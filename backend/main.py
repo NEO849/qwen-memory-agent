@@ -18,12 +18,14 @@ Endpoints:
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
+from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Response
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import config, events, ledger, memory, qwen_client
 
@@ -31,7 +33,29 @@ ROOT = Path(__file__).resolve().parent.parent
 FRONTEND = ROOT / "frontend"
 AB_RESULT = ROOT / "ab_result.json"
 
+MAX_BODY = 64 * 1024                              # reject bodies larger than 64 KB
+DEMO_TOKEN = os.environ.get("REGRESS_GUARD_TOKEN", "")   # if set, gate paid-LLM writes
+GATED = ("/chat", "/recall", "/notes", "/ingest")
+
 app = FastAPI(title="regress-guard", version="1.0.0")
+
+
+@app.middleware("http")
+async def _guard(request: Request, call_next):
+    # 1) body-size cap — cheap cost-DoS protection on the paid Qwen path
+    cl = request.headers.get("content-length")
+    if cl and cl.isdigit() and int(cl) > MAX_BODY:
+        return JSONResponse({"detail": "payload too large"}, status_code=413)
+    # 2) optional shared-secret gate on paid endpoints (enabled only if env token set)
+    if DEMO_TOKEN and request.url.path in GATED:
+        if request.headers.get("x-demo-token") != DEMO_TOKEN:
+            return JSONResponse({"detail": "forbidden"}, status_code=403)
+    return await call_next(request)
+
+
+@app.exception_handler(KeyError)
+async def _key_error(_request: Request, exc: KeyError) -> JSONResponse:
+    return JSONResponse({"detail": "not found"}, status_code=404)
 
 
 @app.on_event("startup")
@@ -41,36 +65,36 @@ def _startup() -> None:
 
 # ------------------------------------------------------------------ models ----
 class IngestIn(BaseModel):
-    test_output: str
-    diff: str
+    test_output: str = Field(max_length=20000)
+    diff: str = Field(max_length=20000)
 
 
 class OutcomeIn(BaseModel):
     lesson_id: int
-    result: str            # pass | fail
-    run_id: str | None = None
+    result: Literal["pass", "fail"]
+    run_id: str | None = Field(default=None, max_length=128)
     injected: bool = True
 
 
 class NoteIn(BaseModel):
-    text: str
+    text: str = Field(max_length=8000)
     distill: bool = False
-    scope: str = ""
-    severity: str = "med"
+    scope: str = Field(default="", max_length=500)
+    severity: Literal["low", "med", "high"] = "med"
     pinned: bool = False
-    author: str | None = None
+    author: str | None = Field(default=None, max_length=128)
 
 
 class EditIn(BaseModel):
-    trigger: str | None = None
-    lesson: str | None = None
-    scope: str | None = None
-    severity: str | None = None
+    trigger: str | None = Field(default=None, max_length=2000)
+    lesson: str | None = Field(default=None, max_length=4000)
+    scope: str | None = Field(default=None, max_length=500)
+    severity: Literal["low", "med", "high"] | None = None
 
 
 class ChatIn(BaseModel):
-    message: str
-    k: int = 4
+    message: str = Field(max_length=8000)
+    k: int = Field(default=4, ge=1, le=20)
 
 
 # -------------------------------------------------------------------- reads ---
@@ -90,7 +114,7 @@ def get_ledger(status: str = "all", since: int | None = None) -> Response:
 
 
 @app.get("/recall")
-def get_recall(q: str, k: int = 5) -> dict:
+def get_recall(q: str = Query(max_length=8000), k: int = Query(5, ge=1, le=20)) -> dict:
     return memory.recall(q, k=k, path=config.LEDGER_PATH)
 
 
@@ -177,6 +201,48 @@ def chat(body: ChatIn) -> dict:
     reply = qwen_client.chat(messages, temperature=0.3)
     return {"reply": reply, "recalled": [l["id"] for l in rec["lessons"]],
             "injected": bool(injection)}
+
+
+# --------------------------------------------------------------- agent loop ---
+class InjectIn(BaseModel):
+    text: str
+    interrupt: bool = True
+
+
+@app.get("/agent/status")
+def agent_status() -> dict:
+    from .agent_loop import session
+    return session.state()
+
+
+@app.post("/agent/start")
+async def agent_start() -> dict:
+    from .agent_loop import session
+    return await session.start()
+
+
+@app.post("/agent/pause")
+async def agent_pause() -> dict:
+    from .agent_loop import session
+    return await session.pause()
+
+
+@app.post("/agent/resume")
+async def agent_resume() -> dict:
+    from .agent_loop import session
+    return await session.resume_()
+
+
+@app.post("/agent/stop")
+async def agent_stop() -> dict:
+    from .agent_loop import session
+    return await session.stop()
+
+
+@app.post("/agent/inject")
+async def agent_inject(body: InjectIn) -> dict:
+    from .agent_loop import session
+    return await session.inject(body.text, interrupt=body.interrupt)
 
 
 # -------------------------------------------------------------------- events --

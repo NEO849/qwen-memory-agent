@@ -124,6 +124,31 @@ button { font-family: inherit; cursor: pointer; }
   font-family: var(--mono); font-size: 11px; color: var(--ink-dim); margin-bottom: 8px; }
 .recall-strip .lz { background: #0d1b12; border: 1px solid #1e4d31; color: var(--green);
   border-radius: 6px; padding: 2px 8px; cursor: pointer; }
+/* agent loop */
+.agent { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); margin-bottom: 10px; overflow: hidden; }
+.agent-bar { display: flex; align-items: center; gap: 7px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: #0e1420; }
+.agent-bar button { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 7px; padding: 5px 10px; font-size: 12px; }
+.agent-bar button.go { background: var(--green); color: #05130a; border-color: transparent; font-weight: 700; }
+.agent-bar button:hover { border-color: var(--blue); }
+.agent-bar .status { font-family: var(--mono); font-size: 11px; padding: 3px 9px; border-radius: 20px;
+  border: 1px solid var(--line); color: var(--ink-dim); text-transform: uppercase; letter-spacing: .06em; }
+.agent-bar .status.running { color: var(--green); border-color: #1e4d31; }
+.agent-bar .status.paused { color: var(--amber); border-color: #4d3f16; }
+.agent-bar .agent-task { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+.agent-panel { padding: 12px 14px; min-height: 96px; }
+.agent-empty { color: var(--ink-faint); font-size: 12.5px; line-height: 1.6; }
+.attempt { display: flex; gap: 12px; align-items: flex-start; }
+.attempt .badge { font-family: var(--mono); font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 8px; white-space: nowrap; }
+.badge.green { background: #0d1b12; color: var(--green); border: 1px solid #1e4d31; }
+.badge.red { background: #1e1010; color: var(--red); border: 1px solid #4d1e1e; }
+.badge.think { background: #101a26; color: var(--blue); border: 1px solid #1e3a4d; }
+.attempt pre { flex: 1; margin: 0; font-family: var(--mono); font-size: 12px; line-height: 1.5;
+  background: #0a0e16; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+  overflow-x: auto; color: #cfe3d6; white-space: pre-wrap; }
+.attempt .filter { color: var(--green); } .attempt .leak { color: var(--red); }
+.agent-meta { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); margin-top: 6px; }
+
 .thread { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 6px 2px; }
 .msg { max-width: 82%; padding: 10px 13px; border-radius: 12px; white-space: pre-wrap; }
 .msg.user { align-self: flex-end; background: #16263a; border: 1px solid #244; }

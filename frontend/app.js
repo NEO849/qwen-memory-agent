@@ -136,8 +136,13 @@ async function runCommand(raw) {
       else throw new Error('unknown command: /' + cmd);
     } else {
       const text = s.replace(/^by the way,?\s*/i, '');
-      const l = await api('/notes', json({ text }));
-      logLine(`✓ by-the-way note → lesson #${l.id} (agent will obey on next recall)`, 'ok');
+      if (state.agentStatus === 'running' || state.agentStatus === 'paused') {
+        await api('/agent/inject', json({ text }));
+        logLine('✓ note injected → agent interrupts & redoes with it', 'ok');
+      } else {
+        const l = await api('/notes', json({ text }));
+        logLine(`✓ by-the-way note → lesson #${l.id} (agent will obey on next recall)`, 'ok');
+      }
     }
   } catch (e) { logLine('✗ ' + (e.message || 'failed'), 'err'); }
   refresh(true);
@@ -184,12 +189,46 @@ async function loadAB() {
   } catch {}
 }
 
+// ---------- agent loop ----------
+function setAgentStatus(s) {
+  state.agentStatus = s;
+  const el = $('#agentStatus'); el.textContent = s; el.className = 'status ' + s;
+}
+function highlightCode(code) {
+  return escapeHtml(code)
+    .replace(/(tenant_id)/g, '<span class="filter">$1</span>')
+    .replace(/(all_orders\(\)(?!\s*if))/g, '<span class="leak">$1</span>');
+}
+function renderAttempt(step, code, passed, recalled) {
+  const badge = passed ? '<span class="badge green">✓ TEST GREEN</span>'
+                       : '<span class="badge red">✗ TEST RED</span>';
+  const mem = recalled && recalled.length ? `recalled #${recalled.join(', #')}` : 'no memory recalled';
+  $('#agentPanel').innerHTML =
+    `<div class="attempt">${badge}<pre>${highlightCode(code || '')}</pre></div>
+     <div class="agent-meta">attempt ${step} · ${mem} · hidden test = tenant isolation</div>`;
+}
+function agentThinking() {
+  $('#agentPanel').innerHTML = `<div class="attempt"><span class="badge think">… writing</span>
+    <pre>agent is drafting get_orders …</pre></div>`;
+}
+function onAgentStep(m) {
+  if (m.status) setAgentStatus(m.status);
+  const ph = m.phase;
+  if (ph === 'recall') { agentThinking(); if (m.recalled) { showRecalled(m.recalled); } }
+  else if (ph === 'result') renderAttempt(m.step, m.code, m.passed, m.recalled);
+  else if (ph === 'interrupted') logLine('↻ agent interrupted → re-planning with your note', 'echo');
+  else if (ph === 'note') logLine(`⇢ agent absorbed note → lesson #${m.lesson_id}`, 'ok');
+  else if (ph === 'stopped') $('#agentPanel').innerHTML = '<div class="agent-empty">agent stopped.</div>';
+}
+async function agentCmd(action) { try { await api('/agent/' + action, { method: 'POST' }); } catch {} }
+
 // ---------- live: SSE + poll fallback ----------
 function live() {
   try {
     const es = new EventSource('/events');
     es.onmessage = (e) => { const m = JSON.parse(e.data);
-      if (m.type === 'ledger_changed') { state.react = { id: m.lesson_id, action: m.action }; refresh(true); } };
+      if (m.type === 'ledger_changed') { state.react = { id: m.lesson_id, action: m.action }; refresh(true); }
+      else if (m.type === 'agent_step') onAgentStep(m); };
     es.onerror = () => {};
   } catch {}
   setInterval(() => refresh(false), 2000); // fallback + safety net
@@ -207,4 +246,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft') $('#prev').click(); if (e.key === 'ArrowRight') $('#next').click();
 });
 
+document.querySelectorAll('[data-agent]').forEach(b =>
+  b.addEventListener('click', () => agentCmd(b.dataset.agent)));
+
 refresh(true); loadAB(); live();
+api('/agent/status').then(s => setAgentStatus(s.status)).catch(() => {});

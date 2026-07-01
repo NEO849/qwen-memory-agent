@@ -16,28 +16,41 @@ from typing import AsyncIterator
 
 _etag: int = 0
 _subscribers: set[asyncio.Queue] = set()
+_MAX_SUBSCRIBERS = 50   # cap idle SSE connections (mild memory-DoS guard)
 
 
 def current_etag() -> int:
     return _etag
 
 
-def bump(kind: str = "ledger_changed", **extra) -> int:
-    """Advance the etag and notify all subscribers. Call after every ledger write."""
-    global _etag
-    _etag += 1
-    msg = {"type": kind, "etag": _etag, **extra}
+def _fanout(msg: dict) -> None:
     for q in list(_subscribers):
         try:
             q.put_nowait(msg)
         except asyncio.QueueFull:
             pass
+
+
+def bump(kind: str = "ledger_changed", **extra) -> int:
+    """Advance the etag and notify all subscribers. Call after every ledger write."""
+    global _etag
+    _etag += 1
+    _fanout({"type": kind, "etag": _etag, **extra})
     return _etag
+
+
+def publish(msg: dict) -> None:
+    """Push a non-ledger event (e.g. agent step) to subscribers WITHOUT bumping the etag,
+    so the deck doesn't needlessly re-fetch for agent-only updates."""
+    _fanout(msg)
 
 
 async def stream() -> AsyncIterator[str]:
     """Yield SSE-formatted events for one client. Sends the current etag immediately so a
     late subscriber syncs, then streams changes; a heartbeat keeps proxies from closing."""
+    if len(_subscribers) >= _MAX_SUBSCRIBERS:
+        yield _sse({"type": "busy", "etag": _etag})
+        return
     q: asyncio.Queue = asyncio.Queue(maxsize=100)
     _subscribers.add(q)
     try:
