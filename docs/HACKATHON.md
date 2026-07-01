@@ -4,7 +4,7 @@
 - **Global AI Hackathon Series with Qwen Cloud** (Devpost, verwaltet von Devpost, Sponsor Alibaba Cloud)
 - **Deadline: 9. Juli 2026, 10:00 GMT-11** (~8 Tage ab 2026-07-01)
 - **Track: MemoryAgent**
-- Teilnehmer-Handle: Devpost **NEO849** / Alibaba Account-ID **5260881302246697** (Region Germany)
+- Teilnehmer-Handle: Devpost **NEO849** (Region Germany, International/Singapore)
 
 ## Pflicht-Leitplanken (sonst Disqualifikation)
 - Qwen-Modelle auf Qwen Cloud **+** Backend auf Alibaba Cloud (Beweis-Video + Code-Datei)
