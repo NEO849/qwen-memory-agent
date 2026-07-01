@@ -27,7 +27,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import config, events, ledger, memory, qwen_client
+from . import config, events, ledger, memory, qwen_client, reviser
 
 ROOT = Path(__file__).resolve().parent.parent
 FRONTEND = ROOT / "frontend"
@@ -35,7 +35,7 @@ AB_RESULT = ROOT / "ab_result.json"
 
 MAX_BODY = 64 * 1024                              # reject bodies larger than 64 KB
 DEMO_TOKEN = os.environ.get("REGRESS_GUARD_TOKEN", "")   # if set, gate paid-LLM writes
-GATED = ("/chat", "/recall", "/notes", "/ingest")
+GATED = ("/chat", "/recall", "/notes", "/ingest", "/revise")
 
 app = FastAPI(title="regress-guard", version="1.0.0")
 
@@ -185,6 +185,19 @@ def tombstone(lesson_id: int) -> dict:
     lesson = ledger.tombstone(lesson_id, path=config.LEDGER_PATH)
     events.bump(lesson_id=lesson_id, action="tombstone")
     return lesson
+
+
+class ReviseIn(BaseModel):
+    change: str = Field(max_length=8000)
+
+
+@app.post("/revise")
+def post_revise(body: ReviseIn) -> dict:
+    """Qwen role 3: judge active lessons against a described change; tombstone obsolete ones."""
+    results = reviser.revise(body.change, path=config.LEDGER_PATH)
+    if any(r["action"] == "tombstoned" for r in results):
+        events.bump(action="revise")
+    return {"results": results}
 
 
 # --------------------------------------------------------------------- chat ---

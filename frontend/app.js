@@ -131,6 +131,10 @@ async function runCommand(raw) {
       else if (cmd === 'unpin') { await api(`/lessons/${id}/unpin`, { method: 'POST' }); logLine(`✓ unpinned #${id}`, 'ok'); }
       else if (cmd === 'demote') { const l = await api(`/lessons/${id}/demote`, { method: 'POST' }); logLine(`✓ demoted #${id} → ${l.confidence.toFixed(2)}`, 'ok'); }
       else if (cmd === 'tombstone') { await api(`/lessons/${id}/tombstone`, { method: 'POST' }); logLine(`✓ tombstoned #${id}`, 'ok'); }
+      else if (cmd === 'revise') { const change = rest.join(' '); logLine('… Qwen judging lessons against the change', 'echo');
+        const r = await api('/revise', json({ change }));
+        r.results.forEach(x => logLine(`  #${x.lesson_id} ${x.action}${x.obsolete ? ' — ' + x.reason : ''}`, x.obsolete ? 'ok' : ''));
+      }
       else if (cmd === 'edit') { const m = s.match(/\/edit\s+(\d+)\s+(\w+)=(.+)/); if (!m) throw new Error('usage: /edit N field=value');
         await api(`/lessons/${m[1]}`, { method: 'PATCH', headers: hdr(), body: JSON.stringify({ [m[2]]: m[3] }) }); logLine(`✓ edited #${m[1]}`, 'ok'); }
       else throw new Error('unknown command: /' + cmd);
