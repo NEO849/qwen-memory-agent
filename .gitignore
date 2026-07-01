@@ -1,0 +1,23 @@
+# Secrets — NIE committen
+.env
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Daten / DB
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/

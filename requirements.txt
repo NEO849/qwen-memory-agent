@@ -1,0 +1,6 @@
+# Kern-Gerüst. Retrieval-/Embedding-Libs kommen nach dem Idee-Lock (Plan-Mode) dazu.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+openai>=1.30          # OpenAI-kompatibler Modus für Qwen/DashScope
+python-dotenv>=1.0
+pydantic>=2.6
