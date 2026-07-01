@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <marker id="arm" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#5AC8F5"/>
+    </marker>
+    <marker id="arg" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#5FD787"/>
+    </marker>
+  </defs>
+  <rect width="960" height="560" fill="#0b0e14"/>
+  <text x="30" y="40" fill="#e6edf3" font-size="22" font-weight="700">Regress-Guard — architecture</text>
+  <text x="30" y="62" fill="#8b96a8" font-size="13">Outcome-grounded, self-correcting memory for AI coding agents · MemoryAgent track</text>
+
+  <!-- Browser -->
+  <rect x="30" y="95" width="250" height="270" rx="12" fill="#121722" stroke="#232c3d"/>
+  <text x="46" y="120" fill="#8b96a8" font-size="12" letter-spacing="1.5">BROWSER (Vanilla JS · no build)</text>
+  <rect x="46" y="134" width="218" height="60" rx="8" fill="#171e2b" stroke="#232c3d"/>
+  <text x="58" y="158" fill="#e6edf3" font-size="13" font-weight="600">Flashcard deck</text>
+  <text x="58" y="177" fill="#8b96a8" font-size="11">3D flip · Beta-PDF sparkline (α/β)</text>
+  <rect x="46" y="202" width="218" height="60" rx="8" fill="#171e2b" stroke="#3a2f12"/>
+  <text x="58" y="226" fill="#F0C35A" font-size="13" font-weight="600">"By the way" console</text>
+  <text x="58" y="245" fill="#8b96a8" font-size="11">out-of-band: note/pin/demote/tombstone</text>
+  <rect x="46" y="270" width="218" height="82" rx="8" fill="#171e2b" stroke="#232c3d"/>
+  <text x="58" y="294" fill="#e6edf3" font-size="13" font-weight="600">Recall theater</text>
+  <text x="58" y="313" fill="#8b96a8" font-size="11">controllable agent loop</text>
+  <text x="58" y="330" fill="#8b96a8" font-size="11">pause · resume · stop · inject</text>
+
+  <!-- Backend -->
+  <rect x="355" y="95" width="270" height="360" rx="12" fill="#121722" stroke="#232c3d"/>
+  <text x="371" y="120" fill="#8b96a8" font-size="12" letter-spacing="1.5">BACKEND · FastAPI (Alibaba ECS)</text>
+  <rect x="371" y="134" width="238" height="70" rx="8" fill="#171e2b" stroke="#232c3d"/>
+  <text x="383" y="156" fill="#e6edf3" font-size="12" font-weight="600">REST + SSE</text>
+  <text x="383" y="174" fill="#8b96a8" font-size="10.5">/ingest /recall /outcome /notes</text>
+  <text x="383" y="190" fill="#8b96a8" font-size="10.5">/revise /agent/* /events (SSE)</text>
+  <rect x="371" y="212" width="238" height="96" rx="8" fill="#171e2b" stroke="#232c3d"/>
+  <text x="383" y="233" fill="#e6edf3" font-size="12" font-weight="600">memory service + agent loop</text>
+  <text x="383" y="251" fill="#8b96a8" font-size="10.5">retrieval fusion: BM25 + vector (RRF)</text>
+  <text x="383" y="267" fill="#8b96a8" font-size="10.5">confidence: Beta(α,β) posterior mean</text>
+  <text x="383" y="283" fill="#8b96a8" font-size="10.5">asyncio loop: recall→act→test→repeat</text>
+  <text x="383" y="299" fill="#8b96a8" font-size="10.5">injection = untrusted DATA (guarded)</text>
+  <rect x="371" y="316" width="238" height="122" rx="8" fill="#0e1420" stroke="#232c3d"/>
+  <text x="383" y="337" fill="#8b96a8" font-size="11" letter-spacing="1">SQLite ledger (WAL)</text>
+  <text x="383" y="357" fill="#e6edf3" font-size="11">lessons: trigger · rule · scope</text>
+  <text x="383" y="374" fill="#e6edf3" font-size="11">α · β · status(active|obsolete)</text>
+  <text x="383" y="391" fill="#e6edf3" font-size="11">pinned · source · embedding</text>
+  <text x="383" y="411" fill="#8b96a8" font-size="11">outcomes: append-only pass/fail</text>
+  <text x="383" y="428" fill="#8b96a8" font-size="10.5">atomic in-SQL increment (no lost update)</text>
+
+  <!-- Qwen Cloud -->
+  <rect x="700" y="95" width="230" height="200" rx="12" fill="#121722" stroke="#2a3550"/>
+  <text x="716" y="120" fill="#5AC8F5" font-size="12" letter-spacing="1.5">QWEN CLOUD</text>
+  <rect x="716" y="134" width="198" height="44" rx="8" fill="#101a26" stroke="#1e3a4d"/>
+  <text x="728" y="153" fill="#e6edf3" font-size="12" font-weight="600">1 · DISTILL</text>
+  <text x="728" y="169" fill="#8b96a8" font-size="10.5">qwen-plus · red+diff → lesson</text>
+  <rect x="716" y="185" width="198" height="44" rx="8" fill="#101a26" stroke="#1e3a4d"/>
+  <text x="728" y="204" fill="#e6edf3" font-size="12" font-weight="600">2 · RECALL</text>
+  <text x="728" y="220" fill="#8b96a8" font-size="10.5">text-embedding-v4 (1024-d)</text>
+  <rect x="716" y="236" width="198" height="44" rx="8" fill="#101a26" stroke="#1e3a4d"/>
+  <text x="728" y="255" fill="#e6edf3" font-size="12" font-weight="600">3 · REVISE</text>
+  <text x="728" y="271" fill="#8b96a8" font-size="10.5">qwen-plus · obsolete? → tombstone</text>
+
+  <!-- MCP + external agent -->
+  <rect x="700" y="325" width="230" height="130" rx="12" fill="#121722" stroke="#232c3d"/>
+  <text x="716" y="350" fill="#8b96a8" font-size="12" letter-spacing="1.5">MCP TOOL</text>
+  <text x="716" y="372" fill="#e6edf3" font-size="12">recall(context)</text>
+  <text x="716" y="391" fill="#e6edf3" font-size="12">record(test_output, diff)</text>
+  <text x="716" y="416" fill="#8b96a8" font-size="11">↳ any coding agent (Claude Code,</text>
+  <text x="716" y="432" fill="#8b96a8" font-size="11">   Qwen) gains the memory</text>
+
+  <!-- arrows -->
+  <line x1="280" y1="230" x2="353" y2="230" stroke="#5AC8F5" stroke-width="2" marker-end="url(#arm)"/>
+  <text x="286" y="222" fill="#8b96a8" font-size="10">REST</text>
+  <line x1="355" y1="255" x2="282" y2="255" stroke="#5FD787" stroke-width="2" marker-end="url(#arg)"/>
+  <text x="290" y="270" fill="#8b96a8" font-size="10">SSE live updates</text>
+  <line x1="625" y1="200" x2="698" y2="185" stroke="#5AC8F5" stroke-width="2" marker-end="url(#arm)"/>
+  <line x1="698" y1="215" x2="625" y2="235" stroke="#5FD787" stroke-width="2" marker-end="url(#arg)"/>
+  <line x1="625" y1="380" x2="698" y2="390" stroke="#5AC8F5" stroke-width="2" marker-end="url(#arm)"/>
+
+  <!-- isolated proof -->
+  <rect x="30" y="400" width="250" height="55" rx="10" fill="#0e1420" stroke="#3a2f12" stroke-dasharray="4 3"/>
+  <text x="46" y="422" fill="#F0C35A" font-size="12" font-weight="600">A/B proof harness (isolated)</text>
+  <text x="46" y="440" fill="#8b96a8" font-size="10.5">throwaway ledger · Arm A 0/5 · Arm B 5/5</text>
+
+  <text x="30" y="500" fill="#5b6577" font-size="11">Blue = request/inject · Green = outcome/live-update. Single uvicorn worker (in-process SSE fan-out).</text>
+  <text x="30" y="520" fill="#5b6577" font-size="11">Confidence is grounded in real pytest pass/fail — not an LLM's opinion. Obsolete lessons are tombstoned, never injected.</text>
+</svg>
