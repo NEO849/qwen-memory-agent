@@ -120,6 +120,16 @@ class AgentSession:
             passed, _out = await asyncio.to_thread(ab_runner._run_pytest, code)
             self.step += 1
             self.last = {"code": code, "passed": passed, "recalled": recalled, "step": self.step}
+
+            # 5) close the loop: the REAL outcome updates each injected lesson's Beta confidence
+            #    (this is the thesis — confidence grounded in test results, not opinion)
+            result = "pass" if passed else "fail"
+            for lid in recalled:
+                await asyncio.to_thread(
+                    memory.record_outcome, lid, result,
+                    run_id=f"agent-{self.step}", injected=True, path=config.LEDGER_PATH)
+            if recalled:
+                events.bump(action="outcome")
             self._emit(phase="result", code=code, passed=passed, recalled=recalled)
 
             # brief, interruptible beat before the next attempt
