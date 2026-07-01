@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Regress-Guard — memory that forgets what's wrong</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- LEFT RAIL -->
+    <div class="rail">
+      <!-- deck -->
+      <section class="zone">
+        <div class="zone-head">
+          <div class="brand"><span class="dot"></span><b>Regress-Guard</b>
+            <span class="tag">ledger</span></div>
+          <span class="zone-sub">flip a card · confidence = real test outcomes</span>
+        </div>
+        <div class="deck-wrap"><div class="deck" id="deck"></div></div>
+        <div class="deck-nav">
+          <button id="prev" title="previous (←)">‹</button>
+          <button id="next" title="next (→)">›</button>
+          <span class="count" id="count">0 / 0</span>
+          <select id="filter">
+            <option value="active">active</option>
+            <option value="all">all</option>
+            <option value="obsolete">obsolete</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- OOB console -->
+      <section class="zone console-zone">
+        <div class="zone-head">
+          <span class="oob-label">◆ Out-of-band · annotate memory live</span>
+          <span class="zone-sub">parallel to the agent</span>
+        </div>
+        <div class="console">
+          <div class="log" id="log"></div>
+          <div class="console-input">
+            <span class="sig">»</span>
+            <input id="cmd" autocomplete="off" spellcheck="false"
+              placeholder="/note …  /pin N  /demote N  /tombstone N   — or just: by the way, …">
+          </div>
+          <div class="hint">by-the-way notes become lessons the agent obeys on its next recall</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="main-head">
+        <h1 style="font-size:16px;">Recall theater</h1>
+        <div class="ab" id="ab"></div>
+      </div>
+      <div class="recall-strip" id="recall"><span style="color:var(--ink-faint)">ask the agent — recalled lessons light up here and in the deck</span></div>
+      <div class="thread" id="thread"></div>
+      <div class="prompt">
+        <input id="ask" placeholder="ask the agent to write some code…" autocomplete="off">
+        <button id="send">send</button>
+      </div>
+    </main>
+  </div>
+  <script src="app.js" type="module"></script>
+</body>
+</html>

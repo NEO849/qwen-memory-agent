@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "regress-guard": {
+      "command": "python",
+      "args": ["-m", "mcp_tool.server"],
+      "env": {}
+    }
+  }
+}

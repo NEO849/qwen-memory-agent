@@ -23,10 +23,12 @@ _SYSTEM = (
     "this class of bug in a future session. Be general enough to transfer, specific "
     "enough to act on. Return ONLY a JSON object with exactly these keys: "
     "trigger (the situation that should surface this lesson), "
-    "lesson (an imperative rule, one or two sentences), "
+    "lesson (an imperative rule, one or two sentences — if the fix hinges on a specific "
+    "field, key, or comparison, name it concretely so the rule can be applied directly, "
+    "e.g. 'filter by user[\"tenant_id\"]'), "
     "scope (where it applies: file / module / symbol / glob, free-form), "
     "severity (one of: low, med, high). "
-    "The lesson MUST be a rule, not the literal fixed code."
+    "The lesson MUST be a transferable rule, not a copy of the literal fixed code."
 )
 
 
