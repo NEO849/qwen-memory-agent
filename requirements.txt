@@ -1,6 +1,11 @@
-# Kern-Gerüst. Retrieval-/Embedding-Libs kommen nach dem Idee-Lock (Plan-Mode) dazu.
+# Regress-Guard — outcome-grounded memory for AI coding agents.
 fastapi>=0.110
 uvicorn[standard]>=0.29
-openai>=1.30          # OpenAI-kompatibler Modus für Qwen/DashScope
+openai>=1.30          # OpenAI-compatible mode for Qwen (Alibaba Model Studio / DashScope)
 python-dotenv>=1.0
 pydantic>=2.6
+mcp>=1.0              # MCP tool: regress_guard.recall / .record
+httpx>=0.27           # test client for the FastAPI layer
+
+# dev / test
+pytest>=8.0
