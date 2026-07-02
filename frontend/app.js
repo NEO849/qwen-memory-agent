@@ -101,6 +101,7 @@ function render() {
     const el = cardEl(l, posFor(r), lifecycle(l, agingThreshold));
     el.style.zIndex = 100 - r;
     el.style.opacity = r < PEEK_OPACITY.length ? PEEK_OPACITY[r] : 0;
+    el.style.filter = r === 0 ? 'none' : `blur(${(r * 0.8).toFixed(1)}px)`;   // depth-of-field
     el.style.pointerEvents = r === 0 ? 'auto' : 'none';
     if (r === 0 && !state.knownIds.has(l.id)) el.classList.add('enter');
     if (r === 0 && state.react && state.react.id === l.id) el.classList.add('react');

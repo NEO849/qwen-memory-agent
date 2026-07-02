@@ -207,10 +207,14 @@ def chat(body: ChatIn) -> dict:
     plus the ids of the lessons that were recalled (for the deck cross-highlight)."""
     rec = memory.recall(body.message, k=body.k, path=config.LEDGER_PATH)
     injection = memory.render_injection(rec["lessons"])
-    messages = []
-    if injection:
-        messages.append({"role": "system", "content": injection})
-    messages.append({"role": "user", "content": body.message})
+    persona = (
+        "You are Regress-Guard's coding assistant. Answer software-engineering questions "
+        "concisely and apply the remembered coding lessons below when relevant. "
+        "You cannot spawn agents, run tools, or perform actions — you only give coding advice. "
+        "If a request is not a coding question, say so in one sentence and offer a coding angle."
+    )
+    system = persona + ("\n\n" + injection if injection else "")
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": body.message}]
     reply = qwen_client.chat(messages, temperature=0.3)
     return {"reply": reply, "recalled": [l["id"] for l in rec["lessons"]],
             "injected": bool(injection)}
