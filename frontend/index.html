@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Regress-Guard — memory that forgets what's wrong</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -13,37 +14,43 @@
       <!-- deck -->
       <section class="zone">
         <div class="zone-head">
-          <div class="brand"><span class="dot"></span><b>Regress-Guard</b>
-            <span class="tag">ledger</span></div>
-          <span class="zone-sub">flip a card · confidence = real test outcomes</span>
+          <div class="brand"><span class="dot"></span><b>Regress-Guard</b></div>
+          <span class="zone-sub">confidence = real test outcomes</span>
         </div>
         <div class="deck-wrap"><div class="deck" id="deck"></div></div>
+        <div class="track" id="track"></div>
         <div class="deck-nav">
           <button id="prev" title="previous (←)">‹</button>
           <button id="next" title="next (→)">›</button>
           <span class="count" id="count">0 / 0</span>
-          <select id="filter">
-            <option value="active">active</option>
-            <option value="all">all</option>
-            <option value="obsolete">obsolete</option>
-          </select>
+          <span class="seg" id="filter">
+            <button data-f="active" class="on">active</button>
+            <button data-f="all">all</button>
+            <button data-f="obsolete">obsolete</button>
+          </span>
         </div>
       </section>
 
-      <!-- OOB console -->
+      <!-- By the way console -->
       <section class="zone console-zone">
         <div class="zone-head">
-          <span class="oob-label">◆ Out-of-band · annotate memory live</span>
-          <span class="zone-sub">parallel to the agent</span>
+          <span class="oob-title">By the way…</span>
+          <span class="zone-sub">teach or correct the memory — live, while the agent runs</span>
         </div>
         <div class="console">
+          <div class="acts" id="acts">
+            <button data-cmd="note">+ Teach a rule</button>
+            <button data-cmd="pin">📌 Pin</button>
+            <button data-cmd="demote">▼ Demote</button>
+            <button data-cmd="tombstone">⌫ Tombstone</button>
+            <button data-cmd="revise">↻ Revise on change</button>
+          </div>
           <div class="log" id="log"></div>
           <div class="console-input">
             <span class="sig">»</span>
             <input id="cmd" autocomplete="off" spellcheck="false"
-              placeholder="/note …  /pin N  /demote N  /tombstone N   — or just: by the way, …">
+              placeholder="by the way, never call all_orders() — filter by tenant_id">
           </div>
-          <div class="hint">by-the-way notes become lessons the agent obeys on its next recall</div>
         </div>
       </section>
     </div>
@@ -51,23 +58,22 @@
     <!-- MAIN -->
     <main class="main">
       <div class="main-head">
-        <h1 style="font-size:16px;">Recall theater</h1>
+        <h1>Recall theater</h1>
         <div class="ab" id="ab"></div>
       </div>
 
-      <!-- live agent loop -->
       <div class="agent">
         <div class="agent-bar">
           <span class="status" id="agentStatus">idle</span>
-          <button data-agent="start" class="go">▶ run agent</button>
-          <button data-agent="pause">⏸ pause</button>
-          <button data-agent="resume">⏵ resume</button>
-          <button data-agent="stop">⏹ stop</button>
+          <button data-agent="start" class="go" id="btnStart">▶ Run agent</button>
+          <button data-agent="pause" id="btnPause" hidden>⏸ Pause</button>
+          <button data-agent="resume" id="btnResume" hidden>⏵ Resume</button>
+          <button data-agent="stop" id="btnStop" hidden>⏹ Stop</button>
           <span class="agent-task">task: implement get_orders(db, user)</span>
         </div>
         <div class="agent-panel" id="agentPanel">
-          <div class="agent-empty">▶ run the agent — it will attempt the task in a loop.
-            While it runs, drop a “by the way” note in the console and watch the next attempt obey it.</div>
+          <div class="agent-empty">▶ Run the agent. While it loops, drop a note on the left —
+            watch the next attempt obey it (red → green).</div>
         </div>
       </div>
 
