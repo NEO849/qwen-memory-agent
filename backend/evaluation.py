@@ -129,19 +129,26 @@ def tune(path: str | None = None, sample: int = 8) -> dict:
 
 
 def metrics(path: str | None = None) -> dict:
-    """Compact memory-health snapshot: grounding + calibration (no LLM, cheap)."""
+    """Compact memory-health snapshot: grounding + calibration (no LLM, cheap).
+
+    Honesty matters here: grounding counts REAL recorded outcomes (the outcomes table), NOT the
+    Beta prior pseudo-counts — a fresh lesson that no test has exercised is grounded=0, not 2.
+    Calibration compares displayed confidence to the empirical pass-rate over those real outcomes."""
     active = ledger.list_lessons(status="active", path=path)
     obsolete = ledger.list_lessons(status="obsolete", path=path)
-    outcomes = 0; conf_sum = 0.0; gap_sum = 0.0; gap_n = 0
+    counts = ledger.outcome_counts(path=path)
+    grounded = 0; conf_sum = 0.0; gap_sum = 0.0; gap_n = 0
     for l in active:
-        passes = max(0.0, l["alpha"] - 1.0); fails = max(0.0, l["beta"] - 1.0)
-        outcomes += int(passes + fails); conf_sum += l["confidence"]
-        if passes + fails > 0:                       # calibration: predicted vs empirical pass-rate
-            gap_sum += abs(l["confidence"] - passes / (passes + fails)); gap_n += 1
+        conf_sum += l["confidence"]
+        c = counts.get(l["id"])
+        if c:
+            p, f = c["pass"], c["fail"]; grounded += p + f
+            if p + f > 0:                            # calibration: displayed vs empirical pass-rate
+                gap_sum += abs(l["confidence"] - p / (p + f)); gap_n += 1
     n = len(active)
     return {
         "lessons_active": n, "lessons_obsolete": len(obsolete),
-        "grounded_outcomes": outcomes,
+        "grounded_outcomes": grounded,
         "avg_confidence": round(conf_sum / n, 3) if n else 0.0,
         "calibration_gap": round(gap_sum / gap_n, 3) if gap_n else 0.0,
         "weights": _current_weights(),

@@ -260,6 +260,19 @@ def outcomes_for(lesson_id: int, *, path: str | None = None) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def outcome_counts(*, path: str | None = None) -> dict[int, dict]:
+    """Real recorded outcomes per lesson (from the outcomes table, NOT the Beta prior).
+    Returns {lesson_id: {"pass": n, "fail": m}} — the honest grounding signal for metrics()."""
+    out: dict[int, dict] = {}
+    with _connect(path) as conn:
+        rows = conn.execute(
+            "SELECT lesson_id, result, COUNT(*) AS c FROM outcomes GROUP BY lesson_id, result"
+        ).fetchall()
+    for r in rows:
+        out.setdefault(r["lesson_id"], {"pass": 0, "fail": 0})[r["result"]] = r["c"]
+    return out
+
+
 if __name__ == "__main__":
     import tempfile, os
     tmp = os.path.join(tempfile.mkdtemp(), "smoke.sqlite")
