@@ -85,7 +85,7 @@ button { font-family: inherit; cursor: pointer; }
 .card .kicker .src { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .card .kicker .when { font-family: var(--mono); font-size: 9px; color: var(--ink-dim);
   text-transform: uppercase; letter-spacing: .11em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.card .lesson { font-size: 14px; line-height: 1.5; font-weight: 600; padding-left: 6px; color: #9aa6b6;
+.card .lesson { font-size: 14px; line-height: 1.5; font-weight: 600; padding-left: 6px; color: #bcc6d3;
   text-transform: uppercase; letter-spacing: .022em;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-height: 4.7em; }
 .card .foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; padding-left: 6px; }
@@ -107,7 +107,7 @@ button { font-family: inherit; cursor: pointer; }
 .brows { display: grid; gap: 5px; }
 .brows > div { display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid var(--line); padding-top: 5px; }
 .brows span { color: var(--ink-faint); font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; }
-.brows b { color: var(--ink); font-weight: 500; font-size: 12px; text-align: right; }
+.brows b { color: #aab4c2; font-weight: 500; font-size: 12px; text-align: right; }
 .brows i { font-style: normal; } .brows .g { color: var(--green); } .brows .r { color: var(--red); }
 .brows .sdot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; vertical-align: middle; margin-right: 3px; }
 
