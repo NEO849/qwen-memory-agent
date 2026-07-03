@@ -7,14 +7,14 @@ const api = (p, o) => fetch(p, o).then(r => r.ok ? r.json() : Promise.reject(r))
 const state = {
   lessons: [], byId: new Map(), etag: -1, filter: 'all', knownIds: new Set(),
   lastRendered: -2, lastFilter: null, agentStatus: 'idle',
-  activeF: 0, targetF: 0, dragging: false, flipLock: false, raf: null, booted: false,
+  activeF: 0, targetF: 0, dragging: false, flipLock: false, raf: null, booted: false, inspecting: false,
 };
 const pool = new Map();                       // lesson id -> card node (built once)
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // arc geometry constants
-const THETA = 30, LIFT = 62, DEPTH = 175, ROLL = 0.24, CAP = 3.4, D2R = Math.PI / 180;
-const CARD_H = 176;
+const THETA = 30, LIFT = 92, DEPTH = 178, ROLL = 0.30, CAP = 3.4, D2R = Math.PI / 180;
+const CARD_H = 168;
 let deckH = 400;   // measured from .deck-wrap; keeps the fan vertically centered
 function measureDeck() { const dw = document.querySelector('.deck-wrap'); if (dw) deckH = dw.clientHeight || deckH; }
 
@@ -134,13 +134,14 @@ function positionAllCards() {
     const nd = pool.get(state.lessons[i].id); if (!nd) continue;
     const d = wrapD(i - state.activeF, n);   // ring: cards loop end -> start
     if (Math.abs(d) > 4.6) { nd.style.visibility = 'hidden'; nd.style.willChange = 'auto'; continue; }
-    const g = geom(d);
+    const g = geom(d), isAct = i === actIdx;
+    const tz = g.tz + (state.inspecting && isAct ? 55 : 0);   // pop the inspected card forward
     nd.style.visibility = 'visible';
-    nd.style.transform = `translate3d(0, ${(baseY + g.ty).toFixed(1)}px, ${g.tz.toFixed(1)}px) rotateX(${g.rx.toFixed(2)}deg) scale(${g.sc.toFixed(3)})`;
-    nd.style.opacity = g.op.toFixed(3);
+    nd.style.transform = `translate3d(0, ${(baseY + g.ty).toFixed(1)}px, ${tz.toFixed(1)}px) rotateX(${g.rx.toFixed(2)}deg) scale(${g.sc.toFixed(3)})`;
+    nd.style.opacity = (state.inspecting && !isAct) ? '0' : g.op.toFixed(3);   // fade peeks while inspecting one card
     nd.style.zIndex = String(1000 - Math.round(g.a * 10));
     nd.style.willChange = Math.abs(d) < 1.5 ? 'transform' : 'auto';
-    nd.style.pointerEvents = i === actIdx ? 'auto' : 'none';
+    nd.style.pointerEvents = isAct ? 'auto' : 'none';
   }
   // reactive ambient glow — picks up the active card's confidence hue
   const glow = document.querySelector('#glow');
@@ -171,8 +172,10 @@ function activeIndex() { const n = state.lessons.length; return n ? ((Math.round
 function flipActive() {
   const n = state.lessons.length; if (!n || state.flipLock) return;
   const nd = pool.get(state.lessons[activeIndex()].id); if (!nd) return;
-  nd.classList.toggle('flipped'); state.flipLock = true; setTimeout(() => state.flipLock = false, 540);
+  nd.classList.toggle('flipped'); state.inspecting = nd.classList.contains('flipped');
+  state.flipLock = true; setTimeout(() => state.flipLock = false, 540); positionAllCards();
 }
+function unflipAll() { if (!state.inspecting) return; pool.forEach(nd => nd.classList.remove('flipped')); state.inspecting = false; positionAllCards(); }
 
 // ---------- data ----------
 async function refresh(force = false) {
@@ -304,7 +307,7 @@ document.querySelectorAll('[data-agent]').forEach(b => b.addEventListener('click
 // deck: wheel / drag / tap-to-flip
 const dw = document.querySelector('.deck-wrap');
 let wheelIdle = null, dnY = 0, dnF = 0, moved = 0;
-dw.addEventListener('wheel', e => { e.preventDefault();
+dw.addEventListener('wheel', e => { e.preventDefault(); unflipAll();
   const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
   setTarget(state.targetF + e.deltaY * unit * 0.0022);
   clearTimeout(wheelIdle); wheelIdle = setTimeout(snap, 120);
@@ -315,6 +318,7 @@ dw.addEventListener('pointerdown', e => {
 });
 dw.addEventListener('pointermove', e => {
   if (!state.dragging) return; const dy = e.clientY - dnY; moved = Math.max(moved, Math.abs(dy));
+  if (moved > 6) unflipAll();
   setTarget(dnF - dy / 96);
 });
 dw.addEventListener('pointerup', e => {
@@ -326,8 +330,8 @@ dw.addEventListener('click', e => e.preventDefault());   // taps handled in poin
 
 document.addEventListener('keydown', e => {
   if (document.activeElement.tagName === 'INPUT') return;
-  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { setTarget(Math.round(state.targetF) - 1, { rubber: false }); e.preventDefault(); }
-  else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { setTarget(Math.round(state.targetF) + 1, { rubber: false }); e.preventDefault(); }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { unflipAll(); setTarget(Math.round(state.targetF) - 1); e.preventDefault(); }
+  else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { unflipAll(); setTarget(Math.round(state.targetF) + 1); e.preventDefault(); }
   else if (e.key === ' ') { flipActive(); e.preventDefault(); }
 });
 

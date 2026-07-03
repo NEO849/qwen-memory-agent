@@ -48,7 +48,7 @@ button { font-family: inherit; cursor: pointer; }
 .deck { position: absolute; inset: 0; z-index: 1; transform-style: preserve-3d; }
 .glow { position: absolute; inset: -6%; z-index: 0; pointer-events: none; transition: background .5s ease; }
 .card {
-  position: absolute; left: 7%; right: 7%; top: 0; height: 176px;
+  position: absolute; left: 7%; right: 7%; top: 0; height: 168px;
   transform-style: preserve-3d; transition: opacity .18s linear;
   cursor: grab; user-select: none; -webkit-user-select: none;
 }
