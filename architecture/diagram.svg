@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" font-family="Inter, system-ui, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="632" viewBox="0 0 980 632" font-family="Inter, system-ui, sans-serif">
   <defs>
     <marker id="arm" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
       <path d="M0,0 L7,3 L0,6 Z" fill="#5AC8F5"/>
@@ -7,80 +7,95 @@
       <path d="M0,0 L7,3 L0,6 Z" fill="#5FD787"/>
     </marker>
   </defs>
-  <rect width="960" height="560" fill="#0b0e14"/>
+  <rect width="980" height="632" fill="#0b0e14"/>
   <text x="30" y="40" fill="#e6edf3" font-size="22" font-weight="700">Regress-Guard — architecture</text>
-  <text x="30" y="62" fill="#8b96a8" font-size="13">Outcome-grounded, self-correcting memory for AI coding agents · MemoryAgent track</text>
+  <text x="30" y="62" fill="#8b96a8" font-size="13">Outcome-grounded, self-measuring, self-correcting memory for AI coding agents · MemoryAgent track</text>
 
   <!-- Browser -->
-  <rect x="30" y="95" width="250" height="270" rx="12" fill="#121722" stroke="#232c3d"/>
-  <text x="46" y="120" fill="#8b96a8" font-size="12" letter-spacing="1.5">BROWSER (Vanilla JS · no build)</text>
-  <rect x="46" y="134" width="218" height="60" rx="8" fill="#171e2b" stroke="#232c3d"/>
-  <text x="58" y="158" fill="#e6edf3" font-size="13" font-weight="600">Flashcard deck</text>
-  <text x="58" y="177" fill="#8b96a8" font-size="11">3D flip · Beta-PDF sparkline (α/β)</text>
-  <rect x="46" y="202" width="218" height="60" rx="8" fill="#171e2b" stroke="#3a2f12"/>
-  <text x="58" y="226" fill="#F0C35A" font-size="13" font-weight="600">"By the way" console</text>
-  <text x="58" y="245" fill="#8b96a8" font-size="11">out-of-band: note/pin/demote/tombstone</text>
-  <rect x="46" y="270" width="218" height="82" rx="8" fill="#171e2b" stroke="#232c3d"/>
-  <text x="58" y="294" fill="#e6edf3" font-size="13" font-weight="600">Recall theater</text>
-  <text x="58" y="313" fill="#8b96a8" font-size="11">controllable agent loop</text>
-  <text x="58" y="330" fill="#8b96a8" font-size="11">pause · resume · stop · inject</text>
+  <rect x="30" y="92" width="252" height="372" rx="12" fill="#121722" stroke="#232c3d"/>
+  <text x="46" y="116" fill="#8b96a8" font-size="12" letter-spacing="1.5">BROWSER (Vanilla JS · no build)</text>
+  <rect x="46" y="130" width="220" height="54" rx="8" fill="#171e2b" stroke="#232c3d"/>
+  <text x="58" y="152" fill="#e6edf3" font-size="13" font-weight="600">Flashcard deck</text>
+  <text x="58" y="171" fill="#8b96a8" font-size="11">3D flip · Beta-PDF sparkline (α/β)</text>
+  <rect x="46" y="192" width="220" height="54" rx="8" fill="#171e2b" stroke="#3a2f12"/>
+  <text x="58" y="214" fill="#F0C35A" font-size="13" font-weight="600">"By the way" console</text>
+  <text x="58" y="233" fill="#8b96a8" font-size="11">note/pin/demote/tombstone · conflicts</text>
+  <rect x="46" y="254" width="220" height="54" rx="8" fill="#171e2b" stroke="#2a3550"/>
+  <text x="58" y="276" fill="#5AC8F5" font-size="13" font-weight="600">Memory-quality panel</text>
+  <text x="58" y="295" fill="#8b96a8" font-size="11">Recall@1 · calibration · Self-tune</text>
+  <rect x="46" y="316" width="220" height="70" rx="8" fill="#171e2b" stroke="#232c3d"/>
+  <text x="58" y="338" fill="#e6edf3" font-size="13" font-weight="600">Recall theater</text>
+  <text x="58" y="357" fill="#8b96a8" font-size="11">controllable agent loop</text>
+  <text x="58" y="374" fill="#8b96a8" font-size="11">pause · resume · stop · inject</text>
+
+  <!-- A/B proof (isolated) -->
+  <rect x="30" y="480" width="252" height="76" rx="10" fill="#0e1420" stroke="#3a2f12" stroke-dasharray="4 3"/>
+  <text x="46" y="502" fill="#F0C35A" font-size="12" font-weight="600">A/B proof harness (isolated)</text>
+  <text x="46" y="521" fill="#8b96a8" font-size="10.5">throwaway ledger · same task · temp 0</text>
+  <text x="46" y="538" fill="#8b96a8" font-size="10.5">Arm A 0/5 green · Arm B 5/5 green</text>
 
   <!-- Backend -->
-  <rect x="355" y="95" width="270" height="360" rx="12" fill="#121722" stroke="#232c3d"/>
-  <text x="371" y="120" fill="#8b96a8" font-size="12" letter-spacing="1.5">BACKEND · FastAPI (Alibaba ECS)</text>
-  <rect x="371" y="134" width="238" height="70" rx="8" fill="#171e2b" stroke="#232c3d"/>
-  <text x="383" y="156" fill="#e6edf3" font-size="12" font-weight="600">REST + SSE</text>
-  <text x="383" y="174" fill="#8b96a8" font-size="10.5">/ingest /recall /outcome /notes</text>
-  <text x="383" y="190" fill="#8b96a8" font-size="10.5">/revise /agent/* /events (SSE)</text>
-  <rect x="371" y="212" width="238" height="96" rx="8" fill="#171e2b" stroke="#232c3d"/>
-  <text x="383" y="233" fill="#e6edf3" font-size="12" font-weight="600">memory service + agent loop</text>
-  <text x="383" y="251" fill="#8b96a8" font-size="10.5">retrieval fusion: BM25 + vector (RRF)</text>
-  <text x="383" y="267" fill="#8b96a8" font-size="10.5">confidence: Beta(α,β) posterior mean</text>
-  <text x="383" y="283" fill="#8b96a8" font-size="10.5">asyncio loop: recall→act→test→repeat</text>
-  <text x="383" y="299" fill="#8b96a8" font-size="10.5">injection = untrusted DATA (guarded)</text>
-  <rect x="371" y="316" width="238" height="122" rx="8" fill="#0e1420" stroke="#232c3d"/>
-  <text x="383" y="337" fill="#8b96a8" font-size="11" letter-spacing="1">SQLite ledger (WAL)</text>
-  <text x="383" y="357" fill="#e6edf3" font-size="11">lessons: trigger · rule · scope</text>
-  <text x="383" y="374" fill="#e6edf3" font-size="11">α · β · status(active|obsolete)</text>
-  <text x="383" y="391" fill="#e6edf3" font-size="11">pinned · source · embedding</text>
-  <text x="383" y="411" fill="#8b96a8" font-size="11">outcomes: append-only pass/fail</text>
-  <text x="383" y="428" fill="#8b96a8" font-size="10.5">atomic in-SQL increment (no lost update)</text>
+  <rect x="357" y="92" width="288" height="470" rx="12" fill="#121722" stroke="#232c3d"/>
+  <text x="373" y="116" fill="#8b96a8" font-size="12" letter-spacing="1.5">BACKEND · FastAPI (Alibaba ECS)</text>
+  <rect x="373" y="130" width="256" height="90" rx="8" fill="#171e2b" stroke="#232c3d"/>
+  <text x="385" y="151" fill="#e6edf3" font-size="12" font-weight="600">REST + SSE</text>
+  <text x="385" y="169" fill="#8b96a8" font-size="10.5">/ingest /recall /outcome /notes</text>
+  <text x="385" y="185" fill="#8b96a8" font-size="10.5">/revise /agent/* /events (SSE)</text>
+  <text x="385" y="201" fill="#5AC8F5" font-size="10.5">/evaluate /tune /metrics</text>
+  <rect x="373" y="228" width="256" height="82" rx="8" fill="#171e2b" stroke="#232c3d"/>
+  <text x="385" y="249" fill="#e6edf3" font-size="12" font-weight="600">memory service + agent loop</text>
+  <text x="385" y="267" fill="#8b96a8" font-size="10.5">retrieval fusion: BM25 + vector (RRF)</text>
+  <text x="385" y="283" fill="#8b96a8" font-size="10.5">confidence: Beta(α,β) posterior mean</text>
+  <text x="385" y="299" fill="#8b96a8" font-size="10.5">asyncio loop: recall→act→test→repeat</text>
+  <rect x="373" y="318" width="256" height="98" rx="8" fill="#101a26" stroke="#2a3550"/>
+  <text x="385" y="339" fill="#5AC8F5" font-size="12" font-weight="600">self-measurement + belief revision</text>
+  <text x="385" y="357" fill="#a9b7c9" font-size="10.5">self-eval: paraphrase → Recall@1 / MRR</text>
+  <text x="385" y="373" fill="#a9b7c9" font-size="10.5">self-tune: RRF weights (keep if &gt; baseline)</text>
+  <text x="385" y="389" fill="#a9b7c9" font-size="10.5">contradiction on teach → tombstone loser</text>
+  <text x="385" y="405" fill="#a9b7c9" font-size="10.5">revise: obsolete on refactor → tombstone</text>
+  <rect x="373" y="424" width="256" height="122" rx="8" fill="#0e1420" stroke="#232c3d"/>
+  <text x="385" y="445" fill="#8b96a8" font-size="11" letter-spacing="1">SQLite ledger (WAL)</text>
+  <text x="385" y="464" fill="#e6edf3" font-size="11">lessons: trigger · rule · scope</text>
+  <text x="385" y="481" fill="#e6edf3" font-size="11">α · β · status(active|obsolete)</text>
+  <text x="385" y="498" fill="#e6edf3" font-size="11">pinned · source · embedding</text>
+  <text x="385" y="516" fill="#8b96a8" font-size="10.5">outcomes: append-only pass/fail</text>
+  <text x="385" y="533" fill="#5AC8F5" font-size="10.5">+ retrieval_config.json (tuned weights)</text>
 
   <!-- Qwen Cloud -->
-  <rect x="700" y="95" width="230" height="200" rx="12" fill="#121722" stroke="#2a3550"/>
-  <text x="716" y="120" fill="#5AC8F5" font-size="12" letter-spacing="1.5">QWEN CLOUD</text>
-  <rect x="716" y="134" width="198" height="44" rx="8" fill="#101a26" stroke="#1e3a4d"/>
-  <text x="728" y="153" fill="#e6edf3" font-size="12" font-weight="600">1 · DISTILL</text>
-  <text x="728" y="169" fill="#8b96a8" font-size="10.5">qwen-plus · red+diff → lesson</text>
-  <rect x="716" y="185" width="198" height="44" rx="8" fill="#101a26" stroke="#1e3a4d"/>
-  <text x="728" y="204" fill="#e6edf3" font-size="12" font-weight="600">2 · RECALL</text>
-  <text x="728" y="220" fill="#8b96a8" font-size="10.5">text-embedding-v4 (1024-d)</text>
-  <rect x="716" y="236" width="198" height="44" rx="8" fill="#101a26" stroke="#1e3a4d"/>
-  <text x="728" y="255" fill="#e6edf3" font-size="12" font-weight="600">3 · REVISE</text>
-  <text x="728" y="271" fill="#8b96a8" font-size="10.5">qwen-plus · obsolete? → tombstone</text>
+  <rect x="665" y="92" width="288" height="256" rx="12" fill="#121722" stroke="#2a3550"/>
+  <text x="681" y="116" fill="#5AC8F5" font-size="12" letter-spacing="1.5">QWEN CLOUD</text>
+  <rect x="681" y="130" width="256" height="46" rx="8" fill="#101a26" stroke="#1e3a4d"/>
+  <text x="693" y="149" fill="#e6edf3" font-size="12" font-weight="600">1 · DISTILL</text>
+  <text x="693" y="166" fill="#8b96a8" font-size="10.5">qwen-plus · red+diff → lesson</text>
+  <rect x="681" y="182" width="256" height="46" rx="8" fill="#101a26" stroke="#1e3a4d"/>
+  <text x="693" y="201" fill="#e6edf3" font-size="12" font-weight="600">2 · RECALL</text>
+  <text x="693" y="218" fill="#8b96a8" font-size="10.5">text-embedding-v4 (1024-d)</text>
+  <rect x="681" y="234" width="256" height="46" rx="8" fill="#101a26" stroke="#1e3a4d"/>
+  <text x="693" y="253" fill="#e6edf3" font-size="12" font-weight="600">3 · REVISE</text>
+  <text x="693" y="270" fill="#8b96a8" font-size="10.5">qwen-plus · obsolete? → tombstone</text>
+  <rect x="681" y="286" width="256" height="46" rx="8" fill="#101a26" stroke="#245a4a"/>
+  <text x="693" y="305" fill="#5FD787" font-size="12" font-weight="600">4 · SELF-CHECK</text>
+  <text x="693" y="322" fill="#8b96a8" font-size="10.5">paraphrase eval + contradiction judge</text>
 
   <!-- MCP + external agent -->
-  <rect x="700" y="325" width="230" height="130" rx="12" fill="#121722" stroke="#232c3d"/>
-  <text x="716" y="350" fill="#8b96a8" font-size="12" letter-spacing="1.5">MCP TOOL</text>
-  <text x="716" y="372" fill="#e6edf3" font-size="12">recall(context)</text>
-  <text x="716" y="391" fill="#e6edf3" font-size="12">record(test_output, diff)</text>
-  <text x="716" y="416" fill="#8b96a8" font-size="11">↳ any coding agent (Claude Code,</text>
-  <text x="716" y="432" fill="#8b96a8" font-size="11">   Qwen) gains the memory</text>
+  <rect x="665" y="366" width="288" height="150" rx="12" fill="#121722" stroke="#232c3d"/>
+  <text x="681" y="391" fill="#8b96a8" font-size="12" letter-spacing="1.5">MCP TOOL</text>
+  <text x="681" y="414" fill="#e6edf3" font-size="12">recall(context)</text>
+  <text x="681" y="433" fill="#e6edf3" font-size="12">record(test_output, diff)</text>
+  <text x="681" y="459" fill="#8b96a8" font-size="11">↳ any coding agent (Claude Code,</text>
+  <text x="681" y="475" fill="#8b96a8" font-size="11">   Qwen) gains the memory</text>
 
-  <!-- arrows -->
-  <line x1="280" y1="230" x2="353" y2="230" stroke="#5AC8F5" stroke-width="2" marker-end="url(#arm)"/>
-  <text x="286" y="222" fill="#8b96a8" font-size="10">REST</text>
-  <line x1="355" y1="255" x2="282" y2="255" stroke="#5FD787" stroke-width="2" marker-end="url(#arg)"/>
-  <text x="290" y="270" fill="#8b96a8" font-size="10">SSE live updates</text>
-  <line x1="625" y1="200" x2="698" y2="185" stroke="#5AC8F5" stroke-width="2" marker-end="url(#arm)"/>
-  <line x1="698" y1="215" x2="625" y2="235" stroke="#5FD787" stroke-width="2" marker-end="url(#arg)"/>
-  <line x1="625" y1="380" x2="698" y2="390" stroke="#5AC8F5" stroke-width="2" marker-end="url(#arm)"/>
+  <!-- arrows: browser <-> backend -->
+  <line x1="282" y1="228" x2="355" y2="228" stroke="#5AC8F5" stroke-width="2" marker-end="url(#arm)"/>
+  <text x="290" y="220" fill="#8b96a8" font-size="10">REST</text>
+  <line x1="357" y1="252" x2="284" y2="252" stroke="#5FD787" stroke-width="2" marker-end="url(#arg)"/>
+  <text x="292" y="267" fill="#8b96a8" font-size="10">SSE live updates</text>
+  <!-- arrows: backend <-> qwen -->
+  <line x1="645" y1="205" x2="663" y2="200" stroke="#5AC8F5" stroke-width="2" marker-end="url(#arm)"/>
+  <line x1="663" y1="245" x2="645" y2="255" stroke="#5FD787" stroke-width="2" marker-end="url(#arg)"/>
+  <!-- arrows: mcp -> backend -->
+  <line x1="663" y1="430" x2="631" y2="415" stroke="#5AC8F5" stroke-width="2" marker-end="url(#arm)"/>
 
-  <!-- isolated proof -->
-  <rect x="30" y="400" width="250" height="55" rx="10" fill="#0e1420" stroke="#3a2f12" stroke-dasharray="4 3"/>
-  <text x="46" y="422" fill="#F0C35A" font-size="12" font-weight="600">A/B proof harness (isolated)</text>
-  <text x="46" y="440" fill="#8b96a8" font-size="10.5">throwaway ledger · Arm A 0/5 · Arm B 5/5</text>
-
-  <text x="30" y="500" fill="#5b6577" font-size="11">Blue = request/inject · Green = outcome/live-update. Single uvicorn worker (in-process SSE fan-out).</text>
-  <text x="30" y="520" fill="#5b6577" font-size="11">Confidence is grounded in real pytest pass/fail — not an LLM's opinion. Obsolete lessons are tombstoned, never injected.</text>
+  <text x="30" y="588" fill="#5b6577" font-size="11">Blue = request/inject · Green = outcome/live-update. Single uvicorn worker (in-process SSE fan-out). Blue-outlined blocks = the self-measuring / self-tuning layer.</text>
+  <text x="30" y="608" fill="#5b6577" font-size="11">Confidence is grounded in real pytest pass/fail — not an LLM's opinion. The memory measures its recall, tunes retrieval, resolves contradictions, and forgets what's wrong.</text>
 </svg>

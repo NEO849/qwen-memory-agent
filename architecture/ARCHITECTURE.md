@@ -16,6 +16,24 @@ use the memory. A separate, isolated harness holds the causal A/B proof.
      author's MIT `markmem`.
   3. **REVISE** (`reviser.py`) — `qwen-plus` judges whether an active lesson is made obsolete by a
      described change and tombstones it.
+  4. **SELF-CHECK** (`evaluation.py` + `reviser.py`) — `qwen-plus` writes keyword-free paraphrase
+     queries so retrieval quality can be measured honestly, and judges whether a newly taught lesson
+     *contradicts* an existing one (belief revision on teach). Same client, two more roles.
+
+- **Self-measurement + self-tuning (`evaluation.py`).** The memory measures and improves *itself*:
+  - `evaluate()` — for a sample of lessons, Qwen writes a paraphrased question that deliberately
+    avoids the lesson's own keywords (so BM25 can't win on word overlap); we then measure **Recall@1/3
+    and MRR** with the vector leg **on vs off** — proof the semantic retrieval earns its place.
+  - `tune()` — grid-searches the RRF fusion weights against that measured Recall@1 and **persists the
+    best weights only if they beat the neutral baseline** (`data/retrieval_config.json`, loaded by
+    `memory.recall`). A memory that tunes how it retrieves, graded by its own hit-rate.
+  - `metrics()` — a cheap, no-LLM health snapshot: grounded-outcome count, average confidence, and a
+    **calibration gap** (predicted confidence vs empirical pass-rate).
+
+- **Contradiction detection on teach (`reviser.check_contradiction`).** When a lesson is taught, a
+  two-stage cheap→expensive check runs: vector cosine shortlists semantic neighbours, then `qwen-plus`
+  judges a genuine contradiction; the loser is tombstoned (`superseded_by`). Newer teaching wins unless
+  the established rule is clearly more correct. Wired into `memory.add_note`.
 
 - **Ledger (`ledger.py`, SQLite + WAL).** `lessons` (trigger, rule, scope, severity, embedding BLOB,
   α, β, status, pinned, source, timestamps) + append-only `outcomes`. Confidence = posterior mean
@@ -24,8 +42,9 @@ use the memory. A separate, isolated harness holds the causal A/B proof.
   no lost update), recall reads one snapshot `SELECT`. `LEDGER_PATH` is injectable — the isolation
   boundary for the harness.
 
-- **API (`main.py`, FastAPI).** REST for ledger/recall/ingest/outcome/notes/lessons/revise, an
-  `asyncio` agent loop under `/agent/*`, and `/events` (SSE). Middleware caps body size and can gate
+- **API (`main.py`, FastAPI).** REST for ledger/recall/ingest/outcome/notes/lessons/revise, the
+  self-measurement endpoints `/evaluate` · `/tune` · `/metrics`, an `asyncio` agent loop under
+  `/agent/*`, and `/events` (SSE). Middleware caps body size and can gate
   the paid endpoints with a shared token. Input is length-bounded; recalled lessons are framed as
   untrusted data (second-order prompt-injection guard).
 
@@ -58,3 +77,7 @@ with the live/interactive surface — the UI cannot contaminate the proof.
    injected into the agent prompt.
 3. **Outcome:** real pass/fail → atomic α/β increment → confidence and the Beta sparkline move live.
 4. **Revise:** a described change → Qwen judges each active lesson → obsolete ones tombstoned.
+5. **Self-measure & self-tune:** Qwen paraphrases lessons into keyword-free queries → measure Recall@1
+   (vector on vs off) → grid-search RRF weights → persist the winner only if it beats baseline.
+6. **Contradict on teach:** a new lesson → cosine shortlist → Qwen contradiction judge → tombstone the
+   loser, so the memory never holds two opposite rules.
