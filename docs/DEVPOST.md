@@ -73,9 +73,11 @@ Qwen, qwen-plus, text-embedding-v4, Qwen Cloud, Alibaba Cloud, ECS, Python, Fast
 
 ## Media
 - Thumbnail / cover: assets/thumbnail.png  (download: http://47.84.227.215/thumbnail.png) → upload to the Devpost image gallery (first image = cover)
-- Demo video (~3 min): (add at the end) → YouTube/Vimeo/Facebook, PUBLIC.
-- Alibaba deploy proof: a SEPARATE short recording (rules: "separate from your demo") of `deploy/deploy_proof.sh`
-  running on the ECS box — proves the backend runs on Alibaba Cloud. Plus the code-file link below.
+- Demo video (< 3 min): (add at the end) → **YouTube / Vimeo / Youku (NOT Facebook)**, PUBLIC, **English**
+  (or English subtitles — required by the Official Rules).
+- Alibaba deploy proof: per the binding Official Rules the required proof is the **code-file link** below
+  (`backend/qwen_client.py`). A short `deploy/deploy_proof.sh` recording on the ECS box is OPTIONAL/recommended.
+- Keep the ECS server running until the Judging Period ends (~Jul 31) — the project must stay testable.
 
 ## Additional-info answers (recap)
 Individual · Germany · Newly built · start 07-01-26 · Track MemoryAgent · repo URL · code-file URL
