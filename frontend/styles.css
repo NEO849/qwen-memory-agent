@@ -49,7 +49,7 @@ button { font-family: inherit; cursor: pointer; }
 .card {
   position: absolute; left: 7%; right: 7%; top: 0; height: 176px;
   transform-style: preserve-3d; transition: opacity .18s linear;
-  cursor: grab;
+  cursor: grab; user-select: none; -webkit-user-select: none;
 }
 .deck-wrap:active .card { cursor: grabbing; }
 .flipper { position: absolute; inset: 0; transform-style: preserve-3d;
@@ -133,7 +133,7 @@ button { font-family: inherit; cursor: pointer; }
   background: linear-gradient(180deg, #17130a44, transparent 42%); border-radius: 12px; }
 .oob-title { font-size: 15px; font-weight: 700; color: var(--amber); }
 .oob-title .bar { font-style: normal; }
-.acts { display: flex; flex-wrap: nowrap; gap: 6px; margin: 10px 0 8px; }
+.acts { display: flex; flex-wrap: nowrap; justify-content: center; gap: 6px; margin: 10px 0 8px; }
 .acts button { flex: 0 0 auto; background: #17120a; color: #f0d9a6; border: 1px solid #3a2f12; border-radius: 7px;
   padding: 6px 9px; font-size: 11.5px; white-space: nowrap; }
 .acts button:hover { border-color: var(--amber); background: #221809; }
@@ -152,7 +152,7 @@ button { font-family: inherit; cursor: pointer; }
 .main-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .main-head h1 { font-size: 17px; }
 .ab { display: flex; gap: 12px; align-items: center; font-family: var(--mono); font-size: 13px; }
-.ab .pill { border: 1px solid var(--line); border-radius: 20px; padding: 6px 13px; background: var(--panel); }
+.ab .pill { border: 1px solid var(--line); border-radius: 8px; padding: 6px 13px; background: var(--panel); }
 .ab .a { color: var(--red); } .ab .b { color: var(--green); }
 
 /* agent */
@@ -162,7 +162,7 @@ button { font-family: inherit; cursor: pointer; }
 .agent-bar button.go { background: var(--green); color: #05130a; border-color: transparent; font-weight: 700; }
 .agent-bar button:hover { border-color: var(--blue); }
 .agent-bar button[hidden] { display: none; }
-.agent-bar .status { font-family: var(--mono); font-size: 12px; padding: 4px 11px; border-radius: 20px;
+.agent-bar .status { font-family: var(--mono); font-size: 12px; padding: 4px 11px; border-radius: 8px;
   border: 1px solid var(--line); color: var(--ink-dim); text-transform: uppercase; letter-spacing: .06em; }
 .agent-bar .status.running { color: var(--green); border-color: #1e4d31; }
 .agent-bar .status.paused { color: var(--amber); border-color: #4d3f16; }

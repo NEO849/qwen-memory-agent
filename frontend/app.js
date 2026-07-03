@@ -5,7 +5,7 @@ const $ = (s) => document.querySelector(s);
 const api = (p, o) => fetch(p, o).then(r => r.ok ? r.json() : Promise.reject(r));
 
 const state = {
-  lessons: [], byId: new Map(), etag: -1, filter: 'active', knownIds: new Set(),
+  lessons: [], byId: new Map(), etag: -1, filter: 'all', knownIds: new Set(),
   lastRendered: -2, lastFilter: null, agentStatus: 'idle',
   activeF: 0, targetF: 0, dragging: false, flipLock: false, raf: null, booted: false,
 };
@@ -95,7 +95,7 @@ function buildDeck() {
   if (!n) {
     pool.forEach(nd => nd.remove()); pool.clear();
     deck.innerHTML = '<div class="empty">No lessons yet — teach one with “+ Teach”, or run the agent.</div>';
-    $('#count').textContent = '0 / 0'; renderTrack(0, 0); return;
+    renderTrack(0, 0); return;
   }
   const emptyEl = deck.querySelector('.empty'); if (emptyEl) emptyEl.remove();
   const live = new Set(state.lessons.map(l => l.id));
@@ -137,7 +137,6 @@ function positionAllCards() {
     nd.style.willChange = Math.abs(d) < 1.5 ? 'transform' : 'auto';
     nd.style.pointerEvents = i === actIdx ? 'auto' : 'none';
   }
-  $('#count').textContent = `${actIdx + 1} / ${n}`;
   renderTrack(n, actIdx);
 }
 function renderTrack(n, act) {
@@ -294,12 +293,6 @@ document.querySelectorAll('#acts [data-cmd]').forEach(b => b.addEventListener('c
 }));
 $('#ask').addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
 $('#send').addEventListener('click', ask);
-$('#prev').addEventListener('click', () => setTarget(Math.round(state.targetF) - 1, { rubber: false }));
-$('#next').addEventListener('click', () => setTarget(Math.round(state.targetF) + 1, { rubber: false }));
-document.querySelectorAll('#filter [data-f]').forEach(b => b.addEventListener('click', () => {
-  document.querySelectorAll('#filter [data-f]').forEach(x => x.classList.toggle('on', x === b));
-  state.filter = b.dataset.f; refresh(true);
-}));
 document.querySelectorAll('[data-agent]').forEach(b => b.addEventListener('click', () => agentCmd(b.dataset.agent)));
 
 // deck: wheel / drag / tap-to-flip
