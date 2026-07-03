@@ -45,13 +45,13 @@ function escapeHtml(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&
 
 // ---------- card DOM (front + back inside a .flipper) ----------
 function faceHTML(l) {
-  const conf = l.confidence ?? 0;
+  const conf = l.confidence ?? 0, src = SRC_COLOR[l.source] || '#93A0B5';
   return `
     <div class="face front">
       <div class="spine sev-${l.severity}"></div>
       <span class="pin">📌</span><span class="stamp">OBSOLETE</span>
       <div class="kicker">
-        <span class="src" style="background:${SRC_COLOR[l.source] || '#93A0B5'}" title="source: ${l.source}"></span>
+        <span class="src" style="background:${src};box-shadow:0 0 8px ${src}77, 0 0 0 3px rgba(255,255,255,.05)" title="source: ${l.source}"></span>
         <span class="when">WHEN ${escapeHtml((l.trigger || 'general').replace(/^when\s+/i, ''))}</span>
       </div>
       <div class="lesson">${escapeHtml(l.lesson)}</div>
@@ -70,7 +70,6 @@ function faceHTML(l) {
       <div class="brows">
         <div><span>test outcomes</span><b><i class="g">${Math.max(0, Math.round(l.alpha - 1))} ✓ pass</i> · <i class="r">${Math.max(0, Math.round(l.beta - 1))} ✗ fail</i></b></div>
         <div><span>severity</span><b><i class="sdot sev-${l.severity}"></i> ${l.severity}</b></div>
-        <div><span>applies to</span><b>${escapeHtml(l.scope || 'general')}</b></div>
         <div><span>source</span><b>${l.source} · learned ${rel(l.created_at)}</b></div>
       </div>
     </div>`;
