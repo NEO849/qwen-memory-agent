@@ -42,15 +42,29 @@ test enforces true isolation, so it would also catch a cross-tenant leak. Reprod
 python -m harness.ab_runner --k 5 --verbose
 ```
 
-## Qwen's three roles
+## Qwen's four roles
 
 | # | Role | Model | Where |
 |---|------|-------|-------|
 | 1 | **DISTILL** — red test + fix diff → lesson JSON | `qwen-plus` (JSON mode) | `backend/extractor.py` |
 | 2 | **RECALL** — embed lessons + context, fuse with BM25 (RRF) | `text-embedding-v4` (1024-d) | `backend/retrieval.py`, `memory.py` |
 | 3 | **REVISE** — is a lesson now obsolete? → tombstone | `qwen-plus` | `backend/reviser.py` |
+| 4 | **SELF-CHECK** — keyword-free paraphrase eval + contradiction judge | `qwen-plus` | `backend/evaluation.py`, `reviser.py` |
 
 Even the coding agent in the proof harness is Qwen — Qwen both *causes* and *cures* the bug via memory.
+
+## The memory measures, tunes and corrects itself
+
+Beyond learn→recall→grade, Regress-Guard improves its *own* retrieval and consistency:
+
+- **Self-evaluation** (`/evaluate`) — Qwen writes *keyword-free* paraphrase queries so BM25 can't win on
+  word overlap; we measure **Recall@1 / MRR** with the vector leg on vs off. Retrieval quality on evidence.
+- **Self-tuning** (`/tune`) — grid-searches the BM25+vector fusion weights against measured Recall@1 and
+  **persists new weights only if they beat baseline** (`data/retrieval_config.json`). Recall@1 **0.75 → 1.00**.
+- **Contradiction detection** — a new lesson is checked (vector-cosine shortlist → Qwen judge) against
+  active ones; a genuine contradiction tombstones the loser, so the memory never holds two opposite rules.
+- **Calibration** (`/metrics`) — a live panel shows Recall@1, the semantic lift, grounded-outcome count,
+  and the **calibration gap** (displayed confidence vs empirical pass-rate, counted from *real* outcomes).
 
 ## Architecture
 
