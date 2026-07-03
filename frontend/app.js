@@ -172,8 +172,11 @@ function activeIndex() { const n = state.lessons.length; return n ? ((Math.round
 function flipActive() {
   const n = state.lessons.length; if (!n || state.flipLock) return;
   const nd = pool.get(state.lessons[activeIndex()].id); if (!nd) return;
-  nd.classList.toggle('flipped'); state.inspecting = nd.classList.contains('flipped');
-  state.flipLock = true; setTimeout(() => state.flipLock = false, 540); positionAllCards();
+  const willFlip = !nd.classList.contains('flipped');
+  nd.classList.toggle('flipped');
+  state.flipLock = true; setTimeout(() => state.flipLock = false, 540);
+  if (willFlip) { state.inspecting = true; positionAllCards(); }            // hide peeks immediately
+  else { setTimeout(() => { state.inspecting = false; positionAllCards(); }, 540); }  // restore peeks AFTER flip-back completes
 }
 function unflipAll() { if (!state.inspecting) return; pool.forEach(nd => nd.classList.remove('flipped')); state.inspecting = false; positionAllCards(); }
 

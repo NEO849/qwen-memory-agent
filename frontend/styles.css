@@ -63,7 +63,7 @@ button { font-family: inherit; cursor: pointer; }
     linear-gradient(158deg, var(--panel-2), var(--panel));
   border: 1px solid var(--line); backface-visibility: hidden; overflow: hidden;
   box-shadow: 0 26px 52px -26px rgba(0,0,0,.75), 0 6px 16px -8px rgba(0,0,0,.55), inset 0 1px 0 #ffffff14;
-  display: flex; flex-direction: column;
+  display: flex; flex-direction: column; justify-content: center;
 }
 .card .back { transform: rotateY(180deg); }
 
@@ -81,16 +81,16 @@ button { font-family: inherit; cursor: pointer; }
 /* card front content */
 .card .kicker { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; padding-left: 6px; }
 .card .kicker .src { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-.card .kicker .when { font-family: var(--mono); font-size: 9.5px; color: var(--ink-faint);
+.card .kicker .when { font-family: var(--mono); font-size: 9px; color: var(--ink-faint);
   text-transform: uppercase; letter-spacing: .11em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.card .lesson { font-size: 17px; line-height: 1.36; font-weight: 500; padding-left: 6px;
+.card .lesson { font-size: 16px; line-height: 1.36; font-weight: 500; padding-left: 6px; color: #cfd6e1;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   max-height: 4.15em; }
-.card .foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-left: 6px; }
-.chip { font-family: var(--mono); font-size: 11px; color: var(--ink-dim);
+.card .foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; padding-left: 6px; }
+.chip { font-family: var(--mono); font-size: 10px; color: var(--ink-dim);
   background: #0d1220; border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px;
   max-width: 52%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.conf { display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 13px; color: var(--ink); }
+.conf { display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 12px; color: #cfd6e1; }
 .conf .bar { width: 58px; height: 7px; border-radius: 4px; background: #0d1220; overflow: hidden; border: 1px solid var(--line); }
 .conf .bar > i { display: block; height: 100%; }
 
