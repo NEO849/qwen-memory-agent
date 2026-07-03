@@ -66,7 +66,11 @@ Qwen, qwen-plus, text-embedding-v4, Qwen Cloud, Alibaba Cloud, ECS, Python, Fast
 
 ## Media
 - Thumbnail / cover: assets/thumbnail.png  (download: http://47.84.227.215/thumbnail.png) → upload to the Devpost image gallery (first image = cover)
-- Video: (add at the end)
+- Demo video (~3 min): (add at the end) → YouTube/Vimeo/Facebook, PUBLIC.
+- Alibaba deploy proof: a SEPARATE short recording (rules: "separate from your demo") of `deploy/deploy_proof.sh`
+  running on the ECS box — proves the backend runs on Alibaba Cloud. Plus the code-file link below.
 
 ## Additional-info answers (recap)
-Individual · Germany · Newly built · start 07-01-26 · Track MemoryAgent · repo URL · code-file URL (backend/qwen_client.py) · architecture diagram PNG · Alibaba deploy screenshot · AI tools text · all 3 checkboxes.
+Individual · Germany · Newly built · start 07-01-26 · Track MemoryAgent · repo URL · code-file URL
+(backend/qwen_client.py — demonstrates Qwen Cloud / DashScope API use) · architecture diagram PNG ·
+Alibaba deploy PROOF (separate short recording via deploy/deploy_proof.sh) · AI tools text · all 3 checkboxes.
