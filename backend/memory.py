@@ -11,8 +11,20 @@ the isolation boundary that keeps the interactive layer from ever touching the c
 """
 from __future__ import annotations
 
-from . import extractor, ledger, qwen_client, retrieval
+import json
+from pathlib import Path
+
+from . import config, extractor, ledger, qwen_client, retrieval, reviser
 from .confidence import should_inject
+
+
+def load_weights() -> dict:
+    """Self-tuned RRF weights (written by evaluation.tune). Fail-open to neutral {1,1}."""
+    try:
+        w = json.loads(Path(config.RETRIEVAL_CONFIG).read_text(encoding="utf-8"))
+        return {"bm25": float(w.get("bm25", 1.0)), "vector": float(w.get("vector", 1.0))}
+    except Exception:
+        return {"bm25": 1.0, "vector": 1.0}
 
 
 def _embed_one(text: str) -> list[float] | None:
@@ -41,7 +53,8 @@ def ingest(test_output: str, diff: str, *, path: str | None = None) -> dict:
 
 
 def add_note(text: str, *, distill: bool = False, scope: str = "", severity: str = "med",
-             author: str | None = None, pinned: bool = False, path: str | None = None) -> dict:
+             author: str | None = None, pinned: bool = False, check_conflicts: bool = True,
+             path: str | None = None) -> dict:
     """Human 'by the way' note -> lesson. Default verbatim (no Qwen in the critical path);
     distill=True asks Qwen to shape it into a {trigger, lesson, scope, severity}."""
     note_raw = text.strip()
@@ -60,7 +73,17 @@ def add_note(text: str, *, distill: bool = False, scope: str = "", severity: str
     lid = ledger.add_lesson(trigger, lesson, scope=scope, severity=severity, embedding=emb,
                             source=source, author=author, note_raw=note_raw, pinned=pinned,
                             path=path)
-    return ledger.get_lesson(lid, path=path)
+    # belief revision: a freshly taught rule may contradict an older one — self-heal on teach.
+    conflicts: dict = {"conflicts": [], "revised": []}
+    if check_conflicts:
+        try:
+            new_full = ledger.get_lesson(lid, with_embedding=True, path=path)
+            conflicts = reviser.check_contradiction(new_full, path=path)
+        except Exception:
+            conflicts = {"conflicts": [], "revised": []}
+    out = ledger.get_lesson(lid, path=path)   # re-read: this lesson may itself have been retired
+    out["_contradictions"] = conflicts
+    return out
 
 
 def recall(context: str, *, k: int = 5, threshold: float = 0.0,
@@ -82,7 +105,7 @@ def recall(context: str, *, k: int = 5, threshold: float = 0.0,
     q_emb = _embed_one(context)
     docs = [{"id": l["id"], "text": _lesson_text(l), "embedding": l.get("embedding")}
             for l in snapshot]
-    fused = retrieval.fuse(context, docs, query_embedding=q_emb, k=max(k * 2, k))
+    fused = retrieval.fuse(context, docs, query_embedding=q_emb, weights=load_weights(), k=max(k * 2, k))
     by_id = {l["id"]: l for l in snapshot}
 
     # strip the heavy embedding from returned lessons

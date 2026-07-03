@@ -27,7 +27,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import config, events, ledger, memory, qwen_client, reviser
+from . import config, evaluation, events, ledger, memory, qwen_client, reviser
 
 ROOT = Path(__file__).resolve().parent.parent
 FRONTEND = ROOT / "frontend"
@@ -198,6 +198,28 @@ def post_revise(body: ReviseIn) -> dict:
     if any(r["action"] == "tombstoned" for r in results):
         events.bump(action="revise")
     return {"results": results}
+
+
+# ------------------------------------------------- self-eval / self-tune ---
+@app.get("/metrics")
+def get_metrics() -> dict:
+    """Cheap memory-health snapshot (no LLM): grounding + calibration + active weights."""
+    return evaluation.metrics(path=config.LEDGER_PATH)
+
+
+@app.post("/evaluate")
+def post_evaluate(sample: int = Query(8, ge=2, le=30)) -> dict:
+    """Measure retrieval quality on keyword-free paraphrase queries (vector on vs off)."""
+    return evaluation.evaluate(path=config.LEDGER_PATH, sample=sample)
+
+
+@app.post("/tune")
+def post_tune(sample: int = Query(8, ge=2, le=30)) -> dict:
+    """Grid-search RRF fusion weights against Recall@1; persist only if it beats baseline."""
+    result = evaluation.tune(path=config.LEDGER_PATH, sample=sample)
+    if result.get("tuned"):
+        events.bump(action="tune")   # weights changed → deck's next recall uses them
+    return result
 
 
 # --------------------------------------------------------------------- chat ---

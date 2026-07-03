@@ -206,7 +206,7 @@ async function runCommand(raw) {
   try {
     if (s.startsWith('/')) {
       const [cmd, ...rest] = s.slice(1).split(/\s+/); const id = parseInt(rest[0], 10);
-      if (cmd === 'note') { const l = await api('/notes', json({ text: rest.join(' ') })); logLine(`✓ learned #${l.id}`, 'ok'); }
+      if (cmd === 'note') { const l = await api('/notes', json({ text: rest.join(' ') })); logLine(`✓ learned #${l.id}`, 'ok'); logConflicts(l); }
       else if (cmd === 'pin') { await api(`/lessons/${id}/pin`, { method: 'POST' }); logLine(`✓ pinned #${id} → front`, 'ok'); }
       else if (cmd === 'demote') { const l = await api(`/lessons/${id}/demote`, { method: 'POST' }); logLine(`✓ demoted #${id} → ${l.confidence.toFixed(2)}`, 'ok'); }
       else if (cmd === 'tombstone') { await api(`/lessons/${id}/tombstone`, { method: 'POST' }); logLine(`✓ tombstoned #${id}`, 'ok'); }
@@ -218,7 +218,7 @@ async function runCommand(raw) {
       const text = s.replace(/^by the way,?\s*/i, '');
       if (state.agentStatus === 'running' || state.agentStatus === 'paused') {
         await api('/agent/inject', json({ text })); logLine('✓ note injected → agent interrupts & redoes with it', 'ok');
-      } else { const l = await api('/notes', json({ text })); logLine(`✓ by-the-way note → lesson #${l.id} (agent obeys on next recall)`, 'ok'); }
+      } else { const l = await api('/notes', json({ text })); logLine(`✓ by-the-way note → lesson #${l.id} (agent obeys on next recall)`, 'ok'); logConflicts(l); }
     }
   } catch (e) { logLine('✗ ' + (e.message || 'failed'), 'err'); }
   refresh(true);
@@ -285,11 +285,55 @@ async function loadAB() {
   } catch {}
 }
 
+// ---------- self-measurement (memory quality) ----------
+function logConflicts(l) {
+  const c = l && l._contradictions;
+  if (!c || !c.conflicts || !c.conflicts.length) return;
+  c.conflicts.forEach(x => {
+    const verb = x.action === 'tombstoned-new' ? 'kept established' : 'superseded';
+    logLine(`⚑ contradiction: #${x.existing_id} ${verb} — ${x.reason}`, 'warn');
+  });
+}
+async function loadMetrics() {
+  try {
+    const m = await api('/metrics');
+    $('#mCal').textContent = m.grounded_outcomes ? m.calibration_gap.toFixed(2) : '—';
+    $('#mGround').textContent = m.grounded_outcomes;
+    $('#mWeights').textContent = `${m.weights.bm25}·${m.weights.vector}`;
+  } catch {}
+}
+async function runEvaluate() {
+  const btn = $('#btnMeasure'); btn.disabled = true; const was = btn.textContent; btn.textContent = 'measuring…';
+  try {
+    const r = await api('/evaluate', { method: 'POST' });
+    if (!r.n) { logLine('need ≥2 lessons to measure recall', 'warn'); }
+    else {
+      const on = r.vector_on.recall_at_1, off = r.vector_off.recall_at_1;
+      $('#mRecall').textContent = on.toFixed(2);
+      const lift = on - off; $('#mLift').textContent = (lift >= 0 ? '+' : '') + lift.toFixed(2);
+      $('#mLift').className = lift > 0 ? 'lift-pos' : (lift < 0 ? 'lift-neg' : '');
+      logLine(`measured on ${r.n} keyword-free queries · Recall@1 ${on.toFixed(2)} (semantic on) vs ${off.toFixed(2)} (off)`, 'ok');
+    }
+  } catch (e) { logLine('✗ measure failed: ' + (e.message || ''), 'err'); }
+  btn.disabled = false; btn.textContent = was;
+}
+async function runTune() {
+  const btn = $('#btnTune'); btn.disabled = true; const was = btn.textContent; btn.textContent = 'tuning…';
+  try {
+    const r = await api('/tune', { method: 'POST' });
+    if (r.tuned) logLine(`✓ self-tuned weights → bm25 ${r.weights.bm25}·vec ${r.weights.vector} · Recall@1 ${r.baseline.recall_at_1.toFixed(2)}→${r.best.recall_at_1.toFixed(2)}`, 'ok');
+    else if (!r.n) logLine('self-tune: need ≥2 lessons', 'warn');
+    else logLine(`self-tune: baseline already optimal (Recall@1 ${r.baseline.recall_at_1.toFixed(2)}) — no change`, '');
+    await loadMetrics();
+  } catch (e) { logLine('✗ self-tune failed: ' + (e.message || ''), 'err'); }
+  btn.disabled = false; btn.textContent = was;
+}
+
 // ---------- live ----------
 function live() {
   try { const es = new EventSource('/events');
     es.onmessage = (e) => { const m = JSON.parse(e.data);
-      if (m.type === 'ledger_changed') { refresh(true); flashCard(m.lesson_id, 'react'); }
+      if (m.type === 'ledger_changed') { refresh(true); flashCard(m.lesson_id, 'react'); loadMetrics(); }
       else if (m.type === 'agent_step') onAgentStep(m); };
     es.onerror = () => {};
   } catch {}
@@ -305,6 +349,8 @@ document.querySelectorAll('#acts [data-cmd]').forEach(b => b.addEventListener('c
 $('#ask').addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
 $('#send').addEventListener('click', ask);
 document.querySelectorAll('[data-agent]').forEach(b => b.addEventListener('click', () => agentCmd(b.dataset.agent)));
+$('#btnMeasure').addEventListener('click', runEvaluate);
+$('#btnTune').addEventListener('click', runTune);
 
 // deck: wheel / drag / tap-to-flip
 const dw = document.querySelector('.deck-wrap');
@@ -339,5 +385,5 @@ document.addEventListener('keydown', e => {
 
 window.addEventListener('resize', () => { measureDeck(); positionAllCards(); });
 measureDeck();
-refresh(true); loadAB(); live();
+refresh(true); loadAB(); live(); loadMetrics();
 api('/agent/status').then(s => setAgentStatus(s.status)).catch(() => {});

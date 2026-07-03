@@ -57,6 +57,18 @@
         <div class="ab" id="ab"></div>
       </div>
 
+      <div class="metrics" id="metrics" title="The memory measures and tunes itself against its own hit-rate.">
+        <span class="mtitle">memory quality</span>
+        <div class="mstat"><span class="mk">Recall@1</span><b id="mRecall">—</b></div>
+        <div class="mstat"><span class="mk">vector lift</span><b id="mLift">—</b></div>
+        <div class="mstat"><span class="mk">calibration gap</span><b id="mCal">—</b></div>
+        <div class="mstat"><span class="mk">grounded</span><b id="mGround">—</b></div>
+        <div class="mstat"><span class="mk">weights bm25·vec</span><b id="mWeights">—</b></div>
+        <div class="mspacer"></div>
+        <button id="btnMeasure" title="Qwen writes keyword-free questions, then we measure hit-rate with the semantic leg on vs off">Measure</button>
+        <button id="btnTune" title="Grid-search the fusion weights against Recall@1; adopt only if it beats baseline">Self-tune</button>
+      </div>
+
       <div class="agent">
         <div class="agent-bar">
           <span class="status" id="agentStatus">idle</span>

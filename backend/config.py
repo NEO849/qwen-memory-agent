@@ -20,6 +20,9 @@ LEDGER_PATH = os.environ.get("LEDGER_PATH", os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "ledger.sqlite"
 ))
 
+# Self-tuned retrieval fusion weights live next to the ledger (written by evaluation.tune()).
+RETRIEVAL_CONFIG = os.path.join(os.path.dirname(LEDGER_PATH), "retrieval_config.json")
+
 
 def assert_configured() -> None:
     """Früh und klar scheitern, wenn der Key fehlt — statt kryptischer 401 später."""
