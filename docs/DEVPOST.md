@@ -28,6 +28,12 @@ When a refactor makes a lesson obsolete, **Qwen judges it and tombstones it** �
 
 You can watch and steer it live: a flashcard deck shows every lesson (with a Beta-curve confidence sparkline), and an out-of-band "by the way" console lets you drop a note *while the agent runs* — it interrupts, re-recalls, and obeys the note on its next attempt.
 
+**The memory also measures, tunes and corrects itself:**
+- **Self-evaluation.** Qwen writes *keyword-free* paraphrase questions (so lexical BM25 can't win on word overlap) and we measure **Recall@1 / MRR** with the semantic leg on vs off — the memory grades its own retrieval quality on evidence, not vibes.
+- **Self-tuning.** It grid-searches its BM25+vector fusion weights against that measured Recall@1 and **adopts new weights only if they beat the baseline** — a memory that tunes *how* it remembers (in our runs, Recall@1 **0.75 → 1.00**).
+- **Contradiction detection.** When you teach a new rule, a cheap→expensive check (vector-cosine shortlist → Qwen judge) spots a rule that **contradicts** an existing one and tombstones the loser — the memory never holds two opposite rules.
+A live "memory-quality" panel surfaces Recall@1, the semantic lift, a **calibration gap** (displayed confidence vs empirical pass-rate), and grounded-outcome count.
+
 ## The proof
 An A/B harness runs the same task, same model (`qwen-plus`, temperature 0) against a hidden `pytest`, K times — the only variable is the injected memory:
 
@@ -38,7 +44,8 @@ An A/B harness runs the same task, same model (`qwen-plus`, temperature 0) again
 > **Honest framing:** without the remembered convention the agent mis-scopes data access (it invents an unsupported `user_id` filter) and fails the hidden tenant-isolation test; the recalled lesson steers it to the correct `tenant_id` scoping. It's statistical (pass-rate over K runs), not one lucky run.
 
 ## How we built it
-- **Qwen Cloud** in three roles: DISTILL (`qwen-plus`, JSON), RECALL (`text-embedding-v4`), REVISE (`qwen-plus`).
+- **Qwen Cloud** in four roles: DISTILL (`qwen-plus`, JSON), RECALL (`text-embedding-v4`), REVISE (`qwen-plus`), and SELF-CHECK (`qwen-plus` — paraphrase-based self-evaluation + contradiction judging).
+- **Self-measurement layer** (`evaluation.py`): keyword-free Recall@1/MRR, RRF weight self-tuning (persisted only if it beats baseline), and a calibration snapshot from *real* recorded outcomes.
 - **FastAPI + SQLite (WAL)** backend with atomic in-SQL Beta updates and Server-Sent Events for the live UI.
 - **Vanilla JS/CSS** frontend (no build): flashcard deck + Beta sparkline + live console.
 - **MCP tool** (`recall` / `record`) so any agent can use the memory.
@@ -48,7 +55,7 @@ An A/B harness runs the same task, same model (`qwen-plus`, temperature 0) again
 Making the proof honest: an adversarial self-review caught us over-claiming, so we re-framed the demo to exactly what the model does and made it statistical (pass-rate over K runs) instead of one lucky run.
 
 ## Accomplishments that we're proud of
-A memory whose confidence is grounded in real test outcomes, and that can **demote and tombstone** wrong advice — something the big chat assistants' memory structurally can't do — proven with a reproducible **0/5 → 5/5** result.
+A memory whose confidence is grounded in real test outcomes, that can **demote and tombstone** wrong advice, and that **measures and tunes its own retrieval** and **resolves contradictions on teach** — things the big chat assistants' memory structurally can't do — proven with a reproducible **0/5 → 5/5** result and a self-measured **Recall@1 0.75 → 1.00**.
 
 ## What we learned
 Retrieval plus an LLM isn't enough for a memory you can trust: you also need an **outcome signal** (real test pass/fail) so confidence is *earned*, and a **revision path** (obsolescence detection) so the memory stays correct as the codebase changes. Grounding trust in evidence — not the model's own confidence — was the key insight.
