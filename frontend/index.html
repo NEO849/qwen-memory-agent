@@ -17,12 +17,12 @@
           <div class="brand"><span class="dot"></span><b>Regress-Guard</b></div>
           <span class="zone-sub">confidence = real test outcomes</span>
         </div>
-        <div class="deck-wrap"><div class="deck" id="deck"></div></div>
+        <div class="deck-wrap" tabindex="0" role="group" aria-label="memory card deck — scroll or arrow keys to browse, space to flip"><div class="deck" id="deck"></div></div>
         <div class="track" id="track"></div>
         <div class="deck-nav">
           <button id="prev" title="previous (←)">‹</button>
           <button id="next" title="next (→)">›</button>
-          <span class="count" id="count">0 / 0</span>
+          <span class="count" id="count" aria-live="polite">0 / 0</span>
           <span class="seg" id="filter">
             <button data-f="active" class="on">active</button>
             <button data-f="all">all</button>
@@ -78,7 +78,23 @@
       </div>
 
       <div class="recall-strip" id="recall"><span style="color:var(--ink-faint)">recalled lessons light up here and in the deck</span></div>
-      <div class="thread" id="thread"></div>
+      <div class="thread" id="thread">
+        <div class="intro" id="intro">
+          <div class="flow">
+            <div class="fstep"><span class="fn">1</span><b>Learn</b><p>a red test + your fix — Qwen distills a lesson</p></div>
+            <span class="farr">→</span>
+            <div class="fstep"><span class="fn">2</span><b>Recall</b><p>the lesson is injected before the agent writes code</p></div>
+            <span class="farr">→</span>
+            <div class="fstep"><span class="fn">3</span><b>Obey</b><p>the bug doesn't come back</p></div>
+            <span class="farr">→</span>
+            <div class="fstep"><span class="fn">4</span><b>Grade</b><p>confidence moves on the real test outcome</p></div>
+          </div>
+          <div class="proof">
+            <span class="plabel">The proof — same task, temp 0, hidden test</span>
+            <span class="pstat"><em class="red">0/5</em> without memory<span class="parrow">→</span><em class="green">5/5</em> with memory</span>
+          </div>
+        </div>
+      </div>
       <div class="prompt">
         <input id="ask" placeholder="or ask the agent a question directly…" autocomplete="off">
         <button id="send">send</button>

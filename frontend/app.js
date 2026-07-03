@@ -1,15 +1,24 @@
 // Regress-Guard UI — vanilla ES module, no build step.
+// Deck = 3D Rolodex arc: persistent node pool + one rAF lerp loop (idle = 0 CPU).
 // Design law: one field -> one channel. lifecycle=card body · confidence=meter · severity=spine.
 const $ = (s) => document.querySelector(s);
 const api = (p, o) => fetch(p, o).then(r => r.ok ? r.json() : Promise.reject(r));
 
 const state = {
-  lessons: [], byId: new Map(), etag: -1, active: 0, filter: 'active',
-  knownIds: new Set(), lastRendered: -2, lastFilter: null, react: null,
-  fanned: false, agentStatus: 'idle',
+  lessons: [], byId: new Map(), etag: -1, filter: 'active', knownIds: new Set(),
+  lastRendered: -2, lastFilter: null, agentStatus: 'idle',
+  activeF: 0, targetF: 0, dragging: false, flipLock: false, raf: null, booted: false,
 };
+const pool = new Map();                       // lesson id -> card node (built once)
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// ---------- Beta PDF sparkline (mathematically honest confidence) ----------
+// arc geometry constants
+const THETA = 30, LIFT = 62, DEPTH = 175, ROLL = 0.24, CAP = 3.4, D2R = Math.PI / 180;
+const CARD_H = 176;
+let deckH = 400;   // measured from .deck-wrap; keeps the fan vertically centered
+function measureDeck() { const dw = document.querySelector('.deck-wrap'); if (dw) deckH = dw.clientHeight || deckH; }
+
+// ---------- Beta PDF sparkline (built once per card, never on scroll) ----------
 function betaSparkline(alpha, beta, w = 140, h = 64) {
   const a = Math.max(alpha, 0.001), b = Math.max(beta, 0.001);
   const N = 48, xs = [], ys = []; let ymax = 1e-9;
@@ -26,30 +35,18 @@ function betaSparkline(alpha, beta, w = 140, h = 64) {
     <text x="${(mean*w).toFixed(1)}" y="${h-1}" fill="${col}" font-size="9" font-family="monospace" text-anchor="middle">${mean.toFixed(2)}</text>
   </svg>`;
 }
-// pastel confidence hue (same honest h=conf*120 math, calmer skin)
 function hueFor(conf) { return `hsl(${Math.round(conf * 120)} 60% 68%)`; }
 const SRC_COLOR = { human: '#B9A6E8', 'human-distill': '#B9A6E8', 'agent-distill': '#7FB8D8', import: '#93A0B5' };
 function rel(ts) { if (!ts) return ''; const d = (Date.now() - Date.parse(ts)) / 1000;
   if (d < 60) return 'just now'; if (d < 3600) return `${Math.floor(d/60)}m ago`;
   if (d < 86400) return `${Math.floor(d/3600)}h ago`; return `${Math.floor(d/86400)}d ago`; }
 function ageMs(l) { return Date.now() - Date.parse(l.updated_at || l.created_at || 0); }
+function escapeHtml(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-// lifecycle bucket (the ONLY full-card colour). At most a few cards are coloured.
-function lifecycle(l, agingThreshold) {
-  if (l.status === 'obsolete') return 'obsolete';
-  if (!state.knownIds.has(l.id) || ageMs(l) < 120000) return 'life-new';   // fresh (<2 min or unseen)
-  if (agingThreshold != null && Date.parse(l.updated_at || l.created_at) <= agingThreshold) return 'life-age';
-  return '';   // settled = neutral default
-}
-
-// ---------- card DOM ----------
-function cardEl(l, pos, lifeClass) {
-  const el = document.createElement('div');
-  el.className = 'card' + (lifeClass ? ' ' + lifeClass : '') + (l.status === 'obsolete' ? ' obsolete' : '') + (l.pinned ? ' pinned' : '');
-  el.dataset.id = l.id;
-  el.style.setProperty('--pos', pos);
+// ---------- card DOM (front + back inside a .flipper) ----------
+function faceHTML(l) {
   const conf = l.confidence ?? 0;
-  el.innerHTML = `
+  return `
     <div class="face front">
       <div class="spine sev-${l.severity}"></div>
       <span class="pin">📌</span><span class="stamp">OBSOLETE</span>
@@ -73,47 +70,104 @@ function cardEl(l, pos, lifeClass) {
         <div>learned ${rel(l.created_at)} · updated ${rel(l.updated_at)}</div>
       </div>
     </div>`;
-  el.addEventListener('click', () => el.classList.toggle('flipped'));
+}
+function cardEl(l) {
+  const el = document.createElement('div'); el.dataset.id = l.id;
+  el.setAttribute('aria-label', `lesson: ${l.lesson}`);
+  el.innerHTML = `<div class="flipper">${faceHTML(l)}</div>`;
   return el;
 }
-function escapeHtml(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function updateFaces(nd, l) { nd.querySelector('.flipper').innerHTML = faceHTML(l);
+  nd.setAttribute('aria-label', `lesson: ${l.lesson}`); }
 
-// ---------- deck: browsable stack (active on top, peeks fanned behind) ----------
-function posFor(r) {
-  if (r === 0) return 'translateY(0) scale(1) rotateZ(0deg)';
-  const off = state.fanned ? 40 : 24;
-  return `translateY(${r*off}px) scale(${(1 - r*0.04).toFixed(3)}) rotateZ(${(r*0.6).toFixed(2)}deg)`;
+function lifecycleClass(l, agingThreshold) {
+  let c = '';
+  if (l.status === 'obsolete') c = ' obsolete';
+  else if (!state.knownIds.has(l.id) || ageMs(l) < 120000) c = ' life-new';
+  else if (agingThreshold != null && Date.parse(l.updated_at || l.created_at) <= agingThreshold) c = ' life-age';
+  if (l.pinned) c += ' pinned';
+  return c;
 }
-const PEEK_OPACITY = [1, 0.5, 0.28, 0.12];
-function render() {
-  const deck = $('#deck'); deck.innerHTML = '';
-  const L = state.lessons, n = L.length;
-  $('#count').textContent = `${n ? state.active + 1 : 0} / ${n}`;
-  renderTrack(n);
-  if (!n) { deck.innerHTML = '<div class="empty">No lessons yet — teach one with “+ Teach a rule”, or run the agent.</div>'; return; }
-  state.active = ((state.active % n) + n) % n;
-  // aging = oldest ~25% by updated_at
-  const times = L.map(x => Date.parse(x.updated_at || x.created_at)).sort((a,b)=>a-b);
-  const agingThreshold = times.length >= 4 ? times[Math.floor(times.length*0.25)-0] : null;
-  const order = [];
-  for (let r = 0; r < n; r++) order.push({ l: L[(state.active + r) % n], r });   // 0=active, then behind
-  order.reverse().forEach(({ l, r }) => {                                          // paint back-to-front
-    const el = cardEl(l, posFor(r), lifecycle(l, agingThreshold));
-    el.style.zIndex = 100 - r;
-    el.style.opacity = r < PEEK_OPACITY.length ? PEEK_OPACITY[r] : 0;
-    el.style.filter = r === 0 ? 'none' : `blur(${(r * 0.8).toFixed(1)}px)`;   // depth-of-field
-    el.style.pointerEvents = r === 0 ? 'auto' : 'none';
-    if (r === 0 && !state.knownIds.has(l.id)) el.classList.add('enter');
-    if (r === 0 && state.react && state.react.id === l.id) el.classList.add('react');
-    deck.appendChild(el);
+
+// ---------- build deck DOM (only on data change) ----------
+function buildDeck() {
+  const deck = $('#deck'), n = state.lessons.length;
+  if (!n) {
+    pool.forEach(nd => nd.remove()); pool.clear();
+    deck.innerHTML = '<div class="empty">No lessons yet — teach one with “+ Teach”, or run the agent.</div>';
+    $('#count').textContent = '0 / 0'; renderTrack(0, 0); return;
+  }
+  const emptyEl = deck.querySelector('.empty'); if (emptyEl) emptyEl.remove();
+  const live = new Set(state.lessons.map(l => l.id));
+  for (const [id, nd] of pool) if (!live.has(id)) { nd.remove(); pool.delete(id); }
+  const times = state.lessons.map(x => Date.parse(x.updated_at || x.created_at)).sort((a, b) => a - b);
+  const agingThreshold = times.length >= 4 ? times[Math.floor(times.length * 0.25)] : null;
+  state.lessons.forEach(l => {
+    let nd = pool.get(l.id);
+    if (!nd) { nd = cardEl(l); deck.appendChild(nd); pool.set(l.id, nd); }
+    else if (nd.dataset.rev !== String(l.rev)) updateFaces(nd, l);
+    const wasFlipped = nd.classList.contains('flipped');
+    nd.className = 'card' + lifecycleClass(l, agingThreshold) + (wasFlipped ? ' flipped' : '');
+    nd.dataset.rev = String(l.rev);
   });
-  L.forEach(l => state.knownIds.add(l.id));
-  state.react = null;
 }
-function renderTrack(n) {
-  const t = $('#track'); const m = Math.min(n, 24); let h = '';
-  for (let i = 0; i < m; i++) h += `<i class="${i === state.active ? 'at' : ''}"></i>`;
+
+// ---------- position pass (style-only, per rAF frame) ----------
+function geom(d) {
+  const cd = Math.max(-CAP, Math.min(CAP, d)), a = Math.min(Math.abs(d), CAP);
+  const ang = cd * THETA * D2R;
+  return {
+    ty: LIFT * Math.sin(ang), tz: DEPTH * (Math.cos(ang) - 1), rx: -cd * THETA * ROLL,
+    sc: 1 - 0.06 * a, op: Math.abs(d) > 4 ? 0 : Math.max(0.12, 1 - 0.30 * Math.abs(d)), a,
+  };
+}
+function positionAllCards() {
+  const n = state.lessons.length; if (!n) return;
+  const actIdx = ((Math.round(state.activeF) % n) + n) % n;
+  for (let i = 0; i < n; i++) {
+    const nd = pool.get(state.lessons[i].id); if (!nd) continue;
+    const d = i - state.activeF;
+    if (Math.abs(d) > 4.6) { nd.style.visibility = 'hidden'; nd.style.willChange = 'auto'; continue; }
+    const g = geom(d);
+    const baseY = (deckH - CARD_H) / 2;   // vertical center of the panel
+    nd.style.visibility = 'visible';
+    nd.style.transform = `translate3d(0, ${(baseY + g.ty).toFixed(1)}px, ${g.tz.toFixed(1)}px) rotateX(${g.rx.toFixed(2)}deg) scale(${g.sc.toFixed(3)})`;
+    nd.style.opacity = g.op.toFixed(3);
+    nd.style.zIndex = String(1000 - Math.round(g.a * 10));
+    nd.style.willChange = Math.abs(d) < 1.5 ? 'transform' : 'auto';
+    nd.style.pointerEvents = i === actIdx ? 'auto' : 'none';
+  }
+  $('#count').textContent = `${actIdx + 1} / ${n}`;
+  renderTrack(n, actIdx);
+}
+function renderTrack(n, act) {
+  const t = $('#track'), m = Math.min(n, 24); let h = '';
+  for (let i = 0; i < m; i++) h += `<i class="${i === act ? 'at' : ''}"></i>`;
   t.innerHTML = h;
+}
+
+// ---------- rAF lerp loop ----------
+function frame() {
+  state.activeF += (state.targetF - state.activeF) * (reduceMotion ? 1 : 0.18);
+  positionAllCards();
+  if (Math.abs(state.targetF - state.activeF) < 0.0015 && !state.dragging) {
+    state.activeF = state.targetF; positionAllCards(); state.raf = null;
+  } else state.raf = requestAnimationFrame(frame);
+}
+function kick() { if (state.raf == null) state.raf = requestAnimationFrame(frame); }
+function setTarget(v, { rubber = true } = {}) {
+  const n = state.lessons.length; if (!n) return; const max = n - 1;
+  if (rubber) { if (v < 0) v *= 0.35; else if (v > max) v = max + (v - max) * 0.35; }
+  else v = Math.max(0, Math.min(max, v));
+  state.targetF = v; kick();
+}
+function snap() { const n = state.lessons.length; if (!n) return;
+  state.targetF = Math.max(0, Math.min(n - 1, Math.round(state.activeF))); kick(); }
+function activeIndex() { const n = state.lessons.length; return n ? ((Math.round(state.activeF) % n) + n) % n : 0; }
+function flipActive() {
+  const n = state.lessons.length; if (!n || state.flipLock) return;
+  const nd = pool.get(state.lessons[activeIndex()].id); if (!nd) return;
+  nd.classList.toggle('flipped'); state.flipLock = true; setTimeout(() => state.flipLock = false, 540);
 }
 
 // ---------- data ----------
@@ -123,8 +177,13 @@ async function refresh(force = false) {
   const fresh = data.lessons.filter(l => !state.knownIds.has(l.id));
   state.lessons = data.lessons; state.byId = new Map(data.lessons.map(l => [l.id, l]));
   state.etag = data.etag; state.lastRendered = data.etag; state.lastFilter = state.filter;
-  if (fresh.length) state.active = data.lessons.findIndex(l => l.id === fresh[fresh.length - 1].id);
-  render();
+  buildDeck();
+  data.lessons.forEach(l => state.knownIds.add(l.id));
+  const n = state.lessons.length;
+  if (!state.booted) { state.booted = true; state.activeF = state.targetF = Math.floor((n - 1) / 2); }
+  else if (fresh.length) setTarget(data.lessons.findIndex(l => l.id === fresh[fresh.length - 1].id), { rubber: false });
+  else state.targetF = Math.max(0, Math.min(Math.max(0, n - 1), state.targetF));
+  positionAllCards(); kick();
 }
 
 // ---------- console ----------
@@ -132,7 +191,6 @@ function logLine(text, cls = '') { const d = document.createElement('div');
   if (cls) d.className = cls; d.textContent = text; $('#log').appendChild(d); $('#log').scrollTop = $('#log').scrollHeight; }
 const hdr = () => ({ 'Content-Type': 'application/json' });
 const json = (o) => ({ method: 'POST', headers: hdr(), body: JSON.stringify(o) });
-
 async function runCommand(raw) {
   const s = raw.trim(); if (!s) return;
   logLine('» ' + s, 'echo');
@@ -188,7 +246,8 @@ function onAgentStep(m) {
 async function agentCmd(action) { try { await api('/agent/' + action, { method: 'POST' }); } catch {} }
 
 // ---------- chat ----------
-function bubble(who, text) { const d = document.createElement('div'); d.className = 'msg ' + who;
+function bubble(who, text) { const intro = $('#intro'); if (intro) intro.remove();
+  const d = document.createElement('div'); d.className = 'msg ' + who;
   d.innerHTML = `<div class="who">${who}</div>${escapeHtml(text)}`; $('#thread').appendChild(d); $('#thread').scrollTop = $('#thread').scrollHeight; return d; }
 async function ask() {
   const inp = $('#ask'), q = inp.value.trim(); if (!q) return;
@@ -206,8 +265,8 @@ function showRecalled(ids) {
     const s = document.createElement('span'); s.className = 'lz'; s.textContent = `#${id}`; s.title = l.lesson; s.onclick = () => jumpTo(id); strip.appendChild(s); });
   ids.forEach(id => flashCard(id, 'highlight'));
 }
-function jumpTo(id) { const i = state.lessons.findIndex(l => l.id === id); if (i >= 0) { state.active = i; render(); flashCard(id, 'highlight'); } }
-function flashCard(id, cls) { const el = document.querySelector(`.card[data-id="${id}"]`); if (el) { el.classList.add(cls); setTimeout(() => el.classList.remove(cls), 1400); } }
+function jumpTo(id) { const i = state.lessons.findIndex(l => l.id === id); if (i >= 0) setTarget(i, { rubber: false }); flashCard(id, 'highlight'); }
+function flashCard(id, cls) { const el = pool.get(id); if (el) { el.classList.add(cls); setTimeout(() => el.classList.remove(cls), 1400); } }
 
 async function loadAB() {
   try { const ab = await api('/ab'); if (ab.available === false) return;
@@ -220,37 +279,60 @@ async function loadAB() {
 function live() {
   try { const es = new EventSource('/events');
     es.onmessage = (e) => { const m = JSON.parse(e.data);
-      if (m.type === 'ledger_changed') { state.react = { id: m.lesson_id, action: m.action }; refresh(true); }
+      if (m.type === 'ledger_changed') { refresh(true); flashCard(m.lesson_id, 'react'); }
       else if (m.type === 'agent_step') onAgentStep(m); };
     es.onerror = () => {};
   } catch {}
   setInterval(() => refresh(false), 2000);
 }
 
-// ---------- wire ----------
+// ---------- input wiring ----------
 $('#cmd').addEventListener('keydown', e => { if (e.key === 'Enter') { runCommand(e.target.value); e.target.value = ''; } });
 document.querySelectorAll('#acts [data-cmd]').forEach(b => b.addEventListener('click', () => {
-  const c = b.dataset.cmd, pre = { note: 'by the way, ', pin: '/pin ', demote: '/demote ', tombstone: '/tombstone ', revise: '/revise ' }[c];
+  const pre = { note: 'by the way, ', pin: '/pin ', demote: '/demote ', tombstone: '/tombstone ', revise: '/revise ' }[b.dataset.cmd];
   const i = $('#cmd'); i.value = pre; i.focus();
 }));
 $('#ask').addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
 $('#send').addEventListener('click', ask);
-$('#prev').addEventListener('click', () => { state.active--; render(); });
-$('#next').addEventListener('click', () => { state.active++; render(); });
+$('#prev').addEventListener('click', () => setTarget(Math.round(state.targetF) - 1, { rubber: false }));
+$('#next').addEventListener('click', () => setTarget(Math.round(state.targetF) + 1, { rubber: false }));
 document.querySelectorAll('#filter [data-f]').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('#filter [data-f]').forEach(x => x.classList.toggle('on', x === b));
   state.filter = b.dataset.f; refresh(true);
 }));
 document.querySelectorAll('[data-agent]').forEach(b => b.addEventListener('click', () => agentCmd(b.dataset.agent)));
+
+// deck: wheel / drag / tap-to-flip
 const dw = document.querySelector('.deck-wrap');
-dw.addEventListener('mouseenter', () => { state.fanned = true; render(); });
-dw.addEventListener('mouseleave', () => { state.fanned = false; render(); });
+let wheelIdle = null, dnY = 0, dnF = 0, moved = 0;
+dw.addEventListener('wheel', e => { e.preventDefault();
+  const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
+  setTarget(state.targetF + e.deltaY * unit * 0.0022);
+  clearTimeout(wheelIdle); wheelIdle = setTimeout(snap, 120);
+}, { passive: false });
+dw.addEventListener('pointerdown', e => {
+  state.dragging = true; dnY = e.clientY; dnF = state.targetF; moved = 0;
+  try { dw.setPointerCapture(e.pointerId); } catch {}
+});
+dw.addEventListener('pointermove', e => {
+  if (!state.dragging) return; const dy = e.clientY - dnY; moved = Math.max(moved, Math.abs(dy));
+  setTarget(dnF - dy / 96);
+});
+dw.addEventListener('pointerup', e => {
+  if (!state.dragging) return; state.dragging = false;
+  try { dw.releasePointerCapture(e.pointerId); } catch {}
+  if (moved < 6) flipActive(); else snap();
+});
+dw.addEventListener('click', e => e.preventDefault());   // taps handled in pointerup
+
 document.addEventListener('keydown', e => {
   if (document.activeElement.tagName === 'INPUT') return;
-  if (e.key === 'ArrowLeft') $('#prev').click();
-  else if (e.key === 'ArrowRight') $('#next').click();
-  else if (e.key === ' ') { const c = document.querySelector('.card'); if (c) { c.classList.toggle('flipped'); e.preventDefault(); } }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { setTarget(Math.round(state.targetF) - 1, { rubber: false }); e.preventDefault(); }
+  else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { setTarget(Math.round(state.targetF) + 1, { rubber: false }); e.preventDefault(); }
+  else if (e.key === ' ') { flipActive(); e.preventDefault(); }
 });
 
+window.addEventListener('resize', () => { measureDeck(); positionAllCards(); });
+measureDeck();
 refresh(true); loadAB(); live();
 api('/agent/status').then(s => setAgentStatus(s.status)).catch(() => {});
