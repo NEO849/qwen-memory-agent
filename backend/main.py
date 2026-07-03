@@ -109,6 +109,12 @@ def get_ledger(status: str = "all", since: int | None = None) -> Response:
     if since is not None and since == etag:
         return Response(status_code=304)
     lessons = ledger.list_lessons(status=status, path=config.LEDGER_PATH)
+    # attach REAL recorded pass/fail (from the outcomes table) so the card shows grounded counts,
+    # not the Beta prior pseudo-counts — consistent with the memory-quality panel.
+    counts = ledger.outcome_counts(path=config.LEDGER_PATH)
+    for l in lessons:
+        c = counts.get(l["id"], {})
+        l["real_pass"], l["real_fail"] = c.get("pass", 0), c.get("fail", 0)
     return Response(content=json.dumps({"etag": etag, "lessons": lessons}),
                     media_type="application/json")
 

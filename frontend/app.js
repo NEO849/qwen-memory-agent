@@ -64,11 +64,11 @@ function faceHTML(l) {
       <div class="spine sev-${l.severity}"></div>
       <div class="btop">
         <div class="bconf" style="color:${hueFor(conf)}">${Math.round(conf * 100)}<span>%</span></div>
-        <div class="blbl">confidence<em>earned from real test runs, not opinion</em></div>
+        <div class="blbl">confidence<em>${(l.real_pass + l.real_fail) > 0 ? 'earned from real test runs, not opinion' : 'starts at a prior — moves on real test outcomes'}</em></div>
         <div class="bspark">${betaSparkline(l.alpha, l.beta, 96, 46)}</div>
       </div>
       <div class="brows">
-        <div><span>test outcomes</span><b><i class="g">${Math.max(0, Math.round(l.alpha - 1))} ✓ pass</i> · <i class="r">${Math.max(0, Math.round(l.beta - 1))} ✗ fail</i></b></div>
+        <div><span>test outcomes</span><b><i class="g">${l.real_pass || 0} ✓ pass</i> · <i class="r">${l.real_fail || 0} ✗ fail</i></b></div>
         <div><span>severity</span><b><i class="sdot sev-${l.severity}"></i> ${l.severity}</b></div>
         <div><span>source</span><b>${l.source} · learned ${rel(l.created_at)}</b></div>
       </div>
