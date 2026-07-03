@@ -62,12 +62,16 @@ function faceHTML(l) {
     </div>
     <div class="face back">
       <div class="spine sev-${l.severity}"></div>
-      <h4>confidence · Beta(${l.alpha.toFixed(0)}, ${l.beta.toFixed(0)})</h4>
-      <div class="spark">${betaSparkline(l.alpha, l.beta)}</div>
-      <div class="meta">
-        <div>scope: ${escapeHtml(l.scope || 'general')} · sev: ${l.severity}</div>
-        <div>source: ${l.source} · rev ${l.rev}</div>
-        <div>learned ${rel(l.created_at)} · updated ${rel(l.updated_at)}</div>
+      <div class="btop">
+        <div class="bconf" style="color:${hueFor(conf)}">${Math.round(conf * 100)}<span>%</span></div>
+        <div class="blbl">confidence<em>earned from real test runs, not opinion</em></div>
+        <div class="bspark">${betaSparkline(l.alpha, l.beta, 96, 46)}</div>
+      </div>
+      <div class="brows">
+        <div><span>test outcomes</span><b><i class="g">${Math.max(0, Math.round(l.alpha - 1))} ✓ pass</i> · <i class="r">${Math.max(0, Math.round(l.beta - 1))} ✗ fail</i></b></div>
+        <div><span>severity</span><b><i class="sdot sev-${l.severity}"></i> ${l.severity}</b></div>
+        <div><span>applies to</span><b>${escapeHtml(l.scope || 'general')}</b></div>
+        <div><span>source</span><b>${l.source} · learned ${rel(l.created_at)}</b></div>
       </div>
     </div>`;
 }
@@ -113,6 +117,7 @@ function buildDeck() {
 }
 
 // ---------- position pass (style-only, per rAF frame) ----------
+function wrapD(d, n) { d = ((d % n) + n) % n; return d > n / 2 ? d - n : d; }   // shortest signed distance on a ring
 function geom(d) {
   const cd = Math.max(-CAP, Math.min(CAP, d)), a = Math.min(Math.abs(d), CAP);
   const ang = cd * THETA * D2R;
@@ -124,12 +129,12 @@ function geom(d) {
 function positionAllCards() {
   const n = state.lessons.length; if (!n) return;
   const actIdx = ((Math.round(state.activeF) % n) + n) % n;
+  const baseY = (deckH - CARD_H) / 2;   // vertical center of the panel
   for (let i = 0; i < n; i++) {
     const nd = pool.get(state.lessons[i].id); if (!nd) continue;
-    const d = i - state.activeF;
+    const d = wrapD(i - state.activeF, n);   // ring: cards loop end -> start
     if (Math.abs(d) > 4.6) { nd.style.visibility = 'hidden'; nd.style.willChange = 'auto'; continue; }
     const g = geom(d);
-    const baseY = (deckH - CARD_H) / 2;   // vertical center of the panel
     nd.style.visibility = 'visible';
     nd.style.transform = `translate3d(0, ${(baseY + g.ty).toFixed(1)}px, ${g.tz.toFixed(1)}px) rotateX(${g.rx.toFixed(2)}deg) scale(${g.sc.toFixed(3)})`;
     nd.style.opacity = g.op.toFixed(3);
@@ -137,6 +142,10 @@ function positionAllCards() {
     nd.style.willChange = Math.abs(d) < 1.5 ? 'transform' : 'auto';
     nd.style.pointerEvents = i === actIdx ? 'auto' : 'none';
   }
+  // reactive ambient glow — picks up the active card's confidence hue
+  const glow = document.querySelector('#glow');
+  if (glow) { const a = state.lessons[actIdx]; const h = hueFor(a ? (a.confidence ?? 0) : 0.5);
+    glow.style.background = `radial-gradient(60% 45% at 50% 42%, ${h.replace(')', ' / 22%)').replace('hsl', 'hsla')}, transparent 70%)`; }
   renderTrack(n, actIdx);
 }
 function renderTrack(n, act) {
@@ -150,18 +159,14 @@ function frame() {
   state.activeF += (state.targetF - state.activeF) * (reduceMotion ? 1 : 0.18);
   positionAllCards();
   if (Math.abs(state.targetF - state.activeF) < 0.0015 && !state.dragging) {
-    state.activeF = state.targetF; positionAllCards(); state.raf = null;
+    const n = state.lessons.length;                        // normalize into [0,n) — seamless (positioning wraps)
+    const norm = n ? ((Math.round(state.targetF) % n) + n) % n : 0;
+    state.activeF = state.targetF = norm; positionAllCards(); state.raf = null;
   } else state.raf = requestAnimationFrame(frame);
 }
 function kick() { if (state.raf == null) state.raf = requestAnimationFrame(frame); }
-function setTarget(v, { rubber = true } = {}) {
-  const n = state.lessons.length; if (!n) return; const max = n - 1;
-  if (rubber) { if (v < 0) v *= 0.35; else if (v > max) v = max + (v - max) * 0.35; }
-  else v = Math.max(0, Math.min(max, v));
-  state.targetF = v; kick();
-}
-function snap() { const n = state.lessons.length; if (!n) return;
-  state.targetF = Math.max(0, Math.min(n - 1, Math.round(state.activeF))); kick(); }
+function setTarget(v) { if (!state.lessons.length) return; state.targetF = v; kick(); }   // unbounded — ring wraps
+function snap() { if (!state.lessons.length) return; state.targetF = Math.round(state.activeF); kick(); }
 function activeIndex() { const n = state.lessons.length; return n ? ((Math.round(state.activeF) % n) + n) % n : 0; }
 function flipActive() {
   const n = state.lessons.length; if (!n || state.flipLock) return;
@@ -264,7 +269,8 @@ function showRecalled(ids) {
     const s = document.createElement('span'); s.className = 'lz'; s.textContent = `#${id}`; s.title = l.lesson; s.onclick = () => jumpTo(id); strip.appendChild(s); });
   ids.forEach(id => flashCard(id, 'highlight'));
 }
-function jumpTo(id) { const i = state.lessons.findIndex(l => l.id === id); if (i >= 0) setTarget(i, { rubber: false }); flashCard(id, 'highlight'); }
+function jumpTo(id) { const i = state.lessons.findIndex(l => l.id === id); const n = state.lessons.length;
+  if (i >= 0) { state.targetF = state.activeF + wrapD(i - state.activeF, n); kick(); } flashCard(id, 'highlight'); }
 function flashCard(id, cls) { const el = pool.get(id); if (el) { el.classList.add(cls); setTimeout(() => el.classList.remove(cls), 1400); } }
 
 async function loadAB() {
