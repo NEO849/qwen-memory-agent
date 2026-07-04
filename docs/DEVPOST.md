@@ -72,7 +72,8 @@ Qwen, qwen-plus, text-embedding-v4, Qwen Cloud, Alibaba Cloud, ECS, Python, Fast
 
 ## Try it out links
 - https://github.com/NEO849/qwen-memory-agent   (⚠️ set PUBLIC before final submit)
-- http://47.84.227.215
+- http://regressguard.duckdns.org   (live demo — friendly URL, also works behind IP-blocking filters)
+- http://47.84.227.215   (same server, direct-IP fallback)
 
 ## Media
 - Thumbnail / cover: assets/thumbnail.png  (download: http://47.84.227.215/thumbnail.png) → upload to the Devpost image gallery (first image = cover)
