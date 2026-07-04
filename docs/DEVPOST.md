@@ -49,6 +49,7 @@ An A/B harness runs the same task, same model (`qwen-plus`, temperature 0) again
 - **FastAPI + SQLite (WAL)** backend with atomic in-SQL Beta updates and Server-Sent Events for the live UI.
 - **Vanilla JS/CSS** frontend (no build): flashcard deck + Beta sparkline + live console.
 - **MCP tool** (`recall` / `record`) so any agent can use the memory.
+- **Memory-injection defense** (`memory.py`): recalled lessons enter the prompt as *untrusted data* behind structural markers and a **deterministic sanitizer** that strips embedded instruction/role directives — so a poisoned lesson can't become a command (second-order prompt injection). Validated by our own red-team.
 - Deployed on **Alibaba Cloud ECS** (Singapore).
 
 ## Challenges we ran into
@@ -56,6 +57,8 @@ Making the proof honest: an adversarial self-review caught us over-claiming, so 
 
 ## Accomplishments that we're proud of
 A memory whose confidence is grounded in real test outcomes, that can **demote and tombstone** wrong advice, and that **measures and tunes its own retrieval** and **resolves contradictions on teach** — things the big chat assistants' memory structurally can't do — proven with a reproducible **0/5 → 5/5** result and a self-measured **Recall@1 0.75 → 1.00**.
+
+We also **red-teamed our own agent**: because recalled lessons are injected into the system prompt, a poisoned lesson is a real attack surface (memory-poisoning). We hardened it — structural isolation + a deterministic sanitizer + persona rules — flipping our poisoned-memory probe from **vulnerable → safe** and passing a 60-case automated red-team scan clean.
 
 ## What we learned
 Retrieval plus an LLM isn't enough for a memory you can trust: you also need an **outcome signal** (real test pass/fail) so confidence is *earned*, and a **revision path** (obsolescence detection) so the memory stays correct as the codebase changes. Grounding trust in evidence — not the model's own confidence — was the key insight.
