@@ -17,6 +17,11 @@ venv/
 *.sqlite3
 data/
 
+# Red-Team-Reports (koennen adversariale Prompts/Outputs enthalten)
+redteam/report.json
+redteam/report.html
+redteam/*.log
+
 # OS / Editor
 .DS_Store
 .idea/
