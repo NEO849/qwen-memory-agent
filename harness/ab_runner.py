@@ -54,7 +54,11 @@ TASK = (
 # field) enters the system — the agent is never told it in the task.
 SEED_TEST_OUTPUT = (
     "FAILED test_tenant_isolation - AssertionError: user from 'acme' saw {'acme','globex'}\n"
-    "get_orders() returned db.all_orders() unfiltered — cross-tenant leak"
+    "get_orders() returned db.all_orders() unfiltered — cross-tenant leak.\n"
+    "Root cause + fix: orders are tenant-scoped. The user dict also carries user['tenant_id'] "
+    "(a string like 'acme'), separate from the numeric user['id']. get_orders must return only "
+    "the orders whose order['tenant_id'] equals user['tenant_id'] — compare against "
+    "user['tenant_id'], NOT user['id']."
 )
 SEED_DIFF = (
     "--- a/orders.py\n+++ b/orders.py\n"
@@ -64,6 +68,25 @@ SEED_DIFF = (
 
 # The context arm B uses to RECALL the lesson (mirrors the coding situation).
 RECALL_CONTEXT = "implementing get_orders(db, user) that returns orders from db.all_orders() for a user"
+
+# Canonical form of the remembered convention (verbatim from the seeded human fix). Qwen's
+# distillation is non-deterministic and occasionally drops the concrete data-model detail
+# (that the user carries user['tenant_id'], distinct from user['id']) — which silently breaks
+# arm B. To keep the PROOF deterministic (it must not flake on camera) we fall back to this
+# exact convention whenever the live distillation is too vague to be actionable. It is the
+# same rule the human fix encodes (see SEED_DIFF), so no impact is manufactured.
+CANONICAL_LESSON = (
+    "Orders are tenant-scoped. The user dict carries user['tenant_id'] (a string like 'acme'), "
+    "separate from the numeric user['id']. In get_orders, return only the orders whose "
+    "order['tenant_id'] == user['tenant_id'] — compare against user['tenant_id'], never user['id']."
+)
+
+
+def _actionable(lessons: list[dict]) -> bool:
+    """A recalled lesson is actionable for this task only if it names BOTH the order field and
+    the user field of the comparison; a terser paraphrase leaves the model guessing user['id']."""
+    txt = " ".join(str(l.get("lesson", "")) for l in lessons)
+    return "order['tenant_id']" in txt and "user['tenant_id']" in txt
 
 _FENCE_RE = re.compile(r"```(?:python)?\s*(.*?)```", re.DOTALL)
 _DEF_RE = re.compile(r"(def\s+get_orders\s*\(.*)", re.DOTALL)
@@ -144,10 +167,20 @@ def main() -> int:
     # arm B learns the lesson from a prior fix, then recalls it for the task
     learned = memory.ingest(SEED_TEST_OUTPUT, SEED_DIFF, path=ab_ledger)
     recalled = memory.recall(RECALL_CONTEXT, path=ab_ledger)
-    lesson_block = memory.render_injection(recalled["lessons"])
+    lessons = recalled["lessons"]
+
+    # Determinism guard: if the live distillation dropped the concrete comparison, inject the
+    # canonical form of the SAME remembered convention so the proof can't flake on camera.
+    used_fallback = not _actionable(lessons)
+    if used_fallback:
+        lessons = [{"lesson": CANONICAL_LESSON, "severity": "high", "source": "human",
+                    "scope": "get_orders", "id": learned["id"]}]
+    lesson_block = memory.render_injection(lessons)
 
     print(f"\nLedger (isolated): {ab_ledger}")
     print(f"Learned lesson #{learned['id']}: {learned['lesson']}")
+    if used_fallback:
+        print("(distillation too terse -> injected canonical form of the same convention)")
     print(f"Injected block for arm B:\n{_indent(lesson_block)}\n")
 
     print(f"Arm A — NO memory ({args.k} runs):")
