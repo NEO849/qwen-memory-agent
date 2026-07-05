@@ -40,7 +40,7 @@ Beta curve sharpen / hue shift toward green on that card. "Real outcome, real co
 in the DB layer; callers must not filter by tenant_id`. Qwen judges the lesson obsolete → the card gets
 the **OBSOLETE stamp** and sinks. "A memory that forgets what's wrong — the big assistants don't do this."
 
-**2:50 — Close (10s).** "Three Qwen roles — distill, recall, revise — deployed on Alibaba Cloud.
+**2:50 — Close (10s).** "Four Qwen roles — distill, recall, revise, self-check — deployed on Alibaba Cloud.
 Confidence grounded in real tests. Public repo, MIT. That's Regress-Guard." Show the ECS URL + GitHub.
 
 ---

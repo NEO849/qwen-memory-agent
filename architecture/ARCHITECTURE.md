@@ -2,13 +2,13 @@
 
 ![diagram](diagram.svg)
 
-Regress-Guard is a small, single-process system: a FastAPI backend over a SQLite ledger, three
+Regress-Guard is a small, single-process system: a FastAPI backend over a SQLite ledger, four
 Qwen roles, a browser UI fed by Server-Sent Events, and an MCP tool that lets a real coding agent
 use the memory. A separate, isolated harness holds the causal A/B proof.
 
 ## Components
 
-- **Qwen Cloud (3 roles).** `backend/qwen_client.py` wraps Qwen in OpenAI-compatible mode.
+- **Qwen Cloud (4 roles).** `backend/qwen_client.py` wraps Qwen in OpenAI-compatible mode.
   1. **DISTILL** (`extractor.py`) — `qwen-plus` in JSON mode turns a red test + fix diff into a
      lesson `{trigger, lesson, scope, severity}`.
   2. **RECALL** (`retrieval.py` + `memory.py`) — `text-embedding-v4` (1024-d) embeds lessons and the
@@ -18,7 +18,7 @@ use the memory. A separate, isolated harness holds the causal A/B proof.
      described change and tombstones it.
   4. **SELF-CHECK** (`evaluation.py` + `reviser.py`) — `qwen-plus` writes keyword-free paraphrase
      queries so retrieval quality can be measured honestly, and judges whether a newly taught lesson
-     *contradicts* an existing one (belief revision on teach). Same client, two more roles.
+     *contradicts* an existing one (belief revision on teach).
 
 - **Self-measurement + self-tuning (`evaluation.py`).** The memory measures and improves *itself*:
   - `evaluate()` — for a sample of lessons, Qwen writes a paraphrased question that deliberately

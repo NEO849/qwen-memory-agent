@@ -1,4 +1,4 @@
-/* Regress-Guard UI v9 — a normal coding AI (right) with a visible, editable memory (left).
+/* Regress-Guard UI v11 — a normal coding AI (right) with a visible, editable memory (left).
    Design law: one data field -> one visual channel -> one location.
    lifecycle -> card body · confidence -> meter only · severity -> left spine only. */
 :root {
@@ -84,8 +84,8 @@ button { font-family: inherit; cursor: pointer; }
 .card .kicker .src { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .card .kicker .when { font-family: var(--mono); font-size: 9px; color: var(--ink-dim);
   text-transform: uppercase; letter-spacing: .11em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.card .lesson { font-size: 14px; line-height: 1.5; font-weight: 600; padding-left: 6px; color: #bcc6d3;
-  text-transform: uppercase; letter-spacing: .022em;
+.card .lesson { font-size: 14.5px; line-height: 1.5; font-weight: 600; padding-left: 6px; color: #dbe3ec;
+  letter-spacing: .002em;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-height: 4.7em; }
 .card .foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; padding-left: 6px; }
 .chip { font-family: var(--mono); font-size: 10px; color: #bcc7d6;
