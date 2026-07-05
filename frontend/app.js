@@ -118,11 +118,15 @@ function buildDeck() {
 // ---------- position pass (style-only, per rAF frame) ----------
 function wrapD(d, n) { d = ((d % n) + n) % n; return d > n / 2 ? d - n : d; }   // shortest signed distance on a ring
 function geom(d) {
-  const cd = Math.max(-CAP, Math.min(CAP, d)), a = Math.min(Math.abs(d), CAP);
+  const ad = Math.abs(d);
+  const cd = Math.max(-CAP, Math.min(CAP, d)), a = Math.min(ad, CAP);
   const ang = cd * THETA * D2R;
   return {
     ty: LIFT * Math.sin(ang), tz: DEPTH * (Math.cos(ang) - 1), rx: -cd * THETA * ROLL,
-    sc: 1 - 0.06 * a, op: Math.abs(d) > 4 ? 0 : Math.max(0.12, 1 - 0.30 * Math.abs(d)), a,
+    sc: 1 - 0.05 * a,
+    op: ad > 4 ? 0 : Math.max(0, 1 - 0.27 * ad),   // card body: solid near, fades to 0 toward the edge
+    txt: Math.max(0, 1 - 1.5 * ad),                // TEXT: only the centered card reads — no ghosting/shimmer
+    a,
   };
 }
 function positionAllCards() {
@@ -138,9 +142,11 @@ function positionAllCards() {
     nd.style.visibility = 'visible';
     nd.style.transform = `translate3d(0, ${(baseY + g.ty).toFixed(1)}px, ${tz.toFixed(1)}px) rotateX(${g.rx.toFixed(2)}deg) scale(${g.sc.toFixed(3)})`;
     nd.style.opacity = (state.inspecting && !isAct) ? '0' : g.op.toFixed(3);   // fade peeks while inspecting one card
+    nd.style.setProperty('--txt', (state.inspecting && !isAct) ? '0' : g.txt.toFixed(3));  // only the centered card shows text
     nd.style.zIndex = String(1000 - Math.round(g.a * 10));
     nd.style.willChange = Math.abs(d) < 1.5 ? 'transform' : 'auto';
     nd.style.pointerEvents = isAct ? 'auto' : 'none';
+    nd.classList.toggle('is-active', isAct && Math.abs(d) < 0.5);   // the focused card lifts (CSS)
   }
   // reactive ambient glow — picks up the active card's confidence hue
   const glow = document.querySelector('#glow');

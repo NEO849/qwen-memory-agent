@@ -68,6 +68,14 @@ button { font-family: inherit; cursor: pointer; }
   display: flex; flex-direction: column; justify-content: center;
 }
 .card .back { transform: rotateY(180deg); }
+/* focus / depth-of-field: only the centered card shows sharp text; peeks stay clean cards in the stack.
+   --txt is set per-frame by the rAF loop (1 at center → 0 for neighbours) → no ghost text, no shimmer. */
+.card .kicker, .card .lesson, .card .foot, .card .btop, .card .brows { opacity: var(--txt, 1); }
+.card .face { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+/* the focused card reads as lifted & crisp above the stack */
+.card.is-active .face { border-top-color: #4a5a72;
+  box-shadow: 0 34px 64px -24px rgba(0,0,0,.9), 0 8px 20px -10px rgba(0,0,0,.6),
+    inset 0 1px 0 rgba(255,255,255,.22), inset 0 -14px 24px -18px rgba(0,0,0,.6); }
 
 /* lifecycle = card body colour (the ONLY full-card colour) */
 .card.life-new .face   { border-color: var(--life-new-border); border-top-color: #3f5a49;
