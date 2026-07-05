@@ -322,6 +322,19 @@ def bump_recall(ids: list[int], *, path: str | None = None) -> None:
         conn.commit()
 
 
+def reinforce_merge(lesson_id: int, *, path: str | None = None) -> dict:
+    """A near-duplicate lesson was taught again — record SALIENCE (merge_count), deliberately NOT
+    alpha/confidence: confidence must stay earned from real tests, never bumped by re-teaching.
+    Refreshes updated_at so the reinforced card resurfaces."""
+    now = _now()
+    with _connect(path) as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        conn.execute("UPDATE lessons SET merge_count = merge_count + 1, updated_at = ? WHERE id = ?",
+                     (now, lesson_id))
+        conn.commit()
+    return get_lesson(lesson_id, path=path)
+
+
 # --------------------------------------------------------------------------- reads
 
 def get_lesson(lesson_id: int, *, with_embedding: bool = False,

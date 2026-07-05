@@ -148,6 +148,17 @@ def metrics(path: str | None = None) -> dict:
     n = len(active)
     total_recalls = sum(l.get("recall_count", 0) or 0 for l in active)
     top = max(active, key=lambda l: l.get("recall_count", 0) or 0, default=None)
+    # retrievability self-quiz (no LLM): does each lesson's OWN trigger surface it in the top-3?
+    # A lesson that can't even find itself is STALE. Honest framing: retrievability, not correctness.
+    docs = [{"id": l["id"], "text": f"{l.get('trigger', '')} {l['lesson']}", "embedding": None} for l in active]
+    stale: list[int] = []
+    for l in active:
+        q = l.get("trigger") or (l["lesson"] or "")[:60]
+        fused = retrieval.fuse(q, docs, query_embedding=None,
+                               weights={"bm25": 1.0, "vector": 0.0}, k=3)
+        if l["id"] not in [fid for fid, _s, _e in fused[:3]]:
+            stale.append(l["id"])
+    health_pct = round((n - len(stale)) / n, 3) if n else 1.0
     return {
         "lessons_active": n, "lessons_obsolete": len(obsolete),
         "grounded_outcomes": grounded,
@@ -157,4 +168,5 @@ def metrics(path: str | None = None) -> dict:
         "total_recalls": total_recalls,
         "most_recalled_id": (top["id"] if top and (top.get("recall_count") or 0) > 0 else None),
         "links": len(ledger.list_links(path=path)),
+        "health_pct": health_pct, "stale": stale,
     }

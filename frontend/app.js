@@ -230,7 +230,9 @@ async function runCommand(raw) {
       const text = s.replace(/^by the way,?\s*/i, '');
       if (state.agentStatus === 'running' || state.agentStatus === 'paused') {
         await api('/agent/inject', json({ text })); logLine("✓ steered — I'll re-plan with your note", 'ok');
-      } else { const l = await api('/notes', json({ text })); logLine(`✓ saved your note → lesson #${l.id} (I'll use it next answer)`, 'ok'); logConflicts(l); }
+      } else { const l = await api('/notes', json({ text }));
+        if (l._deduped) logLine(`↺ merged into #${l.merged_into} (duplicate — salience up, confidence still from tests)`, 'ok');
+        else { logLine(`✓ saved your note → lesson #${l.id} (I'll use it next answer)`, 'ok'); logConflicts(l); } }
     }
   } catch (e) { logLine('✗ ' + (e.message || 'failed'), 'err'); }
   refresh(true);
@@ -351,6 +353,7 @@ async function loadMetrics() {
     $('#mCal').textContent = m.grounded_outcomes ? m.calibration_gap.toFixed(2) : '—';
     $('#mGround').textContent = m.grounded_outcomes;
     $('#mWeights').textContent = `${m.weights.bm25}·${m.weights.vector}`;
+    if (m.health_pct != null) $('#mHealth').textContent = `${Math.round(m.health_pct * 100)}%`;
   } catch {}
 }
 async function runEvaluate() {

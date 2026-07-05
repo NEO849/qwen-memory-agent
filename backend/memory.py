@@ -42,6 +42,20 @@ def _lesson_text(lesson: dict) -> str:
     return f"{lesson.get('trigger', '')} {lesson.get('lesson', '')}".strip()
 
 
+def _find_duplicate(scope: str, emb: list[float] | None, *, path: str | None = None) -> int | None:
+    """A near-duplicate active lesson (same scope, cosine >= RG_DEDUP_THRESHOLD), or None.
+    Needs an embedding to compare — returns None if the candidate couldn't be embedded."""
+    if emb is None:
+        return None
+    for l in ledger.list_lessons(status="active", with_embedding=True, path=path):
+        if (l.get("scope") or "") != (scope or ""):
+            continue
+        e = l.get("embedding")
+        if e and retrieval._cosine(emb, e) >= config.RG_DEDUP_THRESHOLD:
+            return l["id"]
+    return None
+
+
 def ingest(test_output: str, diff: str, *, path: str | None = None) -> dict:
     """Learn a lesson from a red test + fix diff (Qwen role 1), embed it, store it."""
     distilled = extractor.extract_lesson(test_output, diff)
@@ -73,6 +87,16 @@ def add_note(text: str, *, distill: bool = False, scope: str = "", severity: str
         lesson = note_raw
         source = "human"
     emb = _embed_one(f"{trigger} {lesson}")
+    # dedup-before-insert (default OFF): reinforce a near-duplicate instead of storing it twice.
+    # Reinforcement bumps SALIENCE (merge_count), never confidence — that stays test-grounded.
+    if config.RG_DEDUP:
+        dup = _find_duplicate(scope, emb, path=path)
+        if dup is not None:
+            merged = ledger.reinforce_merge(dup, path=path)
+            merged["_deduped"] = True
+            merged["merged_into"] = dup
+            merged["_contradictions"] = {"conflicts": [], "revised": []}
+            return merged
     lid = ledger.add_lesson(trigger, lesson, scope=scope, severity=severity, embedding=emb,
                             source=source, author=author, note_raw=note_raw, pinned=pinned,
                             kind=kind, path=path)
@@ -126,7 +150,9 @@ def recall(context: str, *, k: int = 5, threshold: float = 0.0, track: bool = Tr
             ordered.append(clean(l)); seen.add(l["id"])
     for doc_id, score, ex in fused:
         l = by_id.get(doc_id)
-        if l and l["id"] not in seen and should_inject(l, threshold=threshold):
+        if l and l["id"] not in seen and should_inject(
+                l, threshold=threshold, decay=config.RG_DECAY_ENABLED,
+                half_life_days=config.RG_DECAY_HALFLIFE_DAYS):
             item = clean(l); item["_score"] = round(score, 6); item["_explain"] = ex
             ordered.append(item); seen.add(l["id"])
         if len(ordered) >= k:

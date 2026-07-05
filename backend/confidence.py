@@ -31,15 +31,43 @@ def evidence_count(alpha: float, beta: float) -> float:
     return max(0.0, (alpha - 1.0)) + max(0.0, (beta - 1.0))
 
 
-def should_inject(lesson: dict, *, threshold: float = 0.0) -> bool:
+def decayed_confidence(lesson: dict, *, now=None, half_life_days: float = 30.0) -> float:
+    """Read-time staleness discount: pull a lesson's confidence TOWARD the 0.5 prior as it ages
+    (time since it was last recalled/updated), WITHOUT ever rewriting alpha/beta. Reversible and
+    honest — the stored Beta is untouched; this only affects display/ordering when explicitly on.
+    A lesson recalled recently keeps its confidence; one untouched for a half-life loses half its
+    distance from 0.5."""
+    conf = lesson.get("confidence", 0.5)
+    if half_life_days <= 0:
+        return conf
+    ts = lesson.get("last_recalled_at") or lesson.get("updated_at") or lesson.get("created_at")
+    if not ts:
+        return conf
+    from datetime import datetime, timezone
+    try:
+        t = datetime.fromisoformat(ts)
+        if t.tzinfo is None:
+            t = t.replace(tzinfo=timezone.utc)
+        n = now or datetime.now(timezone.utc)
+        age_days = max(0.0, (n - t).total_seconds() / 86400.0)
+    except Exception:
+        return conf
+    factor = 0.5 ** (age_days / half_life_days)   # 1.0 when fresh → 0 when very old
+    return 0.5 + (conf - 0.5) * factor
+
+
+def should_inject(lesson: dict, *, threshold: float = 0.0, decay: bool = False,
+                  half_life_days: float = 30.0) -> bool:
     """Injection policy. Pinned lessons bypass the confidence gate (human override).
     Otherwise inject active lessons whose posterior mean clears the threshold.
-    Obsolete (tombstoned) lessons are never injected."""
+    Obsolete (tombstoned) lessons are never injected. With decay=True the age-discounted
+    confidence is used against the threshold (default off → behaviour is unchanged)."""
     if lesson.get("status") == "obsolete":
         return False
     if lesson.get("pinned"):
         return True
-    return lesson.get("confidence", 0.0) >= threshold
+    conf = decayed_confidence(lesson, half_life_days=half_life_days) if decay else lesson.get("confidence", 0.0)
+    return conf >= threshold
 
 
 def beta_pdf(alpha: float, beta: float, x: float) -> float:
