@@ -71,8 +71,9 @@ function faceHTML(l) {
       </div>
       <div class="brows">
         <div><span>test outcomes</span><b><i class="g">${l.real_pass || 0} ✓ pass</i> · <i class="r">${l.real_fail || 0} ✗ fail</i></b></div>
-        <div><span>severity</span><b><i class="sdot sev-${l.severity}"></i> ${l.severity}</b></div>
+        <div><span>severity</span><b><i class="sdot sev-${l.severity}"></i> ${l.severity}${l.kind === 'anti_pattern' ? ' · anti-pattern' : ''}</b></div>
         <div><span>source</span><b>${l.source} · learned ${rel(l.created_at)}</b></div>
+        ${(l.recall_count > 0) ? `<div><span>recalled</span><b>${l.recall_count}× · last ${rel(l.last_recalled_at)}</b></div>` : ''}
       </div>
     </div>`;
 }

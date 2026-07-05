@@ -88,20 +88,39 @@ def check_contradiction(new_lesson: dict, *, path: str | None = None) -> dict:
             scored.append((sim, l))
     scored.sort(key=lambda t: t[0], reverse=True)
 
+    new_id = new_lesson.get("id")
+
+    def _link(a, b, type_, w):   # never let link bookkeeping break the teach path
+        try:
+            if a is not None and b is not None:
+                ledger.add_link(a, b, type=type_, weight=w, path=path)
+        except Exception:
+            pass
+
     conflicts: list[dict] = []
     revised: list[int] = []
     for sim, existing in scored[:_MAX_CANDIDATES]:
+        # A-MEM: the semantic neighbourhood we already computed IS a relationship — persist it
+        # as a 'related' edge (this is the graph the knowledge globe renders) instead of discarding.
+        _link(new_id, existing["id"], "related", round(sim, 3))
         verdict = _judge_contradiction(new_lesson, existing)
         if not verdict["contradicts"] or verdict["loser"] == "none":
+            try:
+                if new_id is not None:
+                    ledger.add_link_rejection(new_id, existing["id"], sim, verdict.get("reason", ""), path=path)
+            except Exception:
+                pass
             continue
         if verdict["loser"] == "existing":
-            ledger.tombstone(existing["id"], superseded_by=new_lesson.get("id"), path=path)
+            ledger.tombstone(existing["id"], superseded_by=new_id, path=path)
+            _link(new_id, existing["id"], "supersedes", 1.0)
             revised.append(existing["id"])
             action = "tombstoned-existing"
         else:  # the new teaching lost — retire it, keep the established lesson
-            if new_lesson.get("id") is not None:
-                ledger.tombstone(new_lesson["id"], superseded_by=existing["id"], path=path)
-                revised.append(new_lesson["id"])
+            if new_id is not None:
+                ledger.tombstone(new_id, superseded_by=existing["id"], path=path)
+                _link(existing["id"], new_id, "supersedes", 1.0)
+                revised.append(new_id)
             action = "tombstoned-new"
         conflicts.append({
             "existing_id": existing["id"], "existing": existing["lesson"],

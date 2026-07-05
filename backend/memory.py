@@ -89,7 +89,7 @@ def add_note(text: str, *, distill: bool = False, scope: str = "", severity: str
     return out
 
 
-def recall(context: str, *, k: int = 5, threshold: float = 0.0,
+def recall(context: str, *, k: int = 5, threshold: float = 0.0, track: bool = True,
            path: str | None = None) -> dict:
     """Retrieve the lessons to inject for a given coding context.
 
@@ -131,7 +131,13 @@ def recall(context: str, *, k: int = 5, threshold: float = 0.0,
             ordered.append(item); seen.add(l["id"])
         if len(ordered) >= k:
             break
-    return {"lessons": ordered[:k], "snapshot": snap_marker}
+    result = {"lessons": ordered[:k], "snapshot": snap_marker}
+    if track:   # usage salience (recall_count/last_recalled_at) — never touches updated_at, fail-open
+        try:
+            ledger.bump_recall([l["id"] for l in result["lessons"]], path=path)
+        except Exception:
+            pass
+    return result
 
 
 def record_outcome(lesson_id: int, result: str, *, run_id: str | None = None,

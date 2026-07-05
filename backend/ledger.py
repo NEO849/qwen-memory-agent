@@ -268,6 +268,60 @@ def set_embedding(lesson_id: int, embedding: list[float], *, path: str | None = 
         conn.commit()
 
 
+# ----------------------------------------------------------------- links (A-MEM)
+
+def add_link(from_id: int, to_id: int, *, type: str = "related", weight: float = 1.0,
+             path: str | None = None) -> None:
+    """Persist a relationship between two lessons. 'related' is undirected (stored in canonical
+    (min,max) order and deduped); 'supersedes'/'synthesizes' keep their direction. Idempotent."""
+    if from_id == to_id:
+        return
+    if type == "related" and from_id > to_id:
+        from_id, to_id = to_id, from_id
+    now = _now()
+    with _connect(path) as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        dup = conn.execute("SELECT 1 FROM links WHERE from_id=? AND to_id=? AND type=?",
+                           (from_id, to_id, type)).fetchone()
+        if not dup:
+            conn.execute("INSERT INTO links (from_id, to_id, type, weight, created_at) VALUES (?,?,?,?,?)",
+                         (from_id, to_id, type, float(weight), now))
+        conn.commit()
+
+
+def list_links(*, path: str | None = None) -> list[dict]:
+    with _connect(path) as conn:
+        rows = conn.execute("SELECT from_id, to_id, type, weight FROM links").fetchall()
+    return [dict(r) for r in rows]
+
+
+def add_link_rejection(from_id: int, to_id: int, similarity: float, reason: str,
+                       *, path: str | None = None) -> None:
+    """Negative signal — a candidate pair the LLM judged NOT contradictory (so we don't re-flag it)."""
+    now = _now()
+    with _connect(path) as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        conn.execute("INSERT INTO link_rejections (from_id, to_id, similarity, reason, ts) VALUES (?,?,?,?,?)",
+                     (from_id, to_id, float(similarity), str(reason)[:300], now))
+        conn.commit()
+
+
+def bump_recall(ids: list[int], *, path: str | None = None) -> None:
+    """Record that these lessons were recalled — usage salience. Deliberately does NOT touch
+    updated_at (so deck ordering, aging thresholds and the recall snapshot marker stay stable)."""
+    ids = [int(i) for i in (ids or [])]
+    if not ids:
+        return
+    now = _now()
+    ph = ",".join("?" * len(ids))
+    with _connect(path) as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        conn.execute(
+            f"UPDATE lessons SET recall_count = recall_count + 1, last_recalled_at = ? WHERE id IN ({ph})",
+            (now, *ids))
+        conn.commit()
+
+
 # --------------------------------------------------------------------------- reads
 
 def get_lesson(lesson_id: int, *, with_embedding: bool = False,

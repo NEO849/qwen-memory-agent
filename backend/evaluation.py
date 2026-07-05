@@ -146,10 +146,15 @@ def metrics(path: str | None = None) -> dict:
             if p + f > 0:                            # calibration: displayed vs empirical pass-rate
                 gap_sum += abs(l["confidence"] - p / (p + f)); gap_n += 1
     n = len(active)
+    total_recalls = sum(l.get("recall_count", 0) or 0 for l in active)
+    top = max(active, key=lambda l: l.get("recall_count", 0) or 0, default=None)
     return {
         "lessons_active": n, "lessons_obsolete": len(obsolete),
         "grounded_outcomes": grounded,
         "avg_confidence": round(conf_sum / n, 3) if n else 0.0,
         "calibration_gap": round(gap_sum / gap_n, 3) if gap_n else 0.0,
         "weights": _current_weights(),
+        "total_recalls": total_recalls,
+        "most_recalled_id": (top["id"] if top and (top.get("recall_count") or 0) > 0 else None),
+        "links": len(ledger.list_links(path=path)),
     }
