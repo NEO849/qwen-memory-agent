@@ -465,10 +465,49 @@ function setView(v) {
   document.querySelectorAll('.vbtn').forEach(x => { const on = x.dataset.view === v; x.classList.toggle('on', on); x.setAttribute('aria-selected', on); });
   $('#viewChat').hidden = v !== 'chat';
   $('#viewGraph').hidden = v !== 'graph';
+  $('#viewProof').hidden = v !== 'proof';
   if (v === 'graph') { $('#graphFrame').src = '/graph.html?n=' + (++graphN); }   // fresh render of the current memory
+  if (v === 'proof') { playProof(); }                                            // the signature moment plays on open
 }
 document.querySelectorAll('.vbtn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+$('#btnReplay') && $('#btnReplay').addEventListener('click', playProof);
 paintTeach();
+
+// ---------- the signature "proof" moment: same AI twice, only difference is memory ----------
+function proofHighlight(code) {
+  return escapeHtml(String(code || ''))
+    .replace(/(user\['tenant_id'\]|order\['tenant_id'\]|tenant_id)/g, '<span class="tok-win">$1</span>')
+    .replace(/(user\['id'\]|user_id)/g, '<span class="tok-lose">$1</span>');
+}
+const _sleep = ms => new Promise(r => setTimeout(r, ms));
+let _proofRunning = false;
+async function playProof() {
+  if (_proofRunning) return; _proofRunning = true;
+  const btn = $('#btnReplay'); if (btn) btn.disabled = true;
+  const H = (id, h) => { const e = $(id); if (e) e.innerHTML = h; };
+  const T = (id, t) => { const e = $(id); if (e) e.textContent = t; };
+  H('#codeA', ''); H('#codeB', ''); H('#testsA', ''); H('#testsB', '');
+  T('#scoreA', '–'); T('#scoreB', '–'); T('#proofPunch', '');
+  const armA = $('#armA'), armB = $('#armB');
+  if (armA) armA.className = 'arm arm-a'; if (armB) armB.className = 'arm arm-b';
+  let ab; try { ab = await api('/ab'); } catch { if (btn) btn.disabled = false; _proofRunning = false; return; }
+  if (!ab || ab.available === false) { T('#proofPunch', 'run `python -m harness.ab_runner --k 5` once to capture the proof'); if (btn) btn.disabled = false; _proofRunning = false; return; }
+  const a = ab.arm_a_no_memory, b = ab.arm_b_with_memory, rm = reduceMotion;
+  await _sleep(rm ? 0 : 300); H('#codeA', proofHighlight(a.sample_code));
+  await _sleep(rm ? 0 : 550); H('#codeB', proofHighlight(b.sample_code));
+  await _sleep(rm ? 0 : 650);
+  let ga = 0, gb = 0;
+  for (let i = 0; i < Math.max(a.k, b.k); i++) {
+    if (i < a.k) { const p = i < a.green; if (p) ga++; $('#testsA').insertAdjacentHTML('beforeend', `<span class="t ${p ? 'g' : 'r'}">${p ? '✓' : '✗'}</span>`); T('#scoreA', `${ga}/${a.k}`); }
+    if (i < b.k) { const p = i < b.green; if (p) gb++; $('#testsB').insertAdjacentHTML('beforeend', `<span class="t ${p ? 'g' : 'r'}">${p ? '✓' : '✗'}</span>`); T('#scoreB', `${gb}/${b.k}`); }
+    await _sleep(rm ? 0 : 260);
+  }
+  if (armA) armA.classList.add(a.green >= b.green ? 'win' : 'lose');
+  if (armB) armB.classList.add(b.green >= a.green ? 'win' : 'lose');
+  await _sleep(rm ? 0 : 250);
+  T('#proofPunch', 'The only difference is memory. That green is earned — from real tests, not opinion.');
+  if (btn) btn.disabled = false; _proofRunning = false;
+}
 
 // ---------- pattern crystallization (synthesis) ----------
 async function runSynthesize() {

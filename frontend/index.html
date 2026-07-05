@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Regress-Guard — memory that forgets what's wrong</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=13">
+  <link rel="stylesheet" href="styles.css?v=14">
 </head>
 <body>
   <div class="app">
@@ -65,6 +65,7 @@
         <div class="view-toggle" role="tablist" aria-label="view">
           <button class="vbtn on" data-view="chat" role="tab" aria-selected="true">💬 Chat</button>
           <button class="vbtn" data-view="graph" role="tab" aria-selected="false">🌐 Graph</button>
+          <button class="vbtn vbtn-proof" data-view="proof" role="tab" aria-selected="false">🏆 Proof</button>
         </div>
         <div class="ab" id="ab" title="A representative captured run — the hidden test is deterministic; temp-0 code-gen varies slightly. Re-run the A/B harness to reproduce."><span class="ab-label">proof</span><span class="pill">loading…</span></div>
       </header>
@@ -107,8 +108,34 @@
         <div class="graph-loading">rendering the memory graph…</div>
         <iframe class="graph-frame" id="graphFrame" title="knowledge graph" src="about:blank"></iframe>
       </div>
+
+      <!-- PROOF VIEW — the signature moment: same AI twice, only difference is memory -->
+      <div class="view view-proof" id="viewProof" hidden>
+        <div class="proof-head">
+          <div>
+            <div class="proof-title">The same AI, twice. The only difference is <em>memory</em>.</div>
+            <div class="proof-sub">same task · same model · temperature 0 · a hidden test the agent never sees</div>
+          </div>
+          <button id="btnReplay">▶ Replay the proof</button>
+        </div>
+        <div class="proof-arena">
+          <div class="arm arm-a" id="armA">
+            <div class="arm-label"><span class="arm-dot red"></span>without memory</div>
+            <pre class="arm-code" id="codeA"></pre>
+            <div class="arm-tests" id="testsA"></div>
+            <div class="arm-score"><b id="scoreA">–</b><span>green</span></div>
+          </div>
+          <div class="arm arm-b" id="armB">
+            <div class="arm-label"><span class="arm-dot green"></span>with Regress-Guard memory</div>
+            <pre class="arm-code" id="codeB"></pre>
+            <div class="arm-tests" id="testsB"></div>
+            <div class="arm-score"><b id="scoreB">–</b><span>green</span></div>
+          </div>
+        </div>
+        <div class="proof-punch" id="proofPunch"></div>
+      </div>
     </main>
   </div>
-  <script src="app.js?v=13" type="module"></script>
+  <script src="app.js?v=14" type="module"></script>
 </body>
 </html>

@@ -308,6 +308,37 @@ button { font-family: inherit; cursor: pointer; }
 .graph-loading { position: absolute; inset: 0; display: grid; place-items: center; z-index: 0;
   color: var(--ink-faint); font-family: var(--mono); font-size: 12px; letter-spacing: .05em; }
 
+/* ---------- signature "proof" moment: same AI twice, only difference is memory ---------- */
+.vbtn-proof.on { background: linear-gradient(180deg, #1c2a14, #111a0c); color: var(--green); }
+.proof-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: none; }
+.proof-title { font-size: 19px; font-weight: 700; color: var(--ink); }
+.proof-title em { font-style: normal; color: var(--green); }
+.proof-sub { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .07em; margin-top: 4px; }
+#btnReplay { flex: none; background: var(--green); color: #05130a; border: none; border-radius: 10px; padding: 10px 18px; font-weight: 700; font-size: 13.5px; }
+#btnReplay:disabled { opacity: .5; cursor: default; }
+.proof-arena { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.arm { display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; background: var(--panel); transition: box-shadow .4s, border-color .4s, opacity .4s; }
+.arm-a { border-top: 2px solid #4d1e1e; } .arm-b { border-top: 2px solid #1e4d31; }
+.arm.win { border-color: #1e4d31; box-shadow: 0 0 0 1px #1e4d31, 0 24px 70px -34px rgba(95,215,135,.55); }
+.arm.lose { opacity: .6; }
+.arm-label { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-dim); }
+.arm-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.arm-dot.red { background: var(--red); box-shadow: 0 0 8px var(--red); } .arm-dot.green { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.arm-code { flex: 1; margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.6; background: #0a0e16; border: 1px solid var(--line); border-radius: 10px; padding: 14px; overflow: auto; color: #aeb9c7; white-space: pre-wrap; min-height: 78px; }
+.tok-win { color: var(--green); font-weight: 700; background: rgba(95,215,135,.12); border-radius: 4px; padding: 0 3px; }
+.tok-lose { color: var(--red); font-weight: 700; background: rgba(255,111,97,.12); border-radius: 4px; padding: 0 3px; }
+.arm-tests { display: flex; gap: 7px; flex-wrap: wrap; min-height: 28px; }
+.arm-tests .t { font-size: 21px; line-height: 1; animation: pop .25s ease; }
+.arm-tests .t.g { color: var(--green); } .arm-tests .t.r { color: var(--red); }
+@keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.arm-score { display: flex; align-items: baseline; gap: 8px; }
+.arm-score b { font-family: var(--mono); font-size: 30px; font-weight: 700; }
+.arm-a .arm-score b { color: var(--red); } .arm-b .arm-score b { color: var(--green); }
+.arm-score span { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-faint); }
+.proof-punch { flex: none; min-height: 22px; text-align: center; font-size: 15px; color: var(--ink); font-weight: 500; }
+@media (prefers-reduced-motion: reduce) { .arm-tests .t { animation: none; } }
+@media (max-width: 900px) { .proof-arena { grid-template-columns: 1fr; } }
+
 /* final polish: focus states + camera-legible on-card evidence */
 .teach-row:focus-within { border-color: var(--memory); }
 .teach.steer .teach-row:focus-within { border-color: var(--green); }
