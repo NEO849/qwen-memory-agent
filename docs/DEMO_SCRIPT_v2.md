@@ -19,11 +19,12 @@
 tomorrow. Chat memory remembers what you tell it — it can't tell whether a rule actually works.
 Regress-Guard is a memory whose confidence is earned from real test outcomes."
 
-**[0:15 · Proof first · 25s]** *(auf die Beweis-Pille oben rechts zeigen, oder Terminal)*
-"Same task, same model, temperature zero, one hidden test, five runs. Without memory: zero of five
-green. With memory: five of five. Without the remembered convention the agent mis-scopes data
-access and fails a hidden isolation test; the recalled rule steers it right. Honest and reproducible
-— the stored run even discloses which lesson drove it."
+**[0:15 · Proof first — THE HOOK · 25s]** *(oben auf den Tab **🏆 Proof** klicken → das Rennen spielt automatisch; sonst **▶ Replay the proof**)*
+"Same task. Same model. Temperature zero. A hidden test the agent never sees." *(die zwei Panels
+tippen ihren Code, das entscheidende Wort leuchtet: links `user['id']` rot, rechts `tenant_id` grün)*
+"Without memory — zero of five." *(✗✗✗✗✗)* "With Regress-Guard — five of five." *(✓✓✓✓✓, rechts
+glüht)* "The only difference is memory — and that green is earned, not luck. This is a run I
+captured; let me show you why." — **⚠️ die GESPEICHERTE Aufzeichnung zeigen, nie live würfeln.**
 
 **[0:40 · Talk to it, and see the memory · 25s]** *(rechts fragen: „How should I list orders for a user?")*
 "It's a normal assistant — but memory-backed. When it answers, watch which lessons it used." *(die
@@ -59,10 +60,21 @@ everything here."
 plugs in with three lines of config and gains this memory, hosted on Alibaba Cloud. It calls recall
 before writing code and record after fixing a test. One outcome-grounded memory, shared across agents."
 
-**[2:45 · Close · 12s]**
-"Four Qwen roles — distill, recall, revise, self-check — on Alibaba Cloud. A memory earned from real
-tests, that forgets what's wrong, blocks what failed, and is hardened against poison — usable in any
-agent. That's Regress-Guard." *(ECS-URL + GitHub einblenden)*
+**[2:45 · Close — slam back to the proof · 15s]** *(zurück auf den Tab **🏆 Proof** — das 0/5 → 5/5 ist das LETZTE Bild)*
+"Four Qwen roles on Alibaba Cloud. A memory earned from real tests, that forgets what's wrong, blocks
+what failed, and is hardened against poison — usable in any agent as an MCP tool." *(auf 0/5 → 5/5
+zeigen)* "Confidence you can audit. Zero of five, to five of five — because it earned it. That's
+Regress-Guard." *(ECS-URL + GitHub einblenden)*
+
+---
+
+## Sieger-Prinzipien (aus der Analyse von Gewinner-Präsentationen — kurz)
+- **Eröffne UND schließe auf dem 🏆-Proof-Moment.** Er ist das erste und das letzte Bild — Jurys entscheiden in den ersten 30 s und behalten das Ende.
+- **Ein Satz für beide:** „gleiche Aufgabe, gleiches Modell, Temperatur 0, versteckter Test — 0/5 ohne, 5/5 mit Gedächtnis" — der Laie hört „es funktioniert", der Techniker hört „kontrollierte Variablen + held-out Test".
+- **Die verräterische Zeile zeigen** (`user['id']` vs `user['tenant_id']`) — jeder Entwickler denkt „genau *sowas* vergisst man".
+- **Flakiges gespeichert, Verlässliches live:** den A/B als Aufzeichnung, das rot→grün-Lehren live.
+- **Sag die Rubrik-Wörter zurück:** „timely forgetting" (Tombstone), „recall a critical memory at the right moment" (Anti-Pattern-Block) — genau die Track-Kriterien.
+- **3–4 Merksätze, dann Knall:** (1) Vertrauen verdient, (2) es vergisst, (3) es verteidigt sich, (4) echtes Cloud-Werkzeug — Schluss zurück zum Scoreboard.
 
 ---
 
