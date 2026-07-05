@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import json
 import os
+import time
+from collections import defaultdict, deque
 from pathlib import Path
 from typing import Literal
 
@@ -34,8 +36,23 @@ FRONTEND = ROOT / "frontend"
 AB_RESULT = ROOT / "ab_result.json"
 
 MAX_BODY = 64 * 1024                              # reject bodies larger than 64 KB
-DEMO_TOKEN = os.environ.get("REGRESS_GUARD_TOKEN", "")   # if set, gate paid-LLM writes
-GATED = ("/chat", "/recall", "/notes", "/ingest", "/revise", "/synthesize", "/synthesize/accept")
+DEMO_TOKEN = os.environ.get("REGRESS_GUARD_TOKEN", "")   # if set, gate all writes (by method)
+# Paid / expensive endpoints — a stricter per-IP budget so a public visitor can't burn the
+# Qwen quota or run the code-executing agent loop unbounded. Prefix match (covers /agent/*).
+PAID_PREFIXES = ("/chat", "/ingest", "/notes", "/revise", "/evaluate", "/tune",
+                 "/synthesize", "/agent/start")
+_hits: dict[str, deque] = defaultdict(deque)       # ip -> request timestamps (all)
+_paid_hits: dict[str, deque] = defaultdict(deque)  # ip -> request timestamps (paid only)
+
+
+def _rate_ok(bucket: dict, ip: str, limit: int, window: float, now: float) -> bool:
+    dq = bucket[ip]
+    while dq and now - dq[0] > window:
+        dq.popleft()
+    if len(dq) >= limit:
+        return False
+    dq.append(now)
+    return True
 
 app = FastAPI(title="regress-guard", version="1.0.0")
 
@@ -46,8 +63,18 @@ async def _guard(request: Request, call_next):
     cl = request.headers.get("content-length")
     if cl and cl.isdigit() and int(cl) > MAX_BODY:
         return JSONResponse({"detail": "payload too large"}, status_code=413)
-    # 2) optional shared-secret gate on paid endpoints (enabled only if env token set)
-    if DEMO_TOKEN and request.url.path in GATED:
+    path, method = request.url.path, request.method
+    ip = request.client.host if request.client else "?"
+    now = time.time()
+    # 2) per-IP rate limit — keeps the demo clickable but caps flooding / cost abuse
+    if not _rate_ok(_hits, ip, 150, 60.0, now):                       # 150 req/min overall
+        return JSONResponse({"detail": "rate limited — slow down a moment"}, status_code=429)
+    is_paid = method != "GET" and any(path == p or path.startswith(p) for p in PAID_PREFIXES)
+    if is_paid and not _rate_ok(_paid_hits, ip, 8, 60.0, now):        # 8 paid-Qwen req/min
+        return JSONResponse({"detail": "rate limited — too many model calls, wait a moment"}, status_code=429)
+    # 3) optional shared-secret gate on ALL writes (enabled only if env token set) — method-based
+    #    so new write endpoints are covered automatically (reads are GET).
+    if DEMO_TOKEN and method in ("POST", "PATCH", "PUT", "DELETE"):
         if request.headers.get("x-demo-token") != DEMO_TOKEN:
             return JSONResponse({"detail": "forbidden"}, status_code=403)
     return await call_next(request)
@@ -218,13 +245,13 @@ def get_metrics() -> dict:
 
 
 @app.post("/evaluate")
-def post_evaluate(sample: int = Query(8, ge=2, le=30)) -> dict:
+def post_evaluate(sample: int = Query(8, ge=2, le=10)) -> dict:
     """Measure retrieval quality on keyword-free paraphrase queries (vector on vs off)."""
     return evaluation.evaluate(path=config.LEDGER_PATH, sample=sample)
 
 
 @app.post("/tune")
-def post_tune(sample: int = Query(8, ge=2, le=30)) -> dict:
+def post_tune(sample: int = Query(8, ge=2, le=10)) -> dict:
     """Grid-search RRF fusion weights against Recall@1; persist only if it beats baseline."""
     result = evaluation.tune(path=config.LEDGER_PATH, sample=sample)
     if result.get("tuned"):
@@ -282,7 +309,10 @@ def chat(body: ChatIn) -> dict:
     )
     system = persona + ("\n\n" + injection if injection else "")
     messages = [{"role": "system", "content": system}, {"role": "user", "content": body.message}]
-    reply = qwen_client.chat(messages, temperature=0.3)
+    try:
+        reply = qwen_client.chat(messages, temperature=0.3)
+    except Exception:
+        reply = "I couldn't reach the model just now — please try again in a moment."
     sanitized_total = sum(memory.directive_count(l["lesson"]) for l in rec["lessons"])
     return {"reply": reply, "recalled": [l["id"] for l in rec["lessons"]],
             "injected": bool(injection), "sanitized_total": sanitized_total,

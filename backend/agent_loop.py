@@ -81,11 +81,16 @@ class AgentSession:
         return self.state()
 
     # ------------------------------------------------------------------- loop
+    MAX_STEPS = 20   # safety cap — the loop stops itself instead of running (and billing) forever
+
     async def _run(self, goal: str) -> None:
         self.status = "running"; self._emit(phase="started", goal=goal)
         while True:
             await self.resume.wait()
             if self._stopping:
+                break
+            if self.step >= self.MAX_STEPS:
+                self._emit(phase="stopped", reason="reached step cap")
                 break
 
             # 1) drain any 'by the way' notes into the live ledger (deck reacts via bump)

@@ -3,18 +3,18 @@
   "model": "qwen-plus",
   "temperature": 0,
   "k": 5,
-  "distilled_lesson": "When filtering resources for tenant isolation, always compare against user['tenant_id'], not user['id'], because tenant scoping is determined by the string-valued 'tenant_id' field.",
+  "distilled_lesson": "When filtering resources for tenant isolation, compare against user['tenant_id'] \u2014 never user['id'] \u2014 because tenant scope is determined by the string-valued 'tenant_id' field.",
   "used_fallback": true,
   "injected_lesson": "Orders are tenant-scoped. The user dict carries user['tenant_id'] (a string like 'acme'), separate from the numeric user['id']. In get_orders, return only the orders whose order['tenant_id'] == user['tenant_id'] \u2014 compare against user['tenant_id'], never user['id'].",
   "note": "temp=0 code-gen is non-deterministic run-to-run; this is a representative captured run \u2014 re-run `python -m harness.ab_runner --k 5` to reproduce.",
-  "lesson": "When filtering resources for tenant isolation, always compare against user['tenant_id'], not user['id'], because tenant scoping is determined by the string-valued 'tenant_id' field.",
+  "lesson": "When filtering resources for tenant isolation, compare against user['tenant_id'] \u2014 never user['id'] \u2014 because tenant scope is determined by the string-valued 'tenant_id' field.",
   "arm_a_no_memory": {
     "arm": "A",
     "k": 5,
     "green": 0,
     "red": 5,
     "pass_rate": 0.0,
-    "sample_code": "def get_orders(db, user):\n    return [order for order in db.all_orders() if order.get(\"user_id\") == user[\"id\"]]"
+    "sample_code": "def get_orders(db, user):\n    return [order for order in db.all_orders() if order.get('user_id') == user['id']]"
   },
   "arm_b_with_memory": {
     "arm": "B",

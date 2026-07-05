@@ -100,10 +100,16 @@ uvicorn backend.main:app --workers 1   # then open http://localhost:8000
 > **`--workers 1` is required** — the live-update fan-out (SSE) is in-process.
 > Tests: `pytest` (offline) · `pytest -m live` (hits Qwen).
 
-## MCP integration
+## MCP integration — this is a real tool, not just a demo
 
-`mcp_tool/server.py` exposes `recall(context)` and `record(test_output, diff)` over MCP; wire it into
-Claude Code (or any MCP client) via [`.mcp.json`](.mcp.json) so a real agent gains the memory.
+`mcp_tool/server.py` exposes `recall(context)` and `record(test_output, diff)` over MCP. By default it
+talks to the **deployed memory on Alibaba Cloud over HTTP** — so any coding agent (Claude Code, Qwen
+Code, Cursor) gains a shared, outcome-grounded memory with **zero local setup** (no ledger, no API key;
+the cloud does the distilling + retrieval). An agent calls `recall` before writing code and `record`
+after fixing a red test, so the same bug can't come back in a later session.
+
+**30-second setup + verified transcript:** [`mcp_tool/README.md`](mcp_tool/README.md) · config: [`.mcp.json`](.mcp.json)
+(`REGRESS_GUARD_LOCAL=1` switches to a fully local ledger + your own Qwen key.)
 
 ## Deployment
 

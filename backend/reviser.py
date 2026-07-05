@@ -130,11 +130,13 @@ def check_contradiction(new_lesson: dict, *, path: str | None = None) -> dict:
     return {"conflicts": conflicts, "revised": revised}
 
 
+_REVISE_CAP = 25   # bound the paid fan-out (one Qwen call per lesson) so a big deck can't blow up
+
 def revise(change: str, *, path: str | None = None) -> list[dict]:
-    """Judge every active lesson against a described change; tombstone the obsolete ones.
-    Returns one verdict per active lesson (with action taken)."""
+    """Judge active lessons against a described change; tombstone the obsolete ones. Capped at
+    _REVISE_CAP lessons so the paid fan-out stays bounded. Returns one verdict per lesson judged."""
     results = []
-    for lesson in ledger.list_lessons(status="active", path=path):
+    for lesson in ledger.list_lessons(status="active", path=path)[:_REVISE_CAP]:
         verdict = judge_obsolete(lesson, change)
         if verdict["obsolete"]:
             ledger.tombstone(lesson["id"], path=path)

@@ -1,9 +1,9 @@
-/* Regress-Guard UI v11 — a normal coding AI (right) with a visible, editable memory (left).
+/* Regress-Guard UI v12 — minimal memory rail (left) + normal-AI chat with a Chat/Graph toggle (right).
    Design law: one data field -> one visual channel -> one location.
    lifecycle -> card body · confidence -> meter only · severity -> left spine only. */
 :root {
   --bg: #090b11; --panel: #10141d; --panel-2: #161d29; --line: #212a3b;
-  --ink: #e8edf4; --ink-dim: #97a2b4; --ink-faint: #596577;
+  --ink: #e8edf4; --ink-dim: #97a2b4; --ink-faint: #6d7a8e;   /* AA-legible for the ≥10px mono labels */
   --green: #5FD787; --amber: #F0C35A; --blue: #5AC8F5; --red: #ff6f61;
   --memory: #B9A6E8;
 
@@ -293,7 +293,7 @@ button { font-family: inherit; cursor: pointer; }
 .teach.steer #teachSend { background: var(--green); color: #05130a; }
 #teachDont { background: #1a0f0f; color: #f2b3ad; border: 1px solid #4d2a2a; border-radius: 9px; padding: 8px 15px; font-size: 12.5px; }
 #teachDont:hover { border-color: var(--red); }
-.analytics { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex: none; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); padding: 9px 12px; }
+.analytics { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex: none; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); padding: 9px 12px; position: relative; z-index: 2; }
 .analytics button { background: var(--panel-2); color: var(--ink-dim); border: 1px solid var(--line); border-radius: 9px; padding: 6px 12px; font-size: 12.5px; }
 .analytics button:hover:not(:disabled) { color: var(--ink); border-color: var(--blue); }
 .analytics button:disabled { opacity: .55; cursor: default; }
@@ -303,7 +303,16 @@ button { font-family: inherit; cursor: pointer; }
 .astat .mk { font-family: var(--mono); font-size: 9px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .05em; }
 .astat b { font-family: var(--mono); font-size: 14px; color: var(--ink); }
 .astat-hidden { display: none; }
-.graph-frame { flex: 1; width: 100%; border: 1px solid var(--line); border-radius: 14px; background: #090b11; }
+.view-graph { position: relative; }
+.graph-frame { flex: 1; width: 100%; border: 1px solid var(--line); border-radius: 14px; background: #090b11; position: relative; z-index: 1; }
+.graph-loading { position: absolute; inset: 0; display: grid; place-items: center; z-index: 0;
+  color: var(--ink-faint); font-family: var(--mono); font-size: 12px; letter-spacing: .05em; }
+
+/* final polish: focus states + camera-legible on-card evidence */
+.teach-row:focus-within { border-color: var(--memory); }
+.teach.steer .teach-row:focus-within { border-color: var(--green); }
+.card .shield { font-size: 10.5px; }
+.anti-ribbon { font-size: 10px; }
 
 /* ---------- responsive ---------- */
 @media (max-width: 1080px) {

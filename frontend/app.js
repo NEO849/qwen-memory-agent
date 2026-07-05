@@ -2,7 +2,14 @@
 // Deck = 3D Rolodex arc: persistent node pool + one rAF lerp loop (idle = 0 CPU).
 // Design law: one field -> one channel. lifecycle=card body · confidence=meter · severity=spine.
 const $ = (s) => document.querySelector(s);
-const api = (p, o) => fetch(p, o).then(r => r.ok ? r.json() : Promise.reject(r));
+// fetch with a 25s client timeout so a stalled backend surfaces the existing error paths
+// (button re-enables, "error contacting agent") instead of hanging a spinner forever.
+const api = (p, o = {}) => {
+  const ac = new AbortController(); const t = setTimeout(() => ac.abort(), 25000);
+  return fetch(p, { ...o, signal: ac.signal })
+    .then(r => r.ok ? r.json() : Promise.reject(r))
+    .finally(() => clearTimeout(t));
+};
 
 const state = {
   lessons: [], byId: new Map(), etag: -1, filter: 'all', knownIds: new Set(),
@@ -101,7 +108,7 @@ function buildDeck() {
   const deck = $('#deck'), n = state.lessons.length;
   if (!n) {
     pool.forEach(nd => nd.remove()); pool.clear();
-    deck.innerHTML = '<div class="empty">No lessons yet — switch to Teach below, or run the agent.</div>';
+    deck.innerHTML = '<div class="empty">No lessons yet — teach a rule below, or hit ▶ Run to earn one.</div>';
     renderTrack(0, 0); return;
   }
   const emptyEl = deck.querySelector('.empty'); if (emptyEl) emptyEl.remove();
@@ -244,7 +251,7 @@ function setAgentStatus(s) {
   state.agentStatus = s;
   const el = $('#agentStatus'); el.textContent = s; el.className = 'status ' + s;
   const show = (id, on) => $(id).hidden = !on;
-  show('#btnStart', s === 'idle'); show('#btnPause', s === 'running');
+  show('#btnStart', s === 'idle' || s === 'stopped' || s === 'done'); show('#btnPause', s === 'running');
   show('#btnResume', s === 'paused'); show('#btnStop', s === 'running' || s === 'paused');
   try { paintTeach(); } catch {}   // the left input becomes "steer" while the agent is busy
 }
@@ -320,10 +327,14 @@ function flashCard(id, cls) { const el = pool.get(id); if (el) { el.classList.ad
 
 async function loadAB() {
   try { const ab = await api('/ab'); if (ab.available === false) return;
-    const a = ab.arm_a_no_memory, b = ab.arm_b_with_memory, el = $('#ab'); if (!el) return;
-    el.innerHTML = `<span class="ab-label">proof</span>` +
+    const a = ab.arm_a_no_memory, b = ab.arm_b_with_memory, el = $('#ab');
+    if (el) el.innerHTML = `<span class="ab-label">proof</span>` +
       `<span class="pill a">no memory ${a.green}/${a.k}</span>` +
       `<span class="pill b">memory ${b.green}/${b.k}</span>`;
+    const pA = $('#pA'), pB = $('#pB'), ph = $('#proofHero');   // big landing-hero proof
+    if (pA) pA.textContent = `${a.green}/${a.k}`;
+    if (pB) pB.textContent = `${b.green}/${b.k}`;
+    if (ph) ph.hidden = false;
   } catch {}
 }
 
@@ -338,6 +349,7 @@ function logConflicts(l) {
 }
 // count-up a metric value with easing + a brief pulse (high-end reveal on Measure)
 function animateNumber(el, to, { decimals = 2, dur = 750, signed = false } = {}) {
+  if (reduceMotion) { el.textContent = (signed && to >= 0 ? '+' : '') + to.toFixed(decimals); return; }
   const from = 0, start = performance.now(), ease = t => 1 - Math.pow(1 - t, 3);
   el.classList.add('metric-pulse');
   (function step(now) {

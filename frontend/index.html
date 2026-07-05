@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Regress-Guard — memory that forgets what's wrong</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=12">
+  <link rel="stylesheet" href="styles.css?v=13">
 </head>
 <body>
   <div class="app">
@@ -66,7 +66,7 @@
           <button class="vbtn on" data-view="chat" role="tab" aria-selected="true">💬 Chat</button>
           <button class="vbtn" data-view="graph" role="tab" aria-selected="false">🌐 Graph</button>
         </div>
-        <div class="ab" id="ab" title="A representative captured run — the hidden test is deterministic; temp-0 code-gen varies slightly. Re-run the A/B harness to reproduce."></div>
+        <div class="ab" id="ab" title="A representative captured run — the hidden test is deterministic; temp-0 code-gen varies slightly. Re-run the A/B harness to reproduce."><span class="ab-label">proof</span><span class="pill">loading…</span></div>
       </header>
 
       <!-- CHAT VIEW -->
@@ -75,6 +75,14 @@
           <div class="intro" id="intro">
             <p class="intro-hi">Ask me to write or fix code.</p>
             <p class="intro-say">My confidence is earned from real tests, not opinion. Teach me on the left, or hit <b>▶ Run</b> to watch a red test turn <em class="green">green</em>.</p>
+            <div class="proof" id="proofHero" hidden>
+              <span class="plabel">the proof · same task · temp 0 · one hidden test</span>
+              <span class="pstat">
+                <span class="pgroup"><em class="red" id="pA">–</em><span class="pg-l">without memory</span></span>
+                <span class="parrow">→</span>
+                <span class="pgroup"><em class="green" id="pB">–</em><span class="pg-l">with memory</span></span>
+              </span>
+            </div>
           </div>
         </section>
         <div class="recall-line" id="recall" hidden></div>
@@ -96,10 +104,11 @@
           <span class="astat" title="Keyword (bm25) vs meaning (vector) search weight"><span class="mk">weights</span><b id="mWeights">—</b></span>
           <span class="astat-hidden"><b id="mLift"></b><b id="mCal"></b><b id="mGround"></b></span>
         </div>
+        <div class="graph-loading">rendering the memory graph…</div>
         <iframe class="graph-frame" id="graphFrame" title="knowledge graph" src="about:blank"></iframe>
       </div>
     </main>
   </div>
-  <script src="app.js?v=12" type="module"></script>
+  <script src="app.js?v=13" type="module"></script>
 </body>
 </html>

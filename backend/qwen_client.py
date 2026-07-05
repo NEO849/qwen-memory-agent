@@ -14,7 +14,10 @@ from . import config
 
 def _client() -> OpenAI:
     config.assert_configured()
-    return OpenAI(api_key=config.DASHSCOPE_API_KEY, base_url=config.QWEN_BASE_URL)
+    # Bounded so a stalled/overloaded gateway (the classic 524) surfaces an error in seconds
+    # instead of hanging a request — and its UI button — for the SDK's 600s×3 default.
+    return OpenAI(api_key=config.DASHSCOPE_API_KEY, base_url=config.QWEN_BASE_URL,
+                  timeout=20.0, max_retries=1)
 
 
 def chat(messages: list[dict], model: str | None = None, **kwargs) -> str:
