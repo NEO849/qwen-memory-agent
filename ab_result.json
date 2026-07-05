@@ -3,7 +3,7 @@
   "model": "qwen-plus",
   "temperature": 0,
   "k": 5,
-  "lesson": "Filter tenant-scoped collections by comparing each item's 'tenant_id' field against the user's 'tenant_id' field \u2014 never against user['id'] or any non-tenant identifier.",
+  "lesson": "When filtering resources for tenant isolation, compare against user['tenant_id'] \u2014 never user['id'] \u2014 to ensure cross-tenant data leaks are prevented.",
   "arm_a_no_memory": {
     "arm": "A",
     "k": 5,

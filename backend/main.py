@@ -27,7 +27,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import config, evaluation, events, ledger, memory, qwen_client, reviser
+from . import config, evaluation, events, graph, ledger, memory, qwen_client, reviser
 
 ROOT = Path(__file__).resolve().parent.parent
 FRONTEND = ROOT / "frontend"
@@ -311,6 +311,14 @@ async def agent_inject(body: InjectIn) -> dict:
 async def sse() -> StreamingResponse:
     return StreamingResponse(events.stream(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+# -------------------------------------------------------------------- graph ---
+@app.get("/graph")
+def get_graph() -> dict:
+    """Knowledge-graph view of the memory (nodes = lessons, edges = related/supersedes/synthesizes).
+    Registered BEFORE the static mount so this API route wins over any static path."""
+    return graph.build_graph(path=config.LEDGER_PATH)
 
 
 # ------------------------------------------------------------------- static ---
