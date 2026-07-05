@@ -3,7 +3,9 @@
     "regress-guard": {
       "command": "python",
       "args": ["-m", "mcp_tool.server"],
-      "env": {}
+      "env": {
+        "REGRESS_GUARD_URL": "http://47.84.227.215"
+      }
     }
   }
 }
