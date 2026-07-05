@@ -65,6 +65,10 @@
   </div>
   <div id="tip"></div>
 
+  <script>
+    // embedded in the app's Graph tab? hide the redundant back-link (the tab toggle is the nav)
+    if (window.self !== window.top) { const b = document.getElementById('back'); if (b) b.style.display = 'none'; }
+  </script>
   <script src="/vendor/3d-force-graph.min.js"></script>
   <script>
     const EDGE = { related: 'rgba(90,140,200,.35)', supersedes: 'rgba(255,111,97,.7)', synthesizes: 'rgba(185,166,232,.7)' };

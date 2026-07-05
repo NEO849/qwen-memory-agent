@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Regress-Guard — memory that forgets what's wrong</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body>
   <div class="app">
-    <!-- LEFT = THE MEMORY & CONTROLS -->
+    <!-- LEFT = THE MEMORY (minimal) -->
     <aside class="rail">
       <header class="brand">
         <span class="dot"></span>
@@ -20,97 +20,86 @@
       </header>
 
       <section class="mem">
-        <div class="rail-label">the memory <span>· scroll to browse · Space flips a card</span></div>
+        <div class="rail-label">the memory <span>· click a card, then act on it</span></div>
         <div class="deck-wrap" tabindex="0" role="group" aria-label="memory card deck — scroll or arrow keys to browse, space to flip">
           <div class="glow" id="glow"></div>
           <div class="deck" id="deck"></div>
         </div>
-        <div class="legend">
-          <span><i class="lg-dot"></i>source</span>
-          <span><i class="lg-spine"></i>severity</span>
-          <span><i class="lg-bar"></i>confidence</span>
-        </div>
         <div class="track" id="track"></div>
+        <div class="card-acts" id="cardActs">
+          <button data-card="pin" title="make the selected lesson authoritative">📌 Pin</button>
+          <button data-card="demote" title="lower the selected lesson's confidence">▼ Demote</button>
+          <button data-card="tombstone" title="forget the selected lesson (mark obsolete)">⌫ Forget</button>
+          <button data-card="revise" title="re-check lessons against a described change">↻ Revise</button>
+        </div>
       </section>
 
       <section class="teach">
-        <div class="rail-label">teach the memory <span id="teachSub">· I'll use it on my next answer</span></div>
+        <div class="rail-label">teach <span id="teachSub">· I'll use it on my next answer</span></div>
         <div class="teach-row" id="teachRow">
           <span class="sig" id="tSig">»</span>
-          <input id="teachInput" autocomplete="off" spellcheck="false"
-            placeholder="Teach a rule, or correct me…">
-          <button id="teachSend">Teach</button>
+          <input id="teachInput" autocomplete="off" spellcheck="false" placeholder="Teach a rule, or correct me…">
         </div>
-        <div class="chips-owner">act on the flipped card</div>
-        <div class="teach-chips" id="teachChips">
-          <button data-cmd="pin" title="make this lesson authoritative — always recalled first">📌 Pin</button>
-          <button data-cmd="demote" title="lower this lesson's confidence">▼ Demote</button>
-          <button data-cmd="tombstone" title="bury an obsolete lesson (a &quot;tombstone&quot;) — this is the memory forgetting what's wrong">⌫ Forget</button>
-          <button data-cmd="revise" title="re-check every lesson against new code with Qwen and retire the stale ones">↻ Revise</button>
-          <button data-cmd="anti" title="record a known regression the agent must NEVER repeat (a dead-end memory)">⛔ Don't</button>
+        <div class="teach-btns">
+          <button id="teachSend">Teach</button>
+          <button id="teachDont" title="record a regression the agent must NEVER repeat (a dead-end memory)">⛔ Don't</button>
         </div>
         <div class="log" id="log"></div>
       </section>
 
       <section class="controls">
-        <div class="rail-label">agent controls</div>
+        <div class="rail-label">the agent</div>
         <div class="agentctl">
-          <button data-agent="start" class="go" id="btnStart">▶ Run agent</button>
+          <button data-agent="start" class="go" id="btnStart">▶ Run</button>
           <button data-agent="pause" id="btnPause" hidden>⏸ Pause</button>
           <button data-agent="resume" id="btnResume" hidden>⏵ Resume</button>
           <button data-agent="stop" id="btnStop" hidden>⏹ Stop</button>
           <span class="status" id="agentStatus">idle</span>
         </div>
-
-        <div class="quality" id="metrics" title="The memory measures and tunes itself against its own hit-rate.">
-          <div class="rail-label">memory quality <span>· it grades how well it remembers</span></div>
-          <div class="qgrid">
-            <div class="mstat" title="How often the correct lesson is ranked #1 (higher = better)"><span class="mk">recall@1</span><b id="mRecall">—</b></div>
-            <div class="mstat" title="How much meaning-based search beats keyword search alone"><span class="mk">vector lift</span><b id="mLift">—</b></div>
-            <div class="mstat" title="Gap between shown confidence and the real pass-rate (smaller = more honest)"><span class="mk">calibration</span><b id="mCal">—</b></div>
-            <div class="mstat" title="How many real pytest pass/fail results the memory has recorded"><span class="mk">real tests</span><b id="mGround">—</b></div>
-            <div class="mstat" title="Weight of keyword (bm25) vs meaning (vector) search"><span class="mk">weights</span><b id="mWeights">—</b></div>
-            <div class="mstat" title="Share of lessons that still surface themselves by their own trigger (retrievability, not correctness)"><span class="mk">retrievable</span><b id="mHealth">—</b></div>
-          </div>
-          <div class="qbtns">
-            <button id="btnMeasure" title="Measure how often the memory finds the right lesson — Qwen writes fresh questions to test it">Measure</button>
-            <button id="btnTune" title="Auto-tune the search weights — kept only if it beats the baseline">Self-tune</button>
-            <button id="btnSynth" title="Crystallize a cluster of related lessons into one higher-level meta-lesson (ExpeL). Proposed first, and it earns confidence from real tests like any other.">✦ Crystallize</button>
-          </div>
-        </div>
       </section>
     </aside>
 
-    <!-- RIGHT = THE CODING AGENT (a normal chat) -->
-    <main class="chat">
-      <header class="chat-head">
-        <div class="eyebrow">the coding agent <span>· memory earned from real tests</span></div>
-        <div class="head-right"><a class="graph-link" href="/graph.html" target="_blank" title="see the memory as a 3D knowledge graph">🌐 knowledge graph</a></div>
+    <!-- RIGHT = TALK & WATCH · toggle Chat / Graph in the same frame -->
+    <main class="stage">
+      <header class="stage-head">
+        <div class="view-toggle" role="tablist" aria-label="view">
+          <button class="vbtn on" data-view="chat" role="tab" aria-selected="true">💬 Chat</button>
+          <button class="vbtn" data-view="graph" role="tab" aria-selected="false">🌐 Graph</button>
+        </div>
+        <div class="ab" id="ab" title="A representative captured run — the hidden test is deterministic; temp-0 code-gen varies slightly. Re-run the A/B harness to reproduce."></div>
       </header>
 
-      <section class="thread" id="thread">
-        <div class="intro" id="intro">
-          <p class="intro-hi">Ask me to write or fix code.</p>
-          <p class="intro-say">I use what I've learned, and my confidence moves on real <em class="green">pass</em>/<em class="red">fail</em>, not opinion. Teach me on the left, or hit <b>▶ Run agent</b> to watch a red test turn <em class="green">green</em>.</p>
-          <div class="proof" id="proof" title="A representative captured run — the hidden test is deterministic, but temp-0 code generation varies slightly run to run. Re-run the A/B harness to reproduce.">
-            <span class="plabel">the proof · same task · temp 0 · one hidden test</span>
-            <span class="pstat">
-              <span class="pgroup"><em class="red" id="abA">0/5</em><span class="pg-l">without memory</span></span>
-              <span class="parrow">→</span>
-              <span class="pgroup"><em class="green" id="abB">5/5</em><span class="pg-l">with memory</span></span>
-            </span>
+      <!-- CHAT VIEW -->
+      <div class="view view-chat" id="viewChat">
+        <section class="thread" id="thread">
+          <div class="intro" id="intro">
+            <p class="intro-hi">Ask me to write or fix code.</p>
+            <p class="intro-say">My confidence is earned from real tests, not opinion. Teach me on the left, or hit <b>▶ Run</b> to watch a red test turn <em class="green">green</em>.</p>
           </div>
+        </section>
+        <div class="recall-line" id="recall" hidden></div>
+        <div class="composer">
+          <span class="sig">›</span>
+          <input id="askInput" autocomplete="off" placeholder="Ask me anything…">
+          <button id="askSend">Send</button>
         </div>
-      </section>
+      </div>
 
-      <div class="recall-line" id="recall" hidden></div>
-      <div class="composer">
-        <span class="sig">›</span>
-        <input id="askInput" autocomplete="off" placeholder="Ask me to write or fix code…">
-        <button id="askSend">Send</button>
+      <!-- GRAPH VIEW (memory as a graph + self-improvement analytics) -->
+      <div class="view view-graph" id="viewGraph" hidden>
+        <div class="analytics" id="metrics" title="The memory measures, tunes and crystallizes itself.">
+          <button id="btnMeasure" title="Measure how often the memory finds the right lesson — Qwen writes fresh questions to test it">Measure</button>
+          <button id="btnTune" title="Auto-tune the search weights — kept only if it beats the baseline">Self-tune</button>
+          <button id="btnSynth" title="Crystallize a cluster of related lessons into one meta-lesson (ExpeL) — it earns confidence from real tests like any other">✦ Crystallize</button>
+          <span class="astat" title="How often the correct lesson is ranked #1"><span class="mk">recall@1</span><b id="mRecall">—</b></span>
+          <span class="astat" title="Share of lessons that still surface themselves by their own trigger (retrievability, not correctness)"><span class="mk">retrievable</span><b id="mHealth">—</b></span>
+          <span class="astat" title="Keyword (bm25) vs meaning (vector) search weight"><span class="mk">weights</span><b id="mWeights">—</b></span>
+          <span class="astat-hidden"><b id="mLift"></b><b id="mCal"></b><b id="mGround"></b></span>
+        </div>
+        <iframe class="graph-frame" id="graphFrame" title="knowledge graph" src="about:blank"></iframe>
       </div>
     </main>
   </div>
-  <script src="app.js?v=11" type="module"></script>
+  <script src="app.js?v=12" type="module"></script>
 </body>
 </html>

@@ -275,10 +275,39 @@ button { font-family: inherit; cursor: pointer; }
 #btnSynth { color: #d9caf0; }
 #btnSynth:hover:not(:disabled) { border-color: var(--memory); color: #fff; }
 
+/* ---------- v12 shell: minimal memory rail + Chat/Graph toggle ---------- */
+.stage { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 16px 24px 18px; gap: 12px; }
+.stage-head { display: flex; align-items: center; justify-content: space-between; flex: none; }
+.view-toggle { display: inline-flex; gap: 4px; background: #0c1119; border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.vbtn { background: transparent; color: var(--ink-faint); border: none; border-radius: 999px; padding: 6px 16px; font-size: 13px; font-weight: 600; }
+.vbtn:hover { color: var(--ink-dim); }
+.vbtn.on { background: var(--panel-2); color: var(--ink); }
+.view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+.view[hidden] { display: none; }
+.card-acts { display: flex; gap: 5px; margin-top: 9px; }
+.card-acts button { flex: 1; background: var(--panel-2); color: var(--ink-dim); border: 1px solid var(--line); border-radius: 8px; padding: 6px 4px; font-size: 11px; white-space: nowrap; }
+.card-acts button:hover { color: var(--ink); border-color: var(--blue); }
+.card-acts button[data-card="tombstone"]:hover { border-color: var(--red); color: #f2b3ad; }
+.teach-btns { display: flex; gap: 7px; margin-top: 8px; }
+#teachSend { flex: 1; background: var(--memory); color: #17102b; border: none; border-radius: 9px; padding: 8px 13px; font-weight: 700; font-size: 12.5px; }
+.teach.steer #teachSend { background: var(--green); color: #05130a; }
+#teachDont { background: #1a0f0f; color: #f2b3ad; border: 1px solid #4d2a2a; border-radius: 9px; padding: 8px 15px; font-size: 12.5px; }
+#teachDont:hover { border-color: var(--red); }
+.analytics { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex: none; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); padding: 9px 12px; }
+.analytics button { background: var(--panel-2); color: var(--ink-dim); border: 1px solid var(--line); border-radius: 9px; padding: 6px 12px; font-size: 12.5px; }
+.analytics button:hover:not(:disabled) { color: var(--ink); border-color: var(--blue); }
+.analytics button:disabled { opacity: .55; cursor: default; }
+.analytics #btnTune:hover:not(:disabled) { border-color: var(--green); }
+.analytics #btnSynth { color: #d9caf0; } .analytics #btnSynth:hover:not(:disabled) { border-color: var(--memory); color: #fff; }
+.astat { display: inline-flex; align-items: baseline; gap: 6px; margin-left: 4px; }
+.astat .mk { font-family: var(--mono); font-size: 9px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .05em; }
+.astat b { font-family: var(--mono); font-size: 14px; color: var(--ink); }
+.astat-hidden { display: none; }
+.graph-frame { flex: 1; width: 100%; border: 1px solid var(--line); border-radius: 14px; background: #090b11; }
+
 /* ---------- responsive ---------- */
 @media (max-width: 1080px) {
   .app { grid-template-columns: 1fr; grid-template-rows: minmax(260px, 44vh) 1fr; }
   .rail { border-right: none; border-bottom: 1px solid var(--line); }
-  .controls .quality { display: none; }
-  .chat { padding: 14px 16px; }
+  .stage { padding: 14px 16px; }
 }

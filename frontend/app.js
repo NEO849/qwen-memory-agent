@@ -320,10 +320,10 @@ function flashCard(id, cls) { const el = pool.get(id); if (el) { el.classList.ad
 
 async function loadAB() {
   try { const ab = await api('/ab'); if (ab.available === false) return;
-    const a = ab.arm_a_no_memory, b = ab.arm_b_with_memory;
-    const A = $('#abA'), B = $('#abB');
-    if (A) A.textContent = `${a.green}/${a.k}`;
-    if (B) B.textContent = `${b.green}/${b.k}`;
+    const a = ab.arm_a_no_memory, b = ab.arm_b_with_memory, el = $('#ab'); if (!el) return;
+    el.innerHTML = `<span class="ab-label">proof</span>` +
+      `<span class="pill a">no memory ${a.green}/${a.k}</span>` +
+      `<span class="pill b">memory ${b.green}/${b.k}</span>`;
   } catch {}
 }
 
@@ -351,10 +351,11 @@ function animateNumber(el, to, { decimals = 2, dur = 750, signed = false } = {})
 async function loadMetrics() {
   try {
     const m = await api('/metrics');
-    $('#mCal').textContent = m.grounded_outcomes ? m.calibration_gap.toFixed(2) : '—';
-    $('#mGround').textContent = m.grounded_outcomes;
-    $('#mWeights').textContent = `${m.weights.bm25}·${m.weights.vector}`;
-    if (m.health_pct != null) $('#mHealth').textContent = `${Math.round(m.health_pct * 100)}%`;
+    const set = (id, v) => { const e = $(id); if (e) e.textContent = v; };
+    set('#mCal', m.grounded_outcomes ? m.calibration_gap.toFixed(2) : '—');
+    set('#mGround', m.grounded_outcomes);
+    set('#mWeights', `${m.weights.bm25}·${m.weights.vector}`);
+    if (m.health_pct != null) set('#mHealth', `${Math.round(m.health_pct * 100)}%`);
   } catch {}
 }
 async function runEvaluate() {
@@ -396,7 +397,7 @@ function live() {
   setInterval(() => refresh(false), 2000);
 }
 
-// ---------- two inputs: LEFT teaches/steers the memory · RIGHT asks the AI ----------
+// ---------- LEFT = the memory · RIGHT = chat/graph ----------
 function agentBusy() { return state.agentStatus === 'running' || state.agentStatus === 'paused'; }
 function paintTeach() {
   const sec = document.querySelector('.teach'); if (!sec) return;
@@ -407,16 +408,37 @@ function paintTeach() {
   $('#tSig').textContent = busy ? '⇢' : '»';
   $('#teachSend').textContent = busy ? 'Steer' : 'Teach';
 }
-async function teachSend() {
+// teach a rule (guard) or a "don't" (anti-pattern). Plain text only; no command syntax leaks into the field.
+async function teachSubmit(kind) {
   const i = $('#teachInput'), raw = i.value.trim(); if (!raw) return; i.value = '';
-  await runCommand(raw);   // plain text → note, or inject/steer if the agent is busy; /cmds → power actions
+  try {
+    if (kind === 'anti') {
+      const l = await api('/notes', json({ text: raw, kind: 'anti_pattern', severity: 'high' }));
+      logLine(`⛔ recorded anti-pattern #${l.id} — I'll block this regression`, 'ok'); logConflicts(l); refresh(true);
+    } else {
+      await runCommand(raw);   // note, or steer/inject when the agent is running
+    }
+  } catch (e) { logLine('✗ ' + (e.message || 'failed'), 'err'); }
 }
-$('#teachInput').addEventListener('keydown', e => { if (e.key === 'Enter') teachSend(); });
-$('#teachSend').addEventListener('click', teachSend);
-document.querySelectorAll('#teachChips [data-cmd]').forEach(b => b.addEventListener('click', () => {
-  const pre = { pin: '/pin ', demote: '/demote ', tombstone: '/tombstone ', revise: '/revise ', anti: '/anti ' }[b.dataset.cmd];
-  const i = $('#teachInput'); i.value = pre; i.focus();
+$('#teachInput').addEventListener('keydown', e => { if (e.key === 'Enter') teachSubmit('guard'); });
+$('#teachSend').addEventListener('click', () => teachSubmit('guard'));
+$('#teachDont').addEventListener('click', () => teachSubmit('anti'));
+
+// card actions act DIRECTLY on the selected (centered) card — no command text in any field
+function activeCardId() { return state.lessons.length ? state.lessons[activeIndex()].id : null; }
+document.querySelectorAll('#cardActs [data-card]').forEach(b => b.addEventListener('click', async () => {
+  const id = activeCardId();
+  if (id == null) { logLine('scroll to a card first', 'warn'); return; }
+  const cmd = b.dataset.card;
+  try {
+    if (cmd === 'pin') { await api(`/lessons/${id}/pin`, { method: 'POST' }); logLine(`✓ pinned #${id}`, 'ok'); }
+    else if (cmd === 'demote') { const l = await api(`/lessons/${id}/demote`, { method: 'POST' }); logLine(`✓ demoted #${id} → ${l.confidence.toFixed(2)}`, 'ok'); }
+    else if (cmd === 'tombstone') { await api(`/lessons/${id}/tombstone`, { method: 'POST' }); logLine(`✓ forgot #${id}`, 'ok'); }
+    else if (cmd === 'revise') { flashCard(id, 'highlight'); const inp = $('#teachInput'); inp.value = '/revise '; inp.focus(); logLine('describe the change after /revise, then Enter', 'echo'); return; }
+  } catch (e) { logLine('✗ ' + (e.message || 'failed'), 'err'); }
+  refresh(true);
 }));
+
 async function askSend() { const i = $('#askInput'), q = i.value.trim(); if (!q) return; i.value = ''; await ask(q); }
 $('#askInput').addEventListener('keydown', e => { if (e.key === 'Enter') askSend(); });
 $('#askSend').addEventListener('click', askSend);
@@ -424,6 +446,16 @@ document.querySelectorAll('[data-agent]').forEach(b => b.addEventListener('click
 $('#btnMeasure').addEventListener('click', runEvaluate);
 $('#btnTune').addEventListener('click', runTune);
 $('#btnSynth').addEventListener('click', runSynthesize);
+
+// view toggle — Chat vs the knowledge Graph, in the same frame (globe embedded, reloads on open)
+let graphN = 0;
+function setView(v) {
+  document.querySelectorAll('.vbtn').forEach(x => { const on = x.dataset.view === v; x.classList.toggle('on', on); x.setAttribute('aria-selected', on); });
+  $('#viewChat').hidden = v !== 'chat';
+  $('#viewGraph').hidden = v !== 'graph';
+  if (v === 'graph') { $('#graphFrame').src = '/graph.html?n=' + (++graphN); }   // fresh render of the current memory
+}
+document.querySelectorAll('.vbtn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 paintTeach();
 
 // ---------- pattern crystallization (synthesis) ----------
