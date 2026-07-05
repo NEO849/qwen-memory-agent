@@ -223,8 +223,8 @@ async function runCommand(raw) {
     } else {
       const text = s.replace(/^by the way,?\s*/i, '');
       if (state.agentStatus === 'running' || state.agentStatus === 'paused') {
-        await api('/agent/inject', json({ text })); logLine('✓ note injected → agent interrupts & redoes with it', 'ok');
-      } else { const l = await api('/notes', json({ text })); logLine(`✓ by-the-way note → lesson #${l.id} (agent obeys on next recall)`, 'ok'); logConflicts(l); }
+        await api('/agent/inject', json({ text })); logLine("✓ steered — I'll re-plan with your note", 'ok');
+      } else { const l = await api('/notes', json({ text })); logLine(`✓ saved your note → lesson #${l.id} (I'll use it next answer)`, 'ok'); logConflicts(l); }
     }
   } catch (e) { logLine('✗ ' + (e.message || 'failed'), 'err'); }
   refresh(true);
@@ -237,27 +237,39 @@ function setAgentStatus(s) {
   const show = (id, on) => $(id).hidden = !on;
   show('#btnStart', s === 'idle'); show('#btnPause', s === 'running');
   show('#btnResume', s === 'paused'); show('#btnStop', s === 'running' || s === 'paused');
-  try { paintConsole(); } catch {}   // reflect Teach→Steer while the agent is busy
+  try { paintTeach(); } catch {}   // the left input becomes "steer" while the agent is busy
 }
 function highlightCode(code) {
   return escapeHtml(code).replace(/(tenant_id)/g, '<span class="filter">$1</span>')
     .replace(/(all_orders\(\)(?!\s*if))/g, '<span class="leak">$1</span>');
 }
-function renderAttempt(step, code, passed, recalled) {
-  const badge = passed ? '<span class="badge green">✓ TEST GREEN</span>' : '<span class="badge red">✗ TEST RED</span>';
-  const mem = recalled && recalled.length ? `recalled #${recalled.join(', #')}` : 'no memory recalled';
-  $('#agentPanel').innerHTML = `<div class="attempt">${badge}<pre>${highlightCode(code || '')}</pre></div>
-    <div class="agent-meta">attempt ${step} · ${mem} · hidden test = tenant isolation</div>`;
+// agent runs stream into the conversation as messages (it's the AI, working)
+let runBubble = null;
+function threadAppend(el) { const intro = $('#intro'); if (intro) intro.remove();
+  $('#thread').appendChild(el); $('#thread').scrollTop = $('#thread').scrollHeight; }
+function agentThinking() {
+  runBubble = document.createElement('div'); runBubble.className = 'msg run agent';
+  runBubble.innerHTML = `<div class="who">agent · run</div><span class="run-badge think">… writing</span><pre>drafting get_orders …</pre>`;
+  threadAppend(runBubble);
 }
-function agentThinking() { $('#agentPanel').innerHTML = `<div class="attempt"><span class="badge think">… writing</span><pre>agent is drafting get_orders …</pre></div>`; }
+function renderAttempt(step, code, passed, recalled) {
+  if (!runBubble) agentThinking();
+  const badge = passed ? '<span class="run-badge green">✓ test green</span>' : '<span class="run-badge red">✗ test red</span>';
+  const mem = recalled && recalled.length ? `recalled #${recalled.join(', #')}` : 'no memory recalled';
+  runBubble.innerHTML = `<div class="who">agent · run</div>${badge}<pre>${highlightCode(code || '')}</pre>` +
+    `<div class="run-meta">attempt ${step} · ${mem} · hidden test: tenant isolation</div>`;
+  runBubble = null;   // the next attempt gets a fresh bubble → the thread shows red → green
+  $('#thread').scrollTop = $('#thread').scrollHeight;
+}
+function sysLine(text, cls = '') { const d = document.createElement('div'); d.className = 'sys ' + cls; d.textContent = text; threadAppend(d); }
 function onAgentStep(m) {
   if (m.status) setAgentStatus(m.status);
   const ph = m.phase;
   if (ph === 'recall') { agentThinking(); if (m.recalled) showRecalled(m.recalled); }
   else if (ph === 'result') renderAttempt(m.step, m.code, m.passed, m.recalled);
-  else if (ph === 'interrupted') logLine('↻ agent interrupted → re-planning with your note', 'echo');
-  else if (ph === 'note') logLine(`⇢ agent absorbed note → lesson #${m.lesson_id}`, 'ok');
-  else if (ph === 'stopped') $('#agentPanel').innerHTML = '<div class="agent-empty">agent stopped.</div>';
+  else if (ph === 'interrupted') sysLine('↻ re-planning with your note');
+  else if (ph === 'note') sysLine(`⇢ saved your note → lesson #${m.lesson_id}`, 'ok');
+  else if (ph === 'stopped') sysLine('agent stopped.');
 }
 async function agentCmd(action) { try { await api('/agent/' + action, { method: 'POST' }); } catch {} }
 
@@ -266,16 +278,17 @@ function bubble(who, text) { const intro = $('#intro'); if (intro) intro.remove(
   const d = document.createElement('div'); d.className = 'msg ' + who;
   d.innerHTML = `<div class="who">${who}</div>${escapeHtml(text)}`; $('#thread').appendChild(d); $('#thread').scrollTop = $('#thread').scrollHeight; return d; }
 async function ask(q) {
-  $('#cSend').disabled = true; bubble('user', q);
+  $('#askSend').disabled = true; bubble('user', q);
   const t = bubble('agent', '…');
   try { const r = await api('/chat', json({ message: q })); t.innerHTML = `<div class="who">agent</div>${escapeHtml(r.reply)}`; showRecalled(r.recalled); }
   catch { t.innerHTML = `<div class="who">agent</div>(error contacting agent)`; }
-  $('#cSend').disabled = false;
+  $('#askSend').disabled = false;
 }
 function showRecalled(ids) {
   const strip = $('#recall');
-  if (!ids || !ids.length) { strip.innerHTML = '<span style="color:var(--ink-faint)">no lessons recalled for that</span>'; return; }
-  strip.innerHTML = `<span>recalled ${ids.length}:</span>`;
+  if (!ids || !ids.length) { strip.hidden = true; strip.innerHTML = ''; return; }
+  strip.hidden = false;
+  strip.innerHTML = `<span>answered using ${ids.length} lesson${ids.length === 1 ? '' : 's'}:</span>`;
   ids.forEach(id => { const l = state.byId.get(id); if (!l) return;
     const s = document.createElement('span'); s.className = 'lz'; s.textContent = `#${id}`; s.title = l.lesson; s.onclick = () => jumpTo(id); strip.appendChild(s); });
   ids.forEach(id => flashCard(id, 'highlight'));
@@ -287,7 +300,7 @@ function flashCard(id, cls) { const el = pool.get(id); if (el) { el.classList.ad
 async function loadAB() {
   try { const ab = await api('/ab'); if (ab.available === false) return;
     const a = ab.arm_a_no_memory, b = ab.arm_b_with_memory;
-    $('#ab').innerHTML = `<span class="pill a">A · no memory ${a.green}/${a.k}</span><span class="pill b">B · with memory ${b.green}/${b.k}</span>`;
+    $('#ab').innerHTML = `<span class="ab-label">proof</span><span class="pill a">A · no memory ${a.green}/${a.k}</span><span class="pill b">B · with memory ${b.green}/${b.k}</span>`;
   } catch {}
 }
 
@@ -359,56 +372,34 @@ function live() {
   setInterval(() => refresh(false), 2000);
 }
 
-// ---------- adaptive console: Ask ⇄ Teach (→ Steer while the agent runs) ----------
-let mode = 'ask';
-const HINTS = {
-  ask: "ask me to write or fix code — I'll use what I've learned",
-  teach: "teach or correct my memory — I'll obey it on the next recall",
-  steer: "nudge me while I work — I interrupt and redo with your note",
-};
-const PLACEH = {
-  ask: 'Ask me to write or fix code…',
-  teach: "e.g. always filter orders by tenant_id — I'll remember it",
-  steer: 'Nudge the running agent…',
-};
+// ---------- two inputs: LEFT teaches/steers the memory · RIGHT asks the AI ----------
 function agentBusy() { return state.agentStatus === 'running' || state.agentStatus === 'paused'; }
-function effMode() { return (mode === 'teach' && agentBusy()) ? 'steer' : mode; }
-function paintConsole() {
-  const em = effMode(), con = $('#console'); if (!con) return;
-  con.classList.toggle('teach', mode === 'teach' && em !== 'steer');
-  con.classList.toggle('steer', em === 'steer');
-  $('#modeHint').textContent = HINTS[em];
-  $('#cInput').placeholder = PLACEH[em];
-  $('#cSig').textContent = em === 'ask' ? '›' : (em === 'steer' ? '⇢' : '»');
-  $('#teachChips').hidden = (mode !== 'teach');
-  document.querySelectorAll('.mode').forEach(b => {
-    const on = b.dataset.mode === mode; b.classList.toggle('on', on); b.setAttribute('aria-selected', on);
-  });
+function paintTeach() {
+  const sec = document.querySelector('.teach'); if (!sec) return;
+  const busy = agentBusy();
+  sec.classList.toggle('steer', busy);
+  $('#teachSub').textContent = busy ? "· steers me while I'm running" : "· I'll use it on my next answer";
+  $('#teachInput').placeholder = busy ? "Steer me — I'll re-plan with your note…" : 'Teach a rule, or correct me…';
+  $('#tSig').textContent = busy ? '⇢' : '»';
+  $('#teachSend').textContent = busy ? 'Steer' : 'Teach';
 }
-function setMode(m) { mode = m; paintConsole(); $('#cInput').focus(); }
-async function consoleSend() {
-  const inp = $('#cInput'), raw = inp.value.trim(); if (!raw) return;
-  inp.value = '';
-  if (raw.startsWith('/')) { await runCommand(raw); return; }   // power commands work in either mode
-  if (mode === 'ask') await ask(raw);
-  else await runCommand(raw);                                    // teach → note, or steer if the agent is busy
+async function teachSend() {
+  const i = $('#teachInput'), raw = i.value.trim(); if (!raw) return; i.value = '';
+  await runCommand(raw);   // plain text → note, or inject/steer if the agent is busy; /cmds → power actions
 }
-$('#cInput').addEventListener('keydown', e => { if (e.key === 'Enter') consoleSend(); });
-$('#cSend').addEventListener('click', consoleSend);
-document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+$('#teachInput').addEventListener('keydown', e => { if (e.key === 'Enter') teachSend(); });
+$('#teachSend').addEventListener('click', teachSend);
 document.querySelectorAll('#teachChips [data-cmd]').forEach(b => b.addEventListener('click', () => {
   const pre = { pin: '/pin ', demote: '/demote ', tombstone: '/tombstone ', revise: '/revise ' }[b.dataset.cmd];
-  setMode('teach'); const i = $('#cInput'); i.value = pre; i.focus();
+  const i = $('#teachInput'); i.value = pre; i.focus();
 }));
-document.querySelectorAll('.try-chip').forEach(b => b.addEventListener('click', () => {
-  const t = b.dataset.try;
-  if (t === 'run') { agentCmd('start'); return; }
-  setMode(t); if (b.dataset.fill) $('#cInput').value = b.dataset.fill; $('#cInput').focus();
-}));
+async function askSend() { const i = $('#askInput'), q = i.value.trim(); if (!q) return; i.value = ''; await ask(q); }
+$('#askInput').addEventListener('keydown', e => { if (e.key === 'Enter') askSend(); });
+$('#askSend').addEventListener('click', askSend);
 document.querySelectorAll('[data-agent]').forEach(b => b.addEventListener('click', () => agentCmd(b.dataset.agent)));
 $('#btnMeasure').addEventListener('click', runEvaluate);
 $('#btnTune').addEventListener('click', runTune);
-paintConsole();
+paintTeach();
 
 // deck: wheel / drag / tap-to-flip
 const dw = document.querySelector('.deck-wrap');
