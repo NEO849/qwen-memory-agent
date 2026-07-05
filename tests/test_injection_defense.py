@@ -81,3 +81,32 @@ def test_recall_attaches_sanitized_field(tmp_path, monkeypatch):
     assert rec["lessons"], "poisoned lesson was not recalled"
     assert all("sanitized" in l for l in rec["lessons"])
     assert any(l["sanitized"] > 0 for l in rec["lessons"])
+
+
+# --- anti-pattern / dead-end memory: rendered as an active inhibition, not guidance ---
+
+def test_render_injection_anti_pattern_is_inhibition():
+    block = memory.render_injection([
+        {"lesson": "call all_orders() and filter in Python", "severity": "high",
+         "source": "human", "scope": "api/orders", "kind": "anti_pattern"}])
+    assert "⛔ DO NOT" in block and "known past regression" in block
+
+
+def test_render_injection_guard_is_not_inhibition():
+    block = memory.render_injection([
+        {"lesson": "validate and clamp page size", "severity": "med",
+         "source": "human", "scope": "api", "kind": "guard"}])
+    assert "⛔ DO NOT" not in block
+
+
+def test_inhibitions_filters_anti_patterns():
+    lessons = [{"id": 1, "kind": "guard"}, {"id": 2, "kind": "anti_pattern"}, {"id": 3}]
+    assert [l["id"] for l in memory.inhibitions(lessons)] == [2]
+
+
+def test_add_lesson_persists_kind(tmp_path):
+    from backend import ledger
+    db = str(tmp_path / "kind.sqlite")
+    ledger.init_db(db)
+    lid = ledger.add_lesson("t", "never do X", kind="anti_pattern", source="human", path=db)
+    assert ledger.get_lesson(lid, path=db)["kind"] == "anti_pattern"

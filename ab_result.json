@@ -3,7 +3,7 @@
   "model": "qwen-plus",
   "temperature": 0,
   "k": 5,
-  "lesson": "When filtering resources for tenant isolation, compare against user['tenant_id'] \u2014 never user['id'] \u2014 to ensure cross-tenant data leaks are prevented.",
+  "lesson": "When filtering resources for tenant isolation, always compare against user['tenant_id'], not user['id'], because tenant scoping is enforced by the string-valued 'tenant_id' field.",
   "arm_a_no_memory": {
     "arm": "A",
     "k": 5,

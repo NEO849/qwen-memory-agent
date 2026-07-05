@@ -54,10 +54,12 @@ def ingest(test_output: str, diff: str, *, path: str | None = None) -> dict:
 
 
 def add_note(text: str, *, distill: bool = False, scope: str = "", severity: str = "med",
-             author: str | None = None, pinned: bool = False, check_conflicts: bool = True,
-             path: str | None = None) -> dict:
+             author: str | None = None, pinned: bool = False, kind: str = "guard",
+             check_conflicts: bool = True, path: str | None = None) -> dict:
     """Human 'by the way' note -> lesson. Default verbatim (no Qwen in the critical path);
-    distill=True asks Qwen to shape it into a {trigger, lesson, scope, severity}."""
+    distill=True asks Qwen to shape it into a {trigger, lesson, scope, severity}.
+    kind='anti_pattern' records a dead-end memory (a known past regression) that is rendered
+    as an active inhibition (⛔ DO NOT) rather than guidance."""
     note_raw = text.strip()
     if distill:
         shaped = extractor.extract_lesson(
@@ -73,7 +75,7 @@ def add_note(text: str, *, distill: bool = False, scope: str = "", severity: str
     emb = _embed_one(f"{trigger} {lesson}")
     lid = ledger.add_lesson(trigger, lesson, scope=scope, severity=severity, embedding=emb,
                             source=source, author=author, note_raw=note_raw, pinned=pinned,
-                            path=path)
+                            kind=kind, path=path)
     # belief revision: a freshly taught rule may contradict an older one — self-heal on teach.
     conflicts: dict = {"conflicts": [], "revised": []}
     if check_conflicts:
@@ -205,6 +207,17 @@ def render_injection(lessons: list[dict]) -> str:
         # then redact embedded instruction/role/override directives (deterministic anti-injection layer)
         rule = str(l["lesson"]).replace("\n", " ").replace("\r", " ")[:500]
         rule = _neutralize_injection(rule)
-        lines.append(f"- [{l['severity']}·{l['source']}] {rule} (scope: {l['scope'] or 'general'})")
+        scope = l.get("scope") or "general"
+        if l.get("kind") == "anti_pattern":
+            # dead-end memory: a known past regression — rendered as an ACTIVE INHIBITION
+            lines.append(f"- ⛔ DO NOT (known past regression, {l['severity']}): {rule} (scope: {scope})")
+        else:
+            lines.append(f"- [{l['severity']}·{l['source']}] {rule} (scope: {scope})")
     lines.append("<<<END_UNTRUSTED_MEMORY>>>")
     return "\n".join(lines)
+
+
+def inhibitions(lessons: list[dict]) -> list[dict]:
+    """The recalled lessons that are dead-end memories (anti-patterns) — active inhibitions
+    the agent is being warned NOT to repeat. Used by the API/UI to flag blocked regressions."""
+    return [l for l in lessons if l.get("kind") == "anti_pattern"]

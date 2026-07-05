@@ -83,6 +83,7 @@ class NoteIn(BaseModel):
     severity: Literal["low", "med", "high"] = "med"
     pinned: bool = False
     author: str | None = Field(default=None, max_length=128)
+    kind: Literal["guard", "anti_pattern"] = "guard"
 
 
 class EditIn(BaseModel):
@@ -156,7 +157,7 @@ def post_outcome(body: OutcomeIn) -> dict:
 def post_note(body: NoteIn) -> dict:
     lesson = memory.add_note(body.text, distill=body.distill, scope=body.scope,
                              severity=body.severity, pinned=body.pinned,
-                             author=body.author, path=config.LEDGER_PATH)
+                             author=body.author, kind=body.kind, path=config.LEDGER_PATH)
     events.bump(lesson_id=lesson["id"], action="note")
     return lesson
 
@@ -259,7 +260,8 @@ def chat(body: ChatIn) -> dict:
     reply = qwen_client.chat(messages, temperature=0.3)
     sanitized_total = sum(memory.directive_count(l["lesson"]) for l in rec["lessons"])
     return {"reply": reply, "recalled": [l["id"] for l in rec["lessons"]],
-            "injected": bool(injection), "sanitized_total": sanitized_total}
+            "injected": bool(injection), "sanitized_total": sanitized_total,
+            "inhibited": [l["id"] for l in memory.inhibitions(rec["lessons"])]}
 
 
 # --------------------------------------------------------------- agent loop ---

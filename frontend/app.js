@@ -50,6 +50,7 @@ function faceHTML(l) {
     <div class="face front">
       <div class="spine sev-${l.severity}"></div>
       <span class="pin">📌</span><span class="stamp">OBSOLETE</span>
+      ${l.kind === 'anti_pattern' ? '<span class="anti-ribbon" title="a known past regression — the memory actively blocks repeating it">⛔ DO-NOT</span>' : ''}
       <div class="kicker">
         <span class="src" style="background:${src};box-shadow:0 0 8px ${src}77, 0 0 0 3px rgba(255,255,255,.05)" title="source: ${l.source}"></span>
         <span class="when">WHEN ${escapeHtml((l.trigger || 'general').replace(/^when\s+/i, ''))}</span>
@@ -111,7 +112,8 @@ function buildDeck() {
     if (!nd) { nd = cardEl(l); deck.appendChild(nd); pool.set(l.id, nd); }
     else if (nd.dataset.rev !== String(l.rev)) updateFaces(nd, l);
     const wasFlipped = nd.classList.contains('flipped');
-    nd.className = 'card' + lifecycleClass(l, agingThreshold) + (wasFlipped ? ' flipped' : '');
+    nd.className = 'card' + lifecycleClass(l, agingThreshold)
+      + (l.kind === 'anti_pattern' ? ' anti' : '') + (wasFlipped ? ' flipped' : '');
     nd.dataset.rev = String(l.rev);
   });
 }
@@ -220,6 +222,8 @@ async function runCommand(raw) {
       else if (cmd === 'revise') { logLine('… Qwen judging lessons against the change', 'echo');
         const r = await api('/revise', json({ change: rest.join(' ') }));
         r.results.forEach(x => logLine(`  #${x.lesson_id} ${x.action}${x.obsolete ? ' — ' + x.reason : ''}`, x.obsolete ? 'ok' : '')); }
+      else if (cmd === 'anti') { const l = await api('/notes', json({ text: rest.join(' '), kind: 'anti_pattern', severity: 'high' }));
+        logLine(`⛔ recorded anti-pattern #${l.id} — I'll block this regression`, 'ok'); logConflicts(l); }
       else throw new Error('unknown command: /' + cmd);
     } else {
       const text = s.replace(/^by the way,?\s*/i, '');
@@ -281,11 +285,11 @@ function bubble(who, text) { const intro = $('#intro'); if (intro) intro.remove(
 async function ask(q) {
   $('#askSend').disabled = true; bubble('user', q);
   const t = bubble('agent', '…');
-  try { const r = await api('/chat', json({ message: q })); t.innerHTML = `<div class="who">agent</div>${escapeHtml(r.reply)}`; showRecalled(r.recalled, r.sanitized_total); }
+  try { const r = await api('/chat', json({ message: q })); t.innerHTML = `<div class="who">agent</div>${escapeHtml(r.reply)}`; showRecalled(r.recalled, r.sanitized_total, r.inhibited); }
   catch { t.innerHTML = `<div class="who">agent</div>(error contacting agent)`; }
   $('#askSend').disabled = false;
 }
-function showRecalled(ids, sanitizedTotal = 0) {
+function showRecalled(ids, sanitizedTotal = 0, inhibited = []) {
   const strip = $('#recall');
   if (!ids || !ids.length) { strip.hidden = true; strip.innerHTML = ''; return; }
   strip.hidden = false;
@@ -296,6 +300,12 @@ function showRecalled(ids, sanitizedTotal = 0) {
     const s = document.createElement('span'); s.className = 'shield-note';
     s.textContent = `🛡 ${sanitizedTotal} directive${sanitizedTotal === 1 ? '' : 's'} neutralized`;
     s.title = 'Embedded injection directives in the recalled lessons were stripped before reaching the model.';
+    strip.appendChild(s);
+  }
+  if (inhibited && inhibited.length) {
+    const s = document.createElement('span'); s.className = 'anti-note';
+    s.textContent = `⛔ blocked ${inhibited.length} known regression${inhibited.length === 1 ? '' : 's'}`;
+    s.title = 'A recalled anti-pattern warned the agent not to repeat a past regression.';
     strip.appendChild(s);
   }
   ids.forEach(id => flashCard(id, 'highlight'));
@@ -399,7 +409,7 @@ async function teachSend() {
 $('#teachInput').addEventListener('keydown', e => { if (e.key === 'Enter') teachSend(); });
 $('#teachSend').addEventListener('click', teachSend);
 document.querySelectorAll('#teachChips [data-cmd]').forEach(b => b.addEventListener('click', () => {
-  const pre = { pin: '/pin ', demote: '/demote ', tombstone: '/tombstone ', revise: '/revise ' }[b.dataset.cmd];
+  const pre = { pin: '/pin ', demote: '/demote ', tombstone: '/tombstone ', revise: '/revise ', anti: '/anti ' }[b.dataset.cmd];
   const i = $('#teachInput'); i.value = pre; i.focus();
 }));
 async function askSend() { const i = $('#askInput'), q = i.value.trim(); if (!q) return; i.value = ''; await ask(q); }
