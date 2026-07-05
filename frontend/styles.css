@@ -264,6 +264,17 @@ button { font-family: inherit; cursor: pointer; }
 .teach-chips button[data-cmd="anti"] { color: #f2b3ad; border-color: #4d2a2a; background: #1a0f0f; }
 .teach-chips button[data-cmd="anti"]:hover { border-color: var(--red); background: #241313; }
 
+/* ---------- Stage 7: synthesis (meta-lessons) ---------- */
+.synth-prop { color: var(--memory); font-size: 11.5px; line-height: 1.5; display: flex; gap: 7px; align-items: baseline; flex-wrap: wrap; }
+.synth-accept { background: #171326; color: var(--memory); border: 1px solid #4a3e63; border-radius: 6px; padding: 1px 9px; font-size: 10.5px; cursor: pointer; }
+.synth-accept:hover { border-color: var(--memory); background: #1c1430; }
+.synth-accept:disabled { opacity: .5; cursor: default; }
+.card .meta-badge { position: absolute; top: 9px; left: 15px; z-index: 3; font-family: var(--mono);
+  font-size: 9px; letter-spacing: .1em; color: var(--memory); background: #171326;
+  border: 1px solid #4a3e63; border-radius: 5px; padding: 2px 7px; }
+#btnSynth { color: #d9caf0; }
+#btnSynth:hover:not(:disabled) { border-color: var(--memory); color: #fff; }
+
 /* ---------- responsive ---------- */
 @media (max-width: 1080px) {
   .app { grid-template-columns: 1fr; grid-template-rows: minmax(260px, 44vh) 1fr; }

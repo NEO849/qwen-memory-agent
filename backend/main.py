@@ -27,7 +27,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import config, evaluation, events, graph, ledger, memory, qwen_client, reviser
+from . import config, evaluation, events, graph, ledger, memory, qwen_client, reviser, synthesis
 
 ROOT = Path(__file__).resolve().parent.parent
 FRONTEND = ROOT / "frontend"
@@ -35,7 +35,7 @@ AB_RESULT = ROOT / "ab_result.json"
 
 MAX_BODY = 64 * 1024                              # reject bodies larger than 64 KB
 DEMO_TOKEN = os.environ.get("REGRESS_GUARD_TOKEN", "")   # if set, gate paid-LLM writes
-GATED = ("/chat", "/recall", "/notes", "/ingest", "/revise")
+GATED = ("/chat", "/recall", "/notes", "/ingest", "/revise", "/synthesize", "/synthesize/accept")
 
 app = FastAPI(title="regress-guard", version="1.0.0")
 
@@ -230,6 +230,30 @@ def post_tune(sample: int = Query(8, ge=2, le=30)) -> dict:
     if result.get("tuned"):
         events.bump(action="tune")   # weights changed → deck's next recall uses them
     return result
+
+
+# ---------------------------------------- pattern crystallization (synthesis) ---
+class SynthAcceptIn(BaseModel):
+    trigger: str = Field(max_length=200)
+    lesson: str = Field(max_length=8000)
+    scope: str = Field(default="", max_length=500)
+    severity: Literal["low", "med", "high"] = "high"
+    children: list[int] = Field(default_factory=list)
+
+
+@app.post("/synthesize")
+def post_synthesize(min_group: int = Query(3, ge=2, le=10)) -> dict:
+    """Propose meta-lessons for scope-clusters of >= min_group lessons (Qwen). Proposes only."""
+    return synthesis.propose_synthesis(path=config.LEDGER_PATH, min_group=min_group)
+
+
+@app.post("/synthesize/accept")
+def post_synthesize_accept(body: SynthAcceptIn) -> dict:
+    """Insert an accepted meta-lesson (starts at the normal prior, NOT the children's confidence)
+    and link it to its children with 'synthesizes' edges."""
+    meta = synthesis.accept(body.model_dump(), path=config.LEDGER_PATH)
+    events.bump(lesson_id=meta["id"], action="synthesize")
+    return meta
 
 
 # --------------------------------------------------------------------- chat ---

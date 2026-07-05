@@ -51,6 +51,7 @@ function faceHTML(l) {
       <div class="spine sev-${l.severity}"></div>
       <span class="pin">📌</span><span class="stamp">OBSOLETE</span>
       ${l.kind === 'anti_pattern' ? '<span class="anti-ribbon" title="a known past regression — the memory actively blocks repeating it">⛔ DO-NOT</span>' : ''}
+      ${l.author === 'synthesis' ? '<span class="meta-badge" title="a synthesized meta-lesson (ExpeL) — starts at the prior, earns confidence from real tests">✦ meta</span>' : ''}
       <div class="kicker">
         <span class="src" style="background:${src};box-shadow:0 0 8px ${src}77, 0 0 0 3px rgba(255,255,255,.05)" title="source: ${l.source}"></span>
         <span class="when">WHEN ${escapeHtml((l.trigger || 'general').replace(/^when\s+/i, ''))}</span>
@@ -422,7 +423,33 @@ $('#askSend').addEventListener('click', askSend);
 document.querySelectorAll('[data-agent]').forEach(b => b.addEventListener('click', () => agentCmd(b.dataset.agent)));
 $('#btnMeasure').addEventListener('click', runEvaluate);
 $('#btnTune').addEventListener('click', runTune);
+$('#btnSynth').addEventListener('click', runSynthesize);
 paintTeach();
+
+// ---------- pattern crystallization (synthesis) ----------
+async function runSynthesize() {
+  const btn = $('#btnSynth'); btn.disabled = true; const was = btn.textContent; btn.textContent = 'synthesizing…';
+  try {
+    const r = await api('/synthesize', { method: 'POST' });
+    if (!r.proposals || !r.proposals.length) logLine('✦ no cluster of ≥3 lessons in one scope yet — teach a few in the same scope', 'warn');
+    else r.proposals.forEach(logSynthProposal);
+  } catch (e) { logLine('✗ synthesize failed: ' + (e.message || ''), 'err'); }
+  btn.disabled = false; btn.textContent = was;
+}
+function logSynthProposal(p) {
+  const d = document.createElement('div'); d.className = 'synth-prop';
+  d.innerHTML = `✦ meta from ${p.children.length} lessons in "${escapeHtml(p.scope)}": ${escapeHtml(p.lesson)} `;
+  const b = document.createElement('button'); b.className = 'synth-accept'; b.textContent = 'accept';
+  b.onclick = async () => {
+    b.disabled = true;
+    try {
+      const m = await api('/synthesize/accept', json({ trigger: p.trigger, lesson: p.lesson, scope: p.scope, severity: p.severity, children: p.children }));
+      logLine(`✓ crystallized → meta-lesson #${m.id} (starts at the 0.5 prior — earns confidence from real tests)`, 'ok');
+      d.remove(); refresh(true);
+    } catch (e) { logLine('✗ accept failed: ' + (e.message || ''), 'err'); b.disabled = false; }
+  };
+  d.appendChild(b); $('#log').appendChild(d); $('#log').scrollTop = $('#log').scrollHeight;
+}
 
 // deck: wheel / drag / tap-to-flip
 const dw = document.querySelector('.deck-wrap');

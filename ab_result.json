@@ -3,14 +3,14 @@
   "model": "qwen-plus",
   "temperature": 0,
   "k": 5,
-  "lesson": "Filter the returned collection by comparing each item's 'tenant_id' field against the user's 'tenant_id' field \u2014 never against user['id'] or any non-tenant identifier.",
+  "lesson": "When filtering resources for tenant isolation, always compare against user['tenant_id'], not user['id'], because tenant scope is determined by the string-valued 'tenant_id' field.",
   "arm_a_no_memory": {
     "arm": "A",
     "k": 5,
     "green": 0,
     "red": 5,
     "pass_rate": 0.0,
-    "sample_code": "def get_orders(db, user):\n    return [order for order in db.all_orders() if order.get('user_id') == user['id']]"
+    "sample_code": "def get_orders(db, user):\n    return [order for order in db.all_orders() if order.get(\"user_id\") == user[\"id\"]]"
   },
   "arm_b_with_memory": {
     "arm": "B",
