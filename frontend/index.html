@@ -53,20 +53,20 @@
     <!-- MAIN -->
     <main class="main">
       <div class="main-head">
-        <h1>Recall theater</h1>
+        <h1>Watch it live</h1>
         <div class="ab" id="ab"></div>
       </div>
 
       <div class="metrics" id="metrics" title="The memory measures and tunes itself against its own hit-rate.">
         <span class="mtitle">memory quality</span>
-        <div class="mstat"><span class="mk">Recall@1</span><b id="mRecall">—</b></div>
-        <div class="mstat"><span class="mk">vector lift</span><b id="mLift">—</b></div>
-        <div class="mstat"><span class="mk">calibration gap</span><b id="mCal">—</b></div>
-        <div class="mstat"><span class="mk">grounded</span><b id="mGround">—</b></div>
-        <div class="mstat"><span class="mk">weights bm25·vec</span><b id="mWeights">—</b></div>
+        <div class="mstat" title="How often the correct lesson is ranked #1 (higher = better)"><span class="mk">Recall@1</span><b id="mRecall">—</b></div>
+        <div class="mstat" title="How much the meaning-based search improves the hit-rate vs keyword search alone"><span class="mk">vector lift</span><b id="mLift">—</b></div>
+        <div class="mstat" title="Gap between the shown confidence and the real pass-rate (smaller = more honest)"><span class="mk">calibration gap</span><b id="mCal">—</b></div>
+        <div class="mstat" title="How many real pytest pass/fail results the memory has recorded"><span class="mk">real tests</span><b id="mGround">—</b></div>
+        <div class="mstat" title="Relative weight of keyword search (bm25) vs meaning search (vector)"><span class="mk">search weights</span><b id="mWeights">—</b></div>
         <div class="mspacer"></div>
-        <button id="btnMeasure" title="Qwen writes keyword-free questions, then we measure hit-rate with the semantic leg on vs off">Measure</button>
-        <button id="btnTune" title="Grid-search the fusion weights against Recall@1; adopt only if it beats baseline">Self-tune</button>
+        <button id="btnMeasure" title="Measure how often the memory finds the right lesson — Qwen writes fresh questions to test it">Measure</button>
+        <button id="btnTune" title="Auto-tune the search weights to improve the hit-rate — kept only if it beats the baseline">Self-tune</button>
       </div>
 
       <div class="agent">
