@@ -97,7 +97,7 @@ function buildDeck() {
   const deck = $('#deck'), n = state.lessons.length;
   if (!n) {
     pool.forEach(nd => nd.remove()); pool.clear();
-    deck.innerHTML = '<div class="empty">No lessons yet — teach one with “+ Teach”, or run the agent.</div>';
+    deck.innerHTML = '<div class="empty">No lessons yet — switch to Teach below, or run the agent.</div>';
     renderTrack(0, 0); return;
   }
   const emptyEl = deck.querySelector('.empty'); if (emptyEl) emptyEl.remove();
@@ -237,6 +237,7 @@ function setAgentStatus(s) {
   const show = (id, on) => $(id).hidden = !on;
   show('#btnStart', s === 'idle'); show('#btnPause', s === 'running');
   show('#btnResume', s === 'paused'); show('#btnStop', s === 'running' || s === 'paused');
+  try { paintConsole(); } catch {}   // reflect Teach→Steer while the agent is busy
 }
 function highlightCode(code) {
   return escapeHtml(code).replace(/(tenant_id)/g, '<span class="filter">$1</span>')
@@ -264,13 +265,12 @@ async function agentCmd(action) { try { await api('/agent/' + action, { method: 
 function bubble(who, text) { const intro = $('#intro'); if (intro) intro.remove();
   const d = document.createElement('div'); d.className = 'msg ' + who;
   d.innerHTML = `<div class="who">${who}</div>${escapeHtml(text)}`; $('#thread').appendChild(d); $('#thread').scrollTop = $('#thread').scrollHeight; return d; }
-async function ask() {
-  const inp = $('#ask'), q = inp.value.trim(); if (!q) return;
-  inp.value = ''; $('#send').disabled = true; bubble('user', q);
+async function ask(q) {
+  $('#cSend').disabled = true; bubble('user', q);
   const t = bubble('agent', '…');
   try { const r = await api('/chat', json({ message: q })); t.innerHTML = `<div class="who">agent</div>${escapeHtml(r.reply)}`; showRecalled(r.recalled); }
   catch { t.innerHTML = `<div class="who">agent</div>(error contacting agent)`; }
-  $('#send').disabled = false;
+  $('#cSend').disabled = false;
 }
 function showRecalled(ids) {
   const strip = $('#recall');
@@ -359,17 +359,56 @@ function live() {
   setInterval(() => refresh(false), 2000);
 }
 
-// ---------- input wiring ----------
-$('#cmd').addEventListener('keydown', e => { if (e.key === 'Enter') { runCommand(e.target.value); e.target.value = ''; } });
-document.querySelectorAll('#acts [data-cmd]').forEach(b => b.addEventListener('click', () => {
-  const pre = { note: 'by the way, ', pin: '/pin ', demote: '/demote ', tombstone: '/tombstone ', revise: '/revise ' }[b.dataset.cmd];
-  const i = $('#cmd'); i.value = pre; i.focus();
+// ---------- adaptive console: Ask ⇄ Teach (→ Steer while the agent runs) ----------
+let mode = 'ask';
+const HINTS = {
+  ask: "ask me to write or fix code — I'll use what I've learned",
+  teach: "teach or correct my memory — I'll obey it on the next recall",
+  steer: "nudge me while I work — I interrupt and redo with your note",
+};
+const PLACEH = {
+  ask: 'Ask me to write or fix code…',
+  teach: "e.g. always filter orders by tenant_id — I'll remember it",
+  steer: 'Nudge the running agent…',
+};
+function agentBusy() { return state.agentStatus === 'running' || state.agentStatus === 'paused'; }
+function effMode() { return (mode === 'teach' && agentBusy()) ? 'steer' : mode; }
+function paintConsole() {
+  const em = effMode(), con = $('#console'); if (!con) return;
+  con.classList.toggle('teach', mode === 'teach' && em !== 'steer');
+  con.classList.toggle('steer', em === 'steer');
+  $('#modeHint').textContent = HINTS[em];
+  $('#cInput').placeholder = PLACEH[em];
+  $('#cSig').textContent = em === 'ask' ? '›' : (em === 'steer' ? '⇢' : '»');
+  $('#teachChips').hidden = (mode !== 'teach');
+  document.querySelectorAll('.mode').forEach(b => {
+    const on = b.dataset.mode === mode; b.classList.toggle('on', on); b.setAttribute('aria-selected', on);
+  });
+}
+function setMode(m) { mode = m; paintConsole(); $('#cInput').focus(); }
+async function consoleSend() {
+  const inp = $('#cInput'), raw = inp.value.trim(); if (!raw) return;
+  inp.value = '';
+  if (raw.startsWith('/')) { await runCommand(raw); return; }   // power commands work in either mode
+  if (mode === 'ask') await ask(raw);
+  else await runCommand(raw);                                    // teach → note, or steer if the agent is busy
+}
+$('#cInput').addEventListener('keydown', e => { if (e.key === 'Enter') consoleSend(); });
+$('#cSend').addEventListener('click', consoleSend);
+document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+document.querySelectorAll('#teachChips [data-cmd]').forEach(b => b.addEventListener('click', () => {
+  const pre = { pin: '/pin ', demote: '/demote ', tombstone: '/tombstone ', revise: '/revise ' }[b.dataset.cmd];
+  setMode('teach'); const i = $('#cInput'); i.value = pre; i.focus();
 }));
-$('#ask').addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
-$('#send').addEventListener('click', ask);
+document.querySelectorAll('.try-chip').forEach(b => b.addEventListener('click', () => {
+  const t = b.dataset.try;
+  if (t === 'run') { agentCmd('start'); return; }
+  setMode(t); if (b.dataset.fill) $('#cInput').value = b.dataset.fill; $('#cInput').focus();
+}));
 document.querySelectorAll('[data-agent]').forEach(b => b.addEventListener('click', () => agentCmd(b.dataset.agent)));
 $('#btnMeasure').addEventListener('click', runEvaluate);
 $('#btnTune').addEventListener('click', runTune);
+paintConsole();
 
 // deck: wheel / drag / tap-to-flip
 const dw = document.querySelector('.deck-wrap');

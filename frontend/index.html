@@ -5,19 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Regress-Guard — memory that forgets what's wrong</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body>
   <div class="app">
-    <!-- LEFT RAIL -->
-    <div class="rail">
-      <!-- deck -->
-      <section class="zone">
-        <div class="zone-head">
-          <div class="brand"><span class="dot"></span><b>Regress-Guard</b></div>
-          <span class="zone-sub">confidence = real test outcomes</span>
+    <!-- LEFT = THE MEMORY -->
+    <aside class="rail">
+      <header class="brand">
+        <span class="dot"></span>
+        <div class="brand-txt">
+          <b>Regress-Guard</b>
+          <span class="brand-sub">a memory that forgets what's wrong</span>
         </div>
-        <div class="deck-wrap" tabindex="0" role="group" aria-label="memory card deck — scroll or arrow keys to browse, space to flip"><div class="glow" id="glow"></div><div class="deck" id="deck"></div></div>
+      </header>
+
+      <section class="mem">
+        <div class="rail-label">the memory <span>· scroll · space flips a card</span></div>
+        <div class="deck-wrap" tabindex="0" role="group" aria-label="memory card deck — scroll or arrow keys to browse, space to flip">
+          <div class="glow" id="glow"></div>
+          <div class="deck" id="deck"></div>
+        </div>
         <div class="legend">
           <span><i class="lg-dot"></i>source</span>
           <span><i class="lg-spine"></i>severity</span>
@@ -26,91 +33,91 @@
         <div class="track" id="track"></div>
       </section>
 
-      <!-- By the way console -->
-      <section class="zone console-zone">
-        <div class="zone-head">
-          <span class="oob-title">By the way…</span>
-          <span class="zone-sub">teach or correct the memory — live, while the agent runs</span>
+      <section class="quality" id="metrics" title="The memory measures and tunes itself against its own hit-rate.">
+        <div class="rail-label">memory quality <span>· it grades its own recall</span></div>
+        <div class="qgrid">
+          <div class="mstat" title="How often the correct lesson is ranked #1 (higher = better)"><span class="mk">recall@1</span><b id="mRecall">—</b></div>
+          <div class="mstat" title="How much meaning-based search beats keyword search alone"><span class="mk">vector lift</span><b id="mLift">—</b></div>
+          <div class="mstat" title="Gap between shown confidence and the real pass-rate (smaller = more honest)"><span class="mk">calibration</span><b id="mCal">—</b></div>
+          <div class="mstat" title="How many real pytest pass/fail results the memory has recorded"><span class="mk">real tests</span><b id="mGround">—</b></div>
+          <div class="mstat" title="Weight of keyword (bm25) vs meaning (vector) search"><span class="mk">weights</span><b id="mWeights">—</b></div>
         </div>
-        <div class="console">
-          <div class="acts" id="acts">
-            <button data-cmd="note">+ Teach</button>
-            <button data-cmd="pin">📌 Pin</button>
-            <button data-cmd="demote">▼ Demote</button>
-            <button data-cmd="tombstone">⌫ Tombstone</button>
-            <button data-cmd="revise">↻ Revise</button>
-          </div>
-          <div class="log" id="log"></div>
-          <div class="console-input">
-            <span class="sig">»</span>
-            <input id="cmd" autocomplete="off" spellcheck="false"
-              placeholder="by the way, never call all_orders() — filter by tenant_id">
-          </div>
+        <div class="qbtns">
+          <button id="btnMeasure" title="Measure how often the memory finds the right lesson — Qwen writes fresh questions to test it">Measure</button>
+          <button id="btnTune" title="Auto-tune the search weights — kept only if it beats the baseline">Self-tune</button>
         </div>
       </section>
-    </div>
+    </aside>
 
-    <!-- MAIN -->
-    <main class="main">
-      <div class="main-head">
-        <h1>Watch it live</h1>
+    <!-- RIGHT = TALK TO IT & WATCH IT -->
+    <main class="stage">
+      <header class="stage-head">
+        <div class="eyebrow">watch it live</div>
         <div class="ab" id="ab"></div>
-      </div>
+      </header>
 
-      <div class="metrics" id="metrics" title="The memory measures and tunes itself against its own hit-rate.">
-        <span class="mtitle">memory quality</span>
-        <div class="mstat" title="How often the correct lesson is ranked #1 (higher = better)"><span class="mk">Recall@1</span><b id="mRecall">—</b></div>
-        <div class="mstat" title="How much the meaning-based search improves the hit-rate vs keyword search alone"><span class="mk">vector lift</span><b id="mLift">—</b></div>
-        <div class="mstat" title="Gap between the shown confidence and the real pass-rate (smaller = more honest)"><span class="mk">calibration gap</span><b id="mCal">—</b></div>
-        <div class="mstat" title="How many real pytest pass/fail results the memory has recorded"><span class="mk">real tests</span><b id="mGround">—</b></div>
-        <div class="mstat" title="Relative weight of keyword search (bm25) vs meaning search (vector)"><span class="mk">search weights</span><b id="mWeights">—</b></div>
-        <div class="mspacer"></div>
-        <button id="btnMeasure" title="Measure how often the memory finds the right lesson — Qwen writes fresh questions to test it">Measure</button>
-        <button id="btnTune" title="Auto-tune the search weights to improve the hit-rate — kept only if it beats the baseline">Self-tune</button>
-      </div>
-
-      <div class="agent">
+      <!-- the agent working on a task -->
+      <section class="agent">
         <div class="agent-bar">
           <span class="status" id="agentStatus">idle</span>
           <button data-agent="start" class="go" id="btnStart">▶ Run agent</button>
           <button data-agent="pause" id="btnPause" hidden>⏸ Pause</button>
           <button data-agent="resume" id="btnResume" hidden>⏵ Resume</button>
           <button data-agent="stop" id="btnStop" hidden>⏹ Stop</button>
-          <span class="agent-task">task: implement get_orders(db, user)</span>
+          <span class="agent-task">task · get_orders(db, user)</span>
         </div>
         <div class="agent-panel" id="agentPanel">
           <div class="agent-empty">
             <div class="ar-head"><span class="ar-dot"></span>agent ready</div>
             <pre class="ar-code">def get_orders(db, user):<span class="ar-caret">▍</span></pre>
-            <div class="ar-hint">Hit <b>▶ Run agent</b> — the first try goes <em class="red">red</em>. Teach it on the left, and the next try turns <em class="green">green</em>.</div>
+            <div class="ar-hint">Hit <b>▶ Run agent</b> — the first try goes <em class="red">red</em>. Teach it below and the next try turns <em class="green">green</em>.</div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="recall-strip" id="recall"><span style="color:var(--ink-faint)">recalled lessons light up here and in the deck</span></div>
-      <div class="thread" id="thread">
+      <div class="recall-strip" id="recall"><span class="recall-idle">recalled lessons light up here and in the deck</span></div>
+
+      <!-- the conversation -->
+      <section class="thread" id="thread">
         <div class="intro" id="intro">
-          <div class="flow">
-            <div class="fstep"><span class="fn">1</span><b>Learn</b><p>a red test + your fix — Qwen distills a lesson</p></div>
-            <span class="farr">→</span>
-            <div class="fstep"><span class="fn">2</span><b>Recall</b><p>the lesson is injected before the agent writes code</p></div>
-            <span class="farr">→</span>
-            <div class="fstep"><span class="fn">3</span><b>Obey</b><p>the bug doesn't come back</p></div>
-            <span class="farr">→</span>
-            <div class="fstep"><span class="fn">4</span><b>Grade</b><p>confidence moves on the real test outcome</p></div>
+          <p class="intro-hi">Hi — I'm a coding agent with a <b>memory earned from real tests</b>.</p>
+          <p class="intro-say">Ask me to write code and I'll use what I've learned. Teach me a rule and watch me obey it — even mid-task. My confidence isn't an opinion; it moves on real <em class="green">pass</em>/<em class="red">fail</em>.</p>
+          <div class="intro-try">
+            <span>try</span>
+            <button class="try-chip" data-try="ask" data-fill="Write get_orders(db, user) that returns this user's orders.">“write get_orders”</button>
+            <button class="try-chip" data-try="teach" data-fill="always filter orders by the user's tenant_id, never return another tenant's rows">“teach me a rule”</button>
+            <button class="try-chip" data-try="run">▶ run the agent</button>
           </div>
           <div class="proof">
-            <span class="plabel">The proof — same task, temp 0, hidden test</span>
+            <span class="plabel">the proof — same task · temp 0 · hidden test</span>
             <span class="pstat"><em class="red">0/5</em> without memory<span class="parrow">→</span><em class="green">5/5</em> with memory</span>
           </div>
         </div>
-      </div>
-      <div class="prompt">
-        <input id="ask" placeholder="or ask the agent a question directly…" autocomplete="off">
-        <button id="send">send</button>
-      </div>
+      </section>
+
+      <!-- ONE adaptive console: Ask ⇄ Teach (→ Steer while the agent runs) -->
+      <section class="console" id="console">
+        <div class="modes" role="tablist" aria-label="what do you want to do">
+          <button class="mode on" data-mode="ask" role="tab" aria-selected="true">Ask</button>
+          <button class="mode" data-mode="teach" role="tab" aria-selected="false">Teach</button>
+          <span class="mode-hint" id="modeHint">ask me to write or fix code — I'll use what I've learned</span>
+        </div>
+        <div class="teach-chips" id="teachChips" hidden>
+          <button data-cmd="pin" title="make a lesson authoritative">📌 Pin</button>
+          <button data-cmd="demote" title="lower a lesson's confidence">▼ Demote</button>
+          <button data-cmd="tombstone" title="bury an obsolete lesson">⌫ Tombstone</button>
+          <button data-cmd="revise" title="let Qwen judge lessons against a change">↻ Revise</button>
+        </div>
+        <div class="console-row">
+          <span class="sig" id="cSig">›</span>
+          <input id="cInput" autocomplete="off" spellcheck="false"
+            placeholder="Ask me to write or fix code…">
+          <button id="cSend">Send</button>
+        </div>
+        <div class="log" id="log"></div>
+      </section>
     </main>
   </div>
-  <script src="app.js?v=7" type="module"></script>
+  <script src="app.js?v=8" type="module"></script>
 </body>
 </html>
