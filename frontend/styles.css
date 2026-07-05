@@ -193,7 +193,10 @@ button { font-family: inherit; cursor: pointer; }
   text-transform: uppercase; color: var(--ink-faint); }
 .metrics .mstat { display: flex; flex-direction: column; line-height: 1.2; }
 .metrics .mk { font-size: 9.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .05em; }
-.metrics .mstat b { font-family: var(--mono); font-size: 14px; color: var(--ink); font-weight: 600; }
+.metrics .mstat b { font-family: var(--mono); font-size: 14px; color: var(--ink); font-weight: 600;
+  display: inline-block; transform-origin: left center; }
+.metric-pulse { animation: mpulse .55s ease; }
+@keyframes mpulse { 0% { transform: scale(1); } 42% { transform: scale(1.18); text-shadow: 0 0 12px currentColor; } 100% { transform: scale(1); text-shadow: none; } }
 .metrics .mspacer { flex: 1; }
 .metrics button { background: var(--panel-2); color: var(--ink-dim); border: 1px solid var(--line);
   border-radius: 8px; padding: 6px 12px; font-size: 12.5px; transition: color .15s, border-color .15s; }
@@ -216,6 +219,18 @@ button { font-family: inherit; cursor: pointer; }
 .agent-bar .agent-task { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--ink-faint); }
 .agent-panel { padding: 13px 15px; min-height: 104px; }
 .agent-empty { color: var(--ink-faint); font-size: 13.5px; line-height: 1.6; }
+/* idle = a primed agent console (blinking caret, live-ready pulse) — not a dead box */
+.ar-head { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px;
+  text-transform: uppercase; letter-spacing: .13em; color: var(--ink-dim); margin-bottom: 10px; }
+.ar-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+  box-shadow: 0 0 8px var(--green); animation: arpulse 2.4s ease-in-out infinite; }
+@keyframes arpulse { 0%,100% { opacity: .45; box-shadow: 0 0 5px var(--green); } 50% { opacity: 1; box-shadow: 0 0 13px var(--green); } }
+.ar-code { margin: 0 0 12px; font-family: var(--mono); font-size: 13.5px; color: #93a7c1;
+  background: #0a0e16; border: 1px solid var(--line); border-left: 2px solid #33405a; border-radius: 8px; padding: 11px 13px; }
+.ar-caret { color: var(--green); font-weight: 700; margin-left: 1px; animation: caret 1.05s steps(1) infinite; }
+@keyframes caret { 0%,50% { opacity: 1; } 50.01%,100% { opacity: 0; } }
+.ar-hint { font-size: 13px; color: var(--ink-faint); line-height: 1.55; }
+.ar-hint b { color: var(--green); } .ar-hint em { font-style: normal; font-weight: 600; }
 .attempt { display: flex; gap: 13px; align-items: flex-start; }
 .attempt .badge { font-family: var(--mono); font-size: 14px; font-weight: 700; padding: 5px 12px; border-radius: 8px; white-space: nowrap; }
 .badge.green { background: #0d1b12; color: var(--green); border: 1px solid #1e4d31; }

@@ -300,6 +300,18 @@ function logConflicts(l) {
     logLine(`⚑ contradiction: #${x.existing_id} ${verb} — ${x.reason}`, 'warn');
   });
 }
+// count-up a metric value with easing + a brief pulse (high-end reveal on Measure)
+function animateNumber(el, to, { decimals = 2, dur = 750, signed = false } = {}) {
+  const from = 0, start = performance.now(), ease = t => 1 - Math.pow(1 - t, 3);
+  el.classList.add('metric-pulse');
+  (function step(now) {
+    const t = Math.min(1, (now - start) / dur), v = from + (to - from) * ease(t);
+    el.textContent = (signed && v > 0 ? '+' : '') + v.toFixed(decimals);
+    if (t < 1) requestAnimationFrame(step);
+    else { el.textContent = (signed && to >= 0 ? '+' : '') + to.toFixed(decimals);
+           setTimeout(() => el.classList.remove('metric-pulse'), 420); }
+  })(start);
+}
 async function loadMetrics() {
   try {
     const m = await api('/metrics');
@@ -315,9 +327,10 @@ async function runEvaluate() {
     if (!r.n) { logLine('need ≥2 lessons to measure recall', 'warn'); }
     else {
       const on = r.vector_on.recall_at_1, off = r.vector_off.recall_at_1;
-      $('#mRecall').textContent = on.toFixed(2);
-      const lift = on - off; $('#mLift').textContent = (lift >= 0 ? '+' : '') + lift.toFixed(2);
+      const lift = on - off;
       $('#mLift').className = lift > 0 ? 'lift-pos' : (lift < 0 ? 'lift-neg' : '');
+      animateNumber($('#mRecall'), on, { decimals: 2 });
+      animateNumber($('#mLift'), lift, { decimals: 2, signed: true });
       logLine(`measured on ${r.n} keyword-free queries · Recall@1 ${on.toFixed(2)} (semantic on) vs ${off.toFixed(2)} (off)`, 'ok');
     }
   } catch (e) { logLine('✗ measure failed: ' + (e.message || ''), 'err'); }

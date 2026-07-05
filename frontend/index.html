@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Regress-Guard — memory that forgets what's wrong</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=7">
 </head>
 <body>
   <div class="app">
@@ -79,8 +79,11 @@
           <span class="agent-task">task: implement get_orders(db, user)</span>
         </div>
         <div class="agent-panel" id="agentPanel">
-          <div class="agent-empty">▶ Run the agent. While it loops, drop a note on the left —
-            watch the next attempt obey it (red → green).</div>
+          <div class="agent-empty">
+            <div class="ar-head"><span class="ar-dot"></span>agent ready</div>
+            <pre class="ar-code">def get_orders(db, user):<span class="ar-caret">▍</span></pre>
+            <div class="ar-hint">Hit <b>▶ Run agent</b> — the first try goes <em class="red">red</em>. Teach it on the left, and the next try turns <em class="green">green</em>.</div>
+          </div>
         </div>
       </div>
 
@@ -108,6 +111,6 @@
       </div>
     </main>
   </div>
-  <script src="app.js?v=6" type="module"></script>
+  <script src="app.js?v=7" type="module"></script>
 </body>
 </html>
