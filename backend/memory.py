@@ -109,9 +109,12 @@ def recall(context: str, *, k: int = 5, threshold: float = 0.0,
     fused = retrieval.fuse(context, docs, query_embedding=q_emb, weights=load_weights(), k=max(k * 2, k))
     by_id = {l["id"]: l for l in snapshot}
 
-    # strip the heavy embedding from returned lessons
+    # strip the heavy embedding from returned lessons; attach how many injection
+    # directives the sanitizer neutralizes in this lesson (added field — contract-safe)
     def clean(l: dict) -> dict:
-        return {kk: vv for kk, vv in l.items() if kk != "embedding"}
+        d = {kk: vv for kk, vv in l.items() if kk != "embedding"}
+        d["sanitized"] = directive_count(l.get("lesson", ""))
+        return d
 
     ordered: list[dict] = []
     seen: set[int] = set()
@@ -154,6 +157,16 @@ _INJECTION_PATTERNS = [
     re.compile(r"(?im)^\s*(system|assistant|user)\s*:"),  # fake role prefixes
 ]
 _REDACT = "[filtered-directive]"
+
+
+def directive_count(text: str) -> int:
+    """How many prompt-injection directives the sanitizer would redact from this text.
+    A deterministic lower bound ('at least N neutralized') — powers the UI security shield
+    without changing the recall/render contract."""
+    if not text:
+        return 0
+    s = str(text)
+    return sum(len(pat.findall(s)) for pat in _INJECTION_PATTERNS)
 
 
 def _neutralize_injection(text: str) -> str:

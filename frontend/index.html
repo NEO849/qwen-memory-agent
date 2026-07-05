@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Regress-Guard — memory that forgets what's wrong</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body>
   <div class="app">
@@ -82,13 +82,21 @@
     <main class="chat">
       <header class="chat-head">
         <div class="eyebrow">the coding agent <span>· memory earned from real tests</span></div>
-        <div class="ab" id="ab"></div>
+        <div class="head-right"><a class="graph-link" href="/graph.html" target="_blank" title="see the memory as a 3D knowledge graph">🌐 knowledge graph</a></div>
       </header>
 
       <section class="thread" id="thread">
         <div class="intro" id="intro">
           <p class="intro-hi">Ask me to write or fix code.</p>
-          <p class="intro-say">I use what I've learned, and my confidence moves on real <em class="green">pass</em>/<em class="red">fail</em>, not opinion. Teach me on the left, or hit <b>▶ Run agent</b> to watch a red test turn <em class="green">green</em> — same task, no randomness, one hidden test.</p>
+          <p class="intro-say">I use what I've learned, and my confidence moves on real <em class="green">pass</em>/<em class="red">fail</em>, not opinion. Teach me on the left, or hit <b>▶ Run agent</b> to watch a red test turn <em class="green">green</em>.</p>
+          <div class="proof" id="proof">
+            <span class="plabel">the proof · same task · no randomness · one hidden test</span>
+            <span class="pstat">
+              <span class="pgroup"><em class="red" id="abA">0/5</em><span class="pg-l">without memory</span></span>
+              <span class="parrow">→</span>
+              <span class="pgroup"><em class="green" id="abB">5/5</em><span class="pg-l">with memory</span></span>
+            </span>
+          </div>
         </div>
       </section>
 
@@ -100,6 +108,6 @@
       </div>
     </main>
   </div>
-  <script src="app.js?v=10" type="module"></script>
+  <script src="app.js?v=11" type="module"></script>
 </body>
 </html>

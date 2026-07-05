@@ -115,6 +115,9 @@ def get_ledger(status: str = "all", since: int | None = None) -> Response:
     for l in lessons:
         c = counts.get(l["id"], {})
         l["real_pass"], l["real_fail"] = c.get("pass", 0), c.get("fail", 0)
+        # security shield: how many embedded injection directives this lesson carries that
+        # the sanitizer neutralizes before it can ever reach the model (0 for clean lessons)
+        l["sanitized"] = memory.directive_count(l["lesson"])
     return Response(content=json.dumps({"etag": etag, "lessons": lessons}),
                     media_type="application/json")
 
@@ -254,8 +257,9 @@ def chat(body: ChatIn) -> dict:
     system = persona + ("\n\n" + injection if injection else "")
     messages = [{"role": "system", "content": system}, {"role": "user", "content": body.message}]
     reply = qwen_client.chat(messages, temperature=0.3)
+    sanitized_total = sum(memory.directive_count(l["lesson"]) for l in rec["lessons"])
     return {"reply": reply, "recalled": [l["id"] for l in rec["lessons"]],
-            "injected": bool(injection)}
+            "injected": bool(injection), "sanitized_total": sanitized_total}
 
 
 # --------------------------------------------------------------- agent loop ---

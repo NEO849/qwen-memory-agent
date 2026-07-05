@@ -28,7 +28,8 @@ from . import config
 
 SEVERITIES = ("low", "med", "high")
 SOURCES = ("agent-distill", "human", "human-distill", "import")
-SCHEMA_VERSION = 1
+KINDS = ("guard", "anti_pattern")   # guard = "do this"; anti_pattern = "never do this again" (dead-end memory)
+SCHEMA_VERSION = 2
 
 
 def _now() -> str:
@@ -93,10 +94,47 @@ CREATE TABLE IF NOT EXISTS outcomes (
 """
 
 
+def _columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    return {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Idempotent, in-place upgrade of an existing ledger (init_db is CREATE-IF-NOT-EXISTS
+    only, so new columns/tables would never reach a DB that predates them). Each ALTER is
+    guarded by introspection → re-running is a no-op; ADD COLUMN with a DEFAULT is atomic,
+    non-locking and preserves every existing row's data."""
+    cols = _columns(conn, "lessons")
+    if "kind" not in cols:
+        conn.execute("ALTER TABLE lessons ADD COLUMN kind TEXT NOT NULL DEFAULT 'guard'")
+    if "recall_count" not in cols:
+        conn.execute("ALTER TABLE lessons ADD COLUMN recall_count INTEGER NOT NULL DEFAULT 0")
+    if "last_recalled_at" not in cols:
+        conn.execute("ALTER TABLE lessons ADD COLUMN last_recalled_at TEXT")
+    if "merge_count" not in cols:   # dedup salience — NOT confidence (confidence stays test-grounded)
+        conn.execute("ALTER TABLE lessons ADD COLUMN merge_count INTEGER NOT NULL DEFAULT 0")
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS links (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            from_id    INTEGER NOT NULL REFERENCES lessons(id),
+            to_id      INTEGER NOT NULL REFERENCES lessons(id),
+            type       TEXT NOT NULL DEFAULT 'related',   -- related | supersedes | synthesizes
+            weight     REAL NOT NULL DEFAULT 1.0,
+            created_at TEXT NOT NULL
+        )""")
+    conn.execute("CREATE INDEX IF NOT EXISTS ix_links_from ON links(from_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS ix_links_to   ON links(to_id)")
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS link_rejections (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            from_id    INTEGER, to_id INTEGER, similarity REAL, reason TEXT, ts TEXT
+        )""")
+
+
 def init_db(path: str | None = None) -> None:
-    """Create the schema if absent and stamp the schema version."""
+    """Create the schema if absent, run idempotent migrations, and stamp the schema version."""
     with _connect(path) as conn:
         conn.executescript(DDL)
+        _migrate(conn)
         conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
         conn.commit()
 
@@ -119,13 +157,16 @@ def _row_to_dict(row: sqlite3.Row, *, with_embedding: bool = False) -> dict:
 def add_lesson(trigger: str, lesson: str, *, scope: str = "", severity: str = "med",
                embedding: list[float] | None = None, source: str = "agent-distill",
                author: str | None = None, note_raw: str | None = None,
-               pinned: bool = False, path: str | None = None) -> int:
+               pinned: bool = False, kind: str = "guard", path: str | None = None) -> int:
     """Insert a lesson. Human-authored lessons get a stronger alpha prior (start more
-    trusted) but still drift on real outcomes."""
+    trusted) but still drift on real outcomes. kind='anti_pattern' marks a dead-end memory
+    (a known past regression) that is rendered as an active inhibition, not guidance."""
     if source not in SOURCES:
         source = "import"
     if severity not in SEVERITIES:
         severity = "med"
+    if kind not in KINDS:
+        kind = "guard"
     alpha, beta = (3.0, 1.0) if source.startswith("human") else (1.0, 1.0)
     now = _now()
     with _connect(path) as conn:
@@ -133,10 +174,10 @@ def add_lesson(trigger: str, lesson: str, *, scope: str = "", severity: str = "m
         cur = conn.execute(
             """INSERT INTO lessons
                (trigger, lesson, scope, severity, embedding, alpha, beta, status,
-                source, pinned, author, note_raw, rev, created_at, updated_at)
-               VALUES (?,?,?,?,?,?,?, 'active', ?,?,?,?, 1, ?,?)""",
+                source, pinned, author, note_raw, kind, rev, created_at, updated_at)
+               VALUES (?,?,?,?,?,?,?, 'active', ?,?,?,?,?, 1, ?,?)""",
             (trigger, lesson, scope, severity, _pack(embedding), alpha, beta,
-             source, int(pinned), author, note_raw, now, now),
+             source, int(pinned), author, note_raw, kind, now, now),
         )
         conn.commit()
         return int(cur.lastrowid)

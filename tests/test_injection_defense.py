@@ -52,3 +52,32 @@ def test_render_injection_wraps_and_sanitizes():
 
 def test_render_injection_empty():
     assert memory.render_injection([]) == ""
+
+
+# --- security shield: directive_count powers the UI "🛡 sanitized N directives" indicator ---
+
+def test_directive_count_positive_for_poison():
+    assert memory.directive_count(POISON) > 0
+
+
+def test_directive_count_zero_for_benign():
+    assert memory.directive_count(
+        "Always validate and sanitize user input; cap page size at 100.") == 0
+
+
+def test_directive_count_empty():
+    assert memory.directive_count("") == 0 and memory.directive_count(None) == 0
+
+
+def test_recall_attaches_sanitized_field(tmp_path, monkeypatch):
+    """recall() must attach a positive `sanitized` count for a poisoned lesson (added field,
+    contract-safe). Offline: stub the embedder so no Qwen call is made."""
+    from backend import ledger
+    monkeypatch.setattr(memory, "_embed_one", lambda _t: None)
+    db = str(tmp_path / "shield.sqlite")
+    ledger.init_db(db)
+    ledger.add_lesson("pagination", POISON, scope="python", source="human", path=db)
+    rec = memory.recall("pagination page size limit", k=5, path=db)
+    assert rec["lessons"], "poisoned lesson was not recalled"
+    assert all("sanitized" in l for l in rec["lessons"])
+    assert any(l["sanitized"] > 0 for l in rec["lessons"])

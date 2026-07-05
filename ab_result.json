@@ -3,14 +3,14 @@
   "model": "qwen-plus",
   "temperature": 0,
   "k": 5,
-  "lesson": "When filtering tenant-scoped resources, compare against user['tenant_id'], not user['id']; verify the field name matches the resource's 'tenant_id' key explicitly.",
+  "lesson": "When filtering resources for tenant isolation, compare against user['tenant_id'] \u2014 never user['id'] \u2014 to ensure cross-tenant data leaks are prevented.",
   "arm_a_no_memory": {
     "arm": "A",
     "k": 5,
     "green": 0,
     "red": 5,
     "pass_rate": 0.0,
-    "sample_code": "def get_orders(db, user):\n    return [order for order in db.all_orders() if order.get(\"user_id\") == user[\"id\"]]"
+    "sample_code": "def get_orders(db, user):\n    return [order for order in db.all_orders() if order.get('user_id') == user['id']]"
   },
   "arm_b_with_memory": {
     "arm": "B",

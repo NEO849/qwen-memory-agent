@@ -53,6 +53,7 @@ function faceHTML(l) {
       <div class="kicker">
         <span class="src" style="background:${src};box-shadow:0 0 8px ${src}77, 0 0 0 3px rgba(255,255,255,.05)" title="source: ${l.source}"></span>
         <span class="when">WHEN ${escapeHtml((l.trigger || 'general').replace(/^when\s+/i, ''))}</span>
+        ${l.sanitized > 0 ? `<span class="shield" title="${l.sanitized} embedded injection directive${l.sanitized === 1 ? '' : 's'} neutralized before this lesson can reach the model">🛡 ${l.sanitized}</span>` : ''}
       </div>
       <div class="lesson">${escapeHtml(l.lesson)}</div>
       <div class="foot">
@@ -280,17 +281,23 @@ function bubble(who, text) { const intro = $('#intro'); if (intro) intro.remove(
 async function ask(q) {
   $('#askSend').disabled = true; bubble('user', q);
   const t = bubble('agent', '…');
-  try { const r = await api('/chat', json({ message: q })); t.innerHTML = `<div class="who">agent</div>${escapeHtml(r.reply)}`; showRecalled(r.recalled); }
+  try { const r = await api('/chat', json({ message: q })); t.innerHTML = `<div class="who">agent</div>${escapeHtml(r.reply)}`; showRecalled(r.recalled, r.sanitized_total); }
   catch { t.innerHTML = `<div class="who">agent</div>(error contacting agent)`; }
   $('#askSend').disabled = false;
 }
-function showRecalled(ids) {
+function showRecalled(ids, sanitizedTotal = 0) {
   const strip = $('#recall');
   if (!ids || !ids.length) { strip.hidden = true; strip.innerHTML = ''; return; }
   strip.hidden = false;
   strip.innerHTML = `<span>answered using ${ids.length} lesson${ids.length === 1 ? '' : 's'}:</span>`;
   ids.forEach(id => { const l = state.byId.get(id); if (!l) return;
     const s = document.createElement('span'); s.className = 'lz'; s.textContent = `#${id}`; s.title = l.lesson; s.onclick = () => jumpTo(id); strip.appendChild(s); });
+  if (sanitizedTotal > 0) {
+    const s = document.createElement('span'); s.className = 'shield-note';
+    s.textContent = `🛡 ${sanitizedTotal} directive${sanitizedTotal === 1 ? '' : 's'} neutralized`;
+    s.title = 'Embedded injection directives in the recalled lessons were stripped before reaching the model.';
+    strip.appendChild(s);
+  }
   ids.forEach(id => flashCard(id, 'highlight'));
 }
 function jumpTo(id) { const i = state.lessons.findIndex(l => l.id === id); const n = state.lessons.length;
@@ -300,7 +307,9 @@ function flashCard(id, cls) { const el = pool.get(id); if (el) { el.classList.ad
 async function loadAB() {
   try { const ab = await api('/ab'); if (ab.available === false) return;
     const a = ab.arm_a_no_memory, b = ab.arm_b_with_memory;
-    $('#ab').innerHTML = `<span class="ab-label">proof</span><span class="pill a">A · no memory ${a.green}/${a.k}</span><span class="pill b">B · with memory ${b.green}/${b.k}</span>`;
+    const A = $('#abA'), B = $('#abB');
+    if (A) A.textContent = `${a.green}/${a.k}`;
+    if (B) B.textContent = `${b.green}/${b.k}`;
   } catch {}
 }
 
