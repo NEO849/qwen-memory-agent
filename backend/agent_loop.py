@@ -97,8 +97,10 @@ class AgentSession:
                 events.bump(lesson_id=lesson["id"], action="note")
                 self._emit(phase="note", lesson_id=lesson["id"], text=text)
 
-            # 2) recall the lessons to inject for this task
-            rec = await asyncio.to_thread(memory.recall, goal, path=config.LEDGER_PATH)
+            # 2) recall the lessons to inject for this task.
+            # k=2: inject only the top-2 lessons. More than that dilutes a temp=0 code task —
+            # the precise taught lesson must dominate for the red→green beat to be deterministic.
+            rec = await asyncio.to_thread(memory.recall, goal, k=2, path=config.LEDGER_PATH)
             inject = memory.render_injection(rec["lessons"])
             recalled = [l["id"] for l in rec["lessons"]]
             self._emit(phase="recall", recalled=recalled, inject=inject)
