@@ -193,7 +193,15 @@ def main() -> int:
         "model": config.QWEN_MODEL,
         "temperature": 0,
         "k": args.k,
-        "lesson": learned["lesson"],
+        "distilled_lesson": learned["lesson"],
+        # FULL DISCLOSURE: which lesson actually drove arm B. If Qwen's distillation was too terse
+        # to be actionable, the guard injects the canonical form of the SAME human-fix convention —
+        # so 'distilled_lesson' above may NOT be what arm B saw. injected_lesson is the truth.
+        "used_fallback": used_fallback,
+        "injected_lesson": (CANONICAL_LESSON if used_fallback else learned["lesson"]),
+        "note": ("temp=0 code-gen is non-deterministic run-to-run; this is a representative "
+                 "captured run — re-run `python -m harness.ab_runner --k 5` to reproduce."),
+        "lesson": learned["lesson"],   # kept for backward-compat with existing readers
         "arm_a_no_memory": arm_a,
         "arm_b_with_memory": arm_b,
         "delta_pass_rate": round(arm_b["pass_rate"] - arm_a["pass_rate"], 3),

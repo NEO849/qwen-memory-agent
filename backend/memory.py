@@ -194,12 +194,14 @@ _REDACT = "[filtered-directive]"
 
 
 def directive_count(text: str) -> int:
-    """How many prompt-injection directives the sanitizer would redact from this text.
-    A deterministic lower bound ('at least N neutralized') — powers the UI security shield
-    without changing the recall/render contract."""
+    """How many prompt-injection directives the sanitizer redacts from this lesson.
+
+    Counted on the SAME normalized text render_injection actually sanitizes (newlines collapsed,
+    truncated to 500) — so the shield number is an exact count of what gets neutralized, never an
+    over-count of matches on raw multi-line text that wouldn't survive normalization anyway."""
     if not text:
         return 0
-    s = str(text)
+    s = str(text).replace("\n", " ").replace("\r", " ")[:500]
     return sum(len(pat.findall(s)) for pat in _INJECTION_PATTERNS)
 
 
