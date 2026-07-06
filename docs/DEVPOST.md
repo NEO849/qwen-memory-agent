@@ -26,7 +26,11 @@ $$ \text{confidence} = \mathbb{E}\big[\text{Beta}(\alpha,\beta)\big] = \frac{\al
 
 When a refactor makes a lesson obsolete, **Qwen judges it and tombstones it** — the memory forgets what's wrong instead of injecting stale advice forever.
 
-You can watch and steer it live: a flashcard deck shows every lesson (with a Beta-curve confidence sparkline), and an out-of-band "by the way" console lets you drop a note *while the agent runs* — it interrupts, re-recalls, and obeys the note on its next attempt.
+You can watch and steer it live from one clean surface: **Chat** with the agent, edit the memory beside it (a flashcard deck with a Beta-curve confidence meter — pin, demote or forget any lesson), and toggle into a **3D knowledge globe** or the **🏆 Proof** view in the same frame. Teach a rule while the agent runs and it re-recalls and obeys it on the next attempt.
+
+The memory also carries **anti-patterns** — dead-end rules a past regression proved wrong — which are injected as active **⛔ DO NOT** inhibitions rather than guidance, so the agent is steered *away* from a known bad path, not just toward a good one. And it can **crystallize** a cluster of related lessons into one higher-level meta-lesson (ExpeL-style synthesis) that then earns its own confidence from real tests like any other.
+
+**The 3D knowledge globe** makes the whole memory legible: every lesson is a node (size = evidence α+β, colour = confidence, grey = forgotten, dark-red = anti-pattern), wired by *related* / *supersedes* (belief revision) / *synthesizes* (crystallization) edges. Click any node and its strands light up by type — you see at a glance what a memory connects to, what replaced it, and what it was distilled into.
 
 **The memory also measures, tunes and corrects itself:**
 - **Self-evaluation.** Qwen writes *keyword-free* paraphrase questions (so lexical BM25 can't win on word overlap) and we measure **Recall@1 / MRR** with the semantic leg on vs off — the memory grades its own retrieval quality on evidence, not vibes.
@@ -47,8 +51,10 @@ An A/B harness runs the same task, same model (`qwen-plus`, temperature 0) again
 - **Qwen Cloud** in four roles: DISTILL (`qwen-plus`, JSON), RECALL (`text-embedding-v4`), REVISE (`qwen-plus`), and SELF-CHECK (`qwen-plus` — paraphrase-based self-evaluation + contradiction judging).
 - **Self-measurement layer** (`evaluation.py`): keyword-free Recall@1/MRR, RRF weight self-tuning (persisted only if it beats baseline), and a calibration snapshot from *real* recorded outcomes.
 - **FastAPI + SQLite (WAL)** backend with atomic in-SQL Beta updates and Server-Sent Events for the live UI.
-- **Vanilla JS/CSS** frontend (no build): flashcard deck + Beta sparkline + live console.
-- **MCP tool** (`recall` / `record`) so any agent can use the memory.
+- **Vanilla JS/CSS** frontend (no build): one clinical surface — Chat, an editable memory deck with a Beta confidence meter, a **3D force-directed knowledge globe** (self-contained, CDN-free) with click-to-highlight strands, and the 🏆 Proof view.
+- **A-MEM auto-linking + ExpeL crystallization** (`graph.py`, `synthesis.py`): lessons wire themselves into a graph (related / supersedes / synthesizes) and clusters can be distilled into meta-lessons that earn their own confidence.
+- **Anti-pattern inhibitions**: dead-end lessons render as **⛔ DO NOT** directives so the agent avoids a known regression, not just repeats a known fix.
+- **MCP tool** (`recall` / `record`) so any agent — Claude Code, Qwen, any coding agent — can use the memory as a drop-in.
 - **Memory-injection defense** (`memory.py`): recalled lessons enter the prompt as *untrusted data* behind structural markers and a **deterministic sanitizer** that strips embedded instruction/role directives — so a poisoned lesson can't become a command (second-order prompt injection). Validated by our own red-team.
 - Deployed on **Alibaba Cloud ECS** (Singapore).
 
