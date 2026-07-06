@@ -130,7 +130,9 @@
         })
         .onNodeClick(n => {
           selectNode(n);                       // colour the strands leaving this node
-          const d = 90, r = 1 + d / Math.hypot(n.x, n.y, n.z);
+          // back the camera off proportionally to the node's radius so even the biggest hub fits
+          const d = 80 + Math.cbrt(n.val || 1) * 46;
+          const r = 1 + d / (Math.hypot(n.x, n.y, n.z) || 1);
           G.cameraPosition({ x: n.x * r, y: n.y * r, z: n.z * r }, n, 900);
         });
       addEventListener('mousemove', e => { tip.style.left = (e.clientX + 16) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; });
