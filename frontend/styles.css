@@ -325,8 +325,10 @@ button { font-family: inherit; cursor: pointer; }
 .arm-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
 .arm-dot.red { background: var(--red); box-shadow: 0 0 8px var(--red); } .arm-dot.green { background: var(--green); box-shadow: 0 0 8px var(--green); }
 .arm-code { flex: 1; margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.6; background: #0a0e16; border: 1px solid var(--line); border-radius: 10px; padding: 14px; overflow: auto; color: #aeb9c7; white-space: pre-wrap; min-height: 78px; }
-.tok-win { color: var(--green); font-weight: 700; background: rgba(95,215,135,.12); border-radius: 4px; padding: 0 3px; }
-.tok-lose { color: var(--red); font-weight: 700; background: rgba(255,111,97,.12); border-radius: 4px; padding: 0 3px; }
+/* the decisive token pulses on reveal — the whole story is in this one difference */
+.tok-win { color: var(--green); font-weight: 700; background: rgba(95,215,135,.12); border-radius: 4px; padding: 0 3px; animation: tokPop .6s ease .35s both; }
+.tok-lose { color: var(--red); font-weight: 700; background: rgba(255,111,97,.12); border-radius: 4px; padding: 0 3px; animation: tokPop .6s ease .35s both; }
+@keyframes tokPop { 0% { box-shadow: 0 0 0 0 currentColor; } 30% { box-shadow: 0 0 0 3px rgba(255,255,255,.18), 0 0 16px -2px currentColor; } 100% { box-shadow: 0 0 0 0 transparent; } }
 .arm-tests { display: flex; gap: 7px; flex-wrap: wrap; min-height: 28px; }
 .arm-tests .t { font-size: 21px; line-height: 1; animation: pop .25s ease; }
 .arm-tests .t.g { color: var(--green); } .arm-tests .t.r { color: var(--red); }
@@ -335,8 +337,16 @@ button { font-family: inherit; cursor: pointer; }
 .arm-score b { font-family: var(--mono); font-size: 30px; font-weight: 700; }
 .arm-a .arm-score b { color: var(--red); } .arm-b .arm-score b { color: var(--green); }
 .arm-score span { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-faint); }
+/* the single big number: pass-rate lift counts up at the climax */
+.proof-delta { flex: none; text-align: center; line-height: 1; margin: 2px 0 -2px; }
+.proof-delta b { font-family: var(--mono); font-size: 46px; font-weight: 800; color: var(--green);
+  letter-spacing: -.02em; text-shadow: 0 0 30px rgba(95,215,135,.4); }
+.proof-delta b::before { content: '+'; font-size: 30px; vertical-align: 6px; opacity: .8; }
+.proof-delta .pd-unit { font-family: var(--mono); font-size: 26px; font-weight: 800; color: var(--green); margin-left: 1px; }
+.proof-delta .pd-label { display: block; font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+  letter-spacing: .12em; color: var(--ink-faint); margin-top: 6px; }
 .proof-punch { flex: none; min-height: 22px; text-align: center; font-size: 15px; color: var(--ink); font-weight: 500; }
-@media (prefers-reduced-motion: reduce) { .arm-tests .t { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .arm-tests .t, .tok-win, .tok-lose { animation: none; } }
 @media (max-width: 900px) { .proof-arena { grid-template-columns: 1fr; } }
 
 /* final polish: focus states + camera-legible on-card evidence */

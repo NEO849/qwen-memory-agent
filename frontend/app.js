@@ -488,6 +488,7 @@ async function playProof() {
   const T = (id, t) => { const e = $(id); if (e) e.textContent = t; };
   H('#codeA', ''); H('#codeB', ''); H('#testsA', ''); H('#testsB', '');
   T('#scoreA', '–'); T('#scoreB', '–'); T('#proofPunch', '');
+  const _pd = $('#proofDelta'); if (_pd) _pd.hidden = true;
   const armA = $('#armA'), armB = $('#armB');
   if (armA) armA.className = 'arm arm-a'; if (armB) armB.className = 'arm arm-b';
   let ab; try { ab = await api('/ab'); } catch { if (btn) btn.disabled = false; _proofRunning = false; return; }
@@ -505,6 +506,20 @@ async function playProof() {
   if (armA) armA.classList.add(a.green >= b.green ? 'win' : 'lose');
   if (armB) armB.classList.add(b.green >= a.green ? 'win' : 'lose');
   await _sleep(rm ? 0 : 250);
+  // the single big number: pass-rate lift, counting up at the climax
+  const delta = Math.round(((b.green / b.k) - (a.green / a.k)) * 100);
+  const dEl = $('#proofDelta'), dNum = $('#proofDeltaNum');
+  if (dEl && dNum) {
+    dEl.hidden = false;
+    if (rm) { dNum.textContent = delta; }
+    else {
+      const steps = 22, dur = 620; let s = 0;
+      const tick = () => { s++; dNum.textContent = Math.round(delta * s / steps);
+        if (s < steps) setTimeout(tick, dur / steps); else dNum.textContent = delta; };
+      tick();
+    }
+  }
+  await _sleep(rm ? 0 : 700);
   T('#proofPunch', 'The only difference is memory. That green is earned — from real tests, not opinion.');
   if (btn) btn.disabled = false; _proofRunning = false;
 }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Regress-Guard — memory that forgets what's wrong</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body>
   <div class="app">
@@ -132,10 +132,14 @@
             <div class="arm-score"><b id="scoreB">–</b><span>green</span></div>
           </div>
         </div>
+        <div class="proof-delta" id="proofDelta" aria-live="polite" hidden>
+          <b id="proofDeltaNum">0</b><span class="pd-unit">%</span>
+          <span class="pd-label">pass-rate lift · memory vs none</span>
+        </div>
         <div class="proof-punch" id="proofPunch"></div>
       </div>
     </main>
   </div>
-  <script src="app.js?v=14" type="module"></script>
+  <script src="app.js?v=15" type="module"></script>
 </body>
 </html>
