@@ -2,45 +2,103 @@
   <img src="assets/banner.png" alt="Regress-Guard — a memory that forgets what's wrong" width="960">
 </p>
 
+<h1 align="center">Regress-Guard</h1>
+
 <p align="center">
-  <img src="https://img.shields.io/badge/License-MIT-5FD787?style=flat-square" alt="MIT">
-  <img src="https://img.shields.io/badge/Qwen_Hackathon-MemoryAgent-5AC8F5?style=flat-square" alt="Track: MemoryAgent">
-  <img src="https://img.shields.io/badge/Built_with-Qwen_Cloud-F0C35A?style=flat-square" alt="Qwen Cloud">
-  <img src="https://img.shields.io/badge/Deployed-Alibaba_Cloud_ECS-5FD787?style=flat-square" alt="Alibaba Cloud">
-  <img src="https://img.shields.io/badge/UI-no_build_step-8A93A0?style=flat-square" alt="No build">
+  <b>A memory that stops AI coding agents from re-introducing bugs they already fixed —<br>
+  with confidence <i>earned from real test outcomes</i>, not the model's opinion.</b>
 </p>
 
-<p align="center"><em>A memory that stops AI coding agents from re-introducing bugs they already fixed —<br>with confidence earned from real test outcomes, not the model's opinion.</em></p>
+<p align="center">
+  <a href="http://regressguard.duckdns.org"><img src="https://img.shields.io/badge/live_demo-online-5FD787?style=for-the-badge&labelColor=0c1119" alt="Live demo"></a>
+  <img src="https://img.shields.io/badge/A%2FB_proof-0%2F5_to_5%2F5-5FD787?style=for-the-badge&labelColor=0c1119" alt="A/B proof 0/5 to 5/5">
+  <img src="https://img.shields.io/badge/tests-48%2F48_green-5FD787?style=for-the-badge&labelColor=0c1119" alt="48/48 tests">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Qwen_Hackathon-MemoryAgent-5AC8F5?style=flat-square&labelColor=0c1119" alt="Track: MemoryAgent">
+  <img src="https://img.shields.io/badge/Qwen_Cloud-qwen--plus_·_embedding--v4-F0C35A?style=flat-square&labelColor=0c1119&logo=alibabacloud&logoColor=white" alt="Qwen Cloud">
+  <img src="https://img.shields.io/badge/Alibaba_Cloud-ECS_Singapore-FF6A00?style=flat-square&labelColor=0c1119&logo=alibabacloud&logoColor=white" alt="Alibaba Cloud ECS">
+  <img src="https://img.shields.io/badge/FastAPI_·_SQLite_·_SSE-009688?style=flat-square&labelColor=0c1119&logo=fastapi&logoColor=white" alt="FastAPI · SQLite · SSE">
+  <img src="https://img.shields.io/badge/MCP-drop--in_tool-B9A6E8?style=flat-square&labelColor=0c1119" alt="MCP tool">
+  <img src="https://img.shields.io/badge/UI-no_build_step-8A93A0?style=flat-square&labelColor=0c1119" alt="No build">
+  <img src="https://img.shields.io/badge/License-MIT-5FD787?style=flat-square&labelColor=0c1119" alt="MIT">
+</p>
 
 ---
 
 ## The problem
 
-AI coding agents are stateless across sessions: you fix a bug today, and a fresh session tomorrow
+AI coding agents are **stateless across sessions**: you fix a bug today, and a fresh session tomorrow
 happily reintroduces it. Existing "memory" features remember *facts you tell them* — they can't tell
-whether a remembered rule actually **works**. Regress-Guard is a memory whose trust is **earned by
-real evidence**, and that **forgets advice a refactor made wrong**.
+whether a remembered rule actually **works**. Regress-Guard is a memory whose trust is **earned by real
+evidence**, and that **forgets advice a refactor made wrong**.
 
-## The proof (this is the point)
+---
+
+## The proof — same AI twice, the only difference is memory
+
+<p align="center"><img src="docs/media/proof.png" alt="A/B proof: without memory 0/5, with memory 5/5, +100% pass-rate lift" width="920"></p>
 
 `harness/ab_runner.py` runs the **same** coding task, **same** model (`qwen-plus`, temperature 0),
 against a **hidden** `pytest`, K times — the only variable is whether a recalled lesson is injected:
 
-```
+```text
   A/B RESULT — get_orders tenant isolation   (model=qwen-plus, temp=0)
-  Arm A  (no memory)   : 0/5 GREEN   (0%)
-  Arm B  (with memory) : 5/5 GREEN   (100%)
+  Arm A  (no memory)   : 0/5 GREEN   (0%)     →  invents  order['user_id'] == user['id']   ✗
+  Arm B  (with memory) : 5/5 GREEN   (100%)   →  scopes   order['tenant_id'] == user['tenant_id']  ✓
   Δ pass-rate          : +100 points
 ```
 
-**Honest framing** (it survived an adversarial self-review): without the remembered project
-convention the agent **mis-scopes data access** — it invents an unsupported `user_id` filter and fails
-the hidden tenant-isolation test; the recalled lesson steers it to the correct `tenant_id` scoping. The
-test enforces true isolation, so it would also catch a cross-tenant leak. Reproduce it yourself:
+> **Honest framing** (it survived an adversarial self-review): without the remembered project
+> convention the agent **mis-scopes data access** and fails the hidden tenant-isolation test; the
+> recalled lesson steers it to correct `tenant_id` scoping. The test enforces true isolation, so it
+> would also catch a cross-tenant leak. Both arms are genuine temp-0 Qwen runs — arm B's injected rule
+> is the *remembered human fix*, replayed deterministically so the on-camera demo can't flake (temp-0
+> code-gen varies run-to-run). Reproduce it yourself:
 
 ```bash
 python -m harness.ab_runner --k 5 --verbose
 ```
+
+---
+
+## Verify it in 60 seconds
+
+No install — hit the live deployment:
+
+```bash
+# 1) the captured causal proof (0/5 → 5/5)
+curl -s http://regressguard.duckdns.org/ab | python -m json.tool
+
+# 2) the memory as a graph (nodes = lessons, edges = related / supersedes / synthesizes)
+curl -s http://regressguard.duckdns.org/graph | python -m json.tool | head -40
+
+# 3) ask the agent — the answer is steered by recalled, outcome-grounded lessons
+curl -s http://regressguard.duckdns.org/chat -H 'content-type: application/json' \
+     -d '{"message":"How should I list orders for a user?"}'
+```
+
+Or just open **[regressguard.duckdns.org](http://regressguard.duckdns.org)** → the **🏆 Proof** tab.
+
+---
+
+## What you can see and steer
+
+One clinical surface — **💬 Chat · 🌐 Graph · 🏆 Proof** — toggled in the same frame:
+
+| | Feature | What it means |
+|---|---|---|
+| 💬 | **Chat + editable memory** | Talk to the agent; beside it, a flashcard deck shows every lesson with a **Beta(α,β) confidence meter** — **pin**, **demote** or **forget** any lesson in a click. |
+| 🌐 | **3D knowledge globe** | The whole memory as a rotating globe: node size = evidence (α+β), colour = confidence, grey = forgotten, dark-red = anti-pattern. **Click a node and its strands light up by type** — *related* (blue), *supersedes* (red), *synthesizes* (violet) — so you see at a glance what a memory connects to. |
+| 🏆 | **The proof** | The signature A/B moment above, replayable on demand — the decisive token pulses, the pass-rate lift counts up. |
+| ⛔ | **Anti-pattern inhibitions** | Dead-end rules a past regression proved wrong are injected as active **⛔ DO NOT** directives — the agent is steered *away* from a known bad path, not just toward a good one. |
+| ✦ | **Crystallization (ExpeL)** | A cluster of related lessons can be distilled into one higher-level meta-lesson that then **earns its own confidence** from real tests like any other. |
+| 🛡 | **Poison defense** | Recalled lessons enter the prompt as *untrusted data* behind structural markers + a deterministic sanitizer — a poisoned lesson can't become a command. |
+
+<p align="center"><img src="docs/media/globe.png" alt="3D knowledge globe — clicking a node lights up its strands by type" width="820"></p>
+
+---
 
 ## Qwen's four roles
 
@@ -51,20 +109,26 @@ python -m harness.ab_runner --k 5 --verbose
 | 3 | **REVISE** — is a lesson now obsolete? → tombstone | `qwen-plus` | `backend/reviser.py` |
 | 4 | **SELF-CHECK** — keyword-free paraphrase eval + contradiction judge | `qwen-plus` | `backend/evaluation.py`, `reviser.py` |
 
-Even the coding agent in the proof harness is Qwen — Qwen both *causes* and *cures* the bug via memory.
+*Even the coding agent in the proof harness is Qwen — Qwen both **causes** and **cures** the bug via memory.*
+
+---
 
 ## The memory measures, tunes and corrects itself
 
-Beyond learn→recall→grade, Regress-Guard improves its *own* retrieval and consistency:
+Beyond learn → recall → grade, Regress-Guard improves its *own* retrieval and consistency:
 
-- **Self-evaluation** (`/evaluate`) — Qwen writes *keyword-free* paraphrase queries so BM25 can't win on
-  word overlap; we measure **Recall@1 / MRR** with the vector leg on vs off. Retrieval quality on evidence.
-- **Self-tuning** (`/tune`) — grid-searches the BM25+vector fusion weights against measured Recall@1 and
-  **persists new weights only if they beat baseline** (`data/retrieval_config.json`). Recall@1 **0.75 → 1.00**.
-- **Contradiction detection** — a new lesson is checked (vector-cosine shortlist → Qwen judge) against
-  active ones; a genuine contradiction tombstones the loser, so the memory never holds two opposite rules.
-- **Calibration** (`/metrics`) — a live panel shows Recall@1, the semantic lift, grounded-outcome count,
-  and the **calibration gap** (displayed confidence vs empirical pass-rate, counted from *real* outcomes).
+- **Self-evaluation** — Qwen writes *keyword-free* paraphrase queries so BM25 can't win on word overlap; it measures **Recall@1 / MRR** with the vector leg on vs off. Retrieval quality graded on evidence, not vibes.
+- **Self-tuning** — grid-searches the BM25 + vector fusion weights against measured Recall@1 and **persists new weights only if they beat baseline** (Recall@1 **0.75 → 1.00** in our runs).
+- **Contradiction detection** — a new lesson is checked (vector-cosine shortlist → Qwen judge) against active ones; a genuine contradiction tombstones the loser, so the memory never holds two opposite rules.
+- **Calibration** — a live panel shows Recall@1, the semantic lift, grounded-outcome count, and the **calibration gap** (displayed confidence vs empirical pass-rate, from *real* outcomes).
+
+Every real **pytest pass/fail** updates a lesson's confidence as the posterior mean of a Beta distribution:
+
+```math
+\text{confidence} = \mathbb{E}[\text{Beta}(\alpha,\beta)] = \frac{\alpha}{\alpha+\beta}, \qquad \text{pass} \Rightarrow \alpha{+}1, \quad \text{fail} \Rightarrow \beta{+}1
+```
+
+---
 
 ## Architecture
 
@@ -74,16 +138,7 @@ Outcome-grounded confidence lives in a SQLite ledger (WAL, atomic in-SQL Beta up
 fed live over Server-Sent Events; an MCP tool exposes the memory to any agent. Details:
 [`architecture/ARCHITECTURE.md`](architecture/ARCHITECTURE.md).
 
-## What you can see and steer
-
-- **Flashcard deck** — every lesson as a browsable, flippable card. The back draws a **Beta(α,β)
-  sparkline** from the real pass/fail counts (sharp peak = confident, flat = unsure). Confidence is also
-  a border hue + fill bar; obsolete lessons get an "OBSOLETE" stamp and sink out of the deck.
-- **"By the way" console** — an out-of-band channel to edit memory live: `/note`, `/pin`, `/demote`,
-  `/tombstone`, `/edit`, `/revise`, or just type `by the way, …`.
-- **Recall theater** — run a controllable coding agent in a loop (**pause / resume / stop**), and drop a
-  by-the-way note *while it runs*: it interrupts, re-recalls, and obeys the note on its next attempt
-  (red → green, live). Recalled cards cross-highlight in the deck.
+---
 
 ## Run it
 
@@ -98,9 +153,11 @@ uvicorn backend.main:app --workers 1   # then open http://localhost:8000
 ```
 
 > **`--workers 1` is required** — the live-update fan-out (SSE) is in-process.
-> Tests: `pytest` (offline) · `pytest -m live` (hits Qwen).
+> Tests: `pytest` (offline, 48/48) · `pytest -m live` (hits Qwen).
 
-## MCP integration — this is a real tool, not just a demo
+---
+
+## MCP integration — a real tool, not just a demo
 
 `mcp_tool/server.py` exposes `recall(context)` and `record(test_output, diff)` over MCP. By default it
 talks to the **deployed memory on Alibaba Cloud over HTTP** — so any coding agent (Claude Code, Qwen
@@ -111,13 +168,16 @@ after fixing a red test, so the same bug can't come back in a later session.
 **30-second setup + verified transcript:** [`mcp_tool/README.md`](mcp_tool/README.md) · config: [`.mcp.json`](.mcp.json)
 (`REGRESS_GUARD_LOCAL=1` switches to a fully local ledger + your own Qwen key.)
 
+---
+
 ## Deployment
 
 Runs as a single process on **Alibaba Cloud ECS** (Singapore) — see [`deploy/README.md`](deploy/README.md).
+Live: **[regressguard.duckdns.org](http://regressguard.duckdns.org)** (friendly URL, also works behind IP-blocking filters).
 
 ## Attribution & license
 
 MIT (see [`LICENSE`](LICENSE)). The retrieval fusion (BM25 + Reciprocal Rank Fusion) is adapted from the
 author's own MIT-licensed **markmem** engine; everything else — the ledger, the outcome-grounded Beta
-confidence, the A/B harness, the Qwen wiring, the UI, and the controllable agent loop — is new for this
-hackathon.
+confidence, the A/B harness, the Qwen wiring, the UI, the 3D globe, and the controllable agent loop — is
+new for this hackathon.
