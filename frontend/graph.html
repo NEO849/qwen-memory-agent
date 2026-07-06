@@ -84,7 +84,7 @@
       const data = { nodes: g.nodes, links: (g.edges || []).map(e => ({ ...e })) };
       const EDGE_BRIGHT = { related: '#5AC8F5', supersedes: '#ff6f61', synthesizes: '#B9A6E8' };
       const DIM_NODE = 'rgba(92,101,119,.20)', DIM_LINK = 'rgba(92,101,119,.05)';
-      let selId = null;
+      let selId = null, autoRot = true;
       const hlNodes = new Set(), hlLinks = new Set();
       const _id = e => (e && typeof e === 'object') ? e.id : e;
       function selectNode(n) {
@@ -100,12 +100,11 @@
         // force re-eval of the accessors
         G.nodeColor(G.nodeColor()).linkColor(G.linkColor()).linkWidth(G.linkWidth())
          .linkDirectionalParticles(G.linkDirectionalParticles());
-        const c = G.controls(); if (c) c.autoRotate = !n;   // pause the idle spin while a node is focused
+        autoRot = !n;   // pause the idle spin while a node is focused
       }
       const G = ForceGraph3D()(el)
         .backgroundColor('#090b11')
         .graphData(data)
-        .controlType('orbit')
         .nodeVal('val')
         .nodeColor(n => (selId && !hlNodes.has(n.id)) ? DIM_NODE : n.color)
         .nodeOpacity(0.96)
@@ -136,10 +135,24 @@
         });
       addEventListener('mousemove', e => { tip.style.left = (e.clientX + 16) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; });
       G.d3Force('charge').strength(-120);
-      // gentle idle auto-rotate — orbit controls; pauses while a node is focused, resumes on empty-click
-      const ctr = G.controls();
-      if (ctr) { ctr.autoRotate = true; ctr.autoRotateSpeed = 0.5; ctr.enableDamping = true; ctr.dampingFactor = 0.12; }
-      // a click on empty space clears the selection (onBackgroundClick handles the graph canvas)
+      // gentle idle auto-rotate (this build ships TrackballControls — no built-in autoRotate),
+      // so orbit the camera around the centre ourselves; pause on interaction and while a node is focused.
+      let ang = 0, radius = null, resumeAt = 0;
+      const pause = () => { autoRot = false; resumeAt = performance.now() + 3500; };
+      el.addEventListener('pointerdown', pause);
+      el.addEventListener('wheel', pause, { passive: true });
+      (function spin(t) {
+        if (!selId && !autoRot && t >= resumeAt) autoRot = true;   // resume after the idle grace period
+        if (autoRot && !selId) {
+          const cam = G.cameraPosition();
+          if (radius === null) radius = Math.hypot(cam.x, cam.z) || 340;
+          ang += 0.0018;
+          G.cameraPosition({ x: radius * Math.sin(ang), z: radius * Math.cos(ang) });  // keep current y
+        } else if (radius !== null) {
+          const cam = G.cameraPosition(); ang = Math.atan2(cam.x, cam.z); radius = Math.hypot(cam.x, cam.z);
+        }
+        requestAnimationFrame(spin);
+      })(0);
     }).catch(() => {
       document.getElementById('stats').innerHTML = '<div class="sub">graph unavailable</div>';
     });
