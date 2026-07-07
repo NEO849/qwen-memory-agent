@@ -11,8 +11,8 @@
 
 <p align="center">
   <a href="http://regressguard.duckdns.org"><img src="https://img.shields.io/badge/live_demo-online-5FD787?style=for-the-badge&labelColor=0c1119" alt="Live demo"></a>
-  <img src="https://img.shields.io/badge/A%2FB_proof-0%2F5_to_5%2F5-5FD787?style=for-the-badge&labelColor=0c1119" alt="A/B proof 0/5 to 5/5">
-  <img src="https://img.shields.io/badge/tests-48%2F48_green-5FD787?style=for-the-badge&labelColor=0c1119" alt="48/48 tests">
+  <img src="https://img.shields.io/badge/A%2FB_proof-floor→ceiling_×_3_bug_classes-5FD787?style=for-the-badge&labelColor=0c1119" alt="A/B proof floor to ceiling across 3 bug classes">
+  <img src="https://img.shields.io/badge/tests-53%2F53_green-5FD787?style=for-the-badge&labelColor=0c1119" alt="53/53 tests">
 </p>
 
 <p align="center">
@@ -38,27 +38,39 @@ evidence**, and that **forgets advice a refactor made wrong**.
 
 ## The proof — same AI twice, the only difference is memory
 
-<p align="center"><img src="docs/media/proof.png" alt="A/B proof: without memory 0/5, with memory 5/5, +100% pass-rate lift" width="920"></p>
+<p align="center"><img src="docs/media/proof.png" alt="A/B proof: floor 0/5 without memory, ceiling 5/5 with the remembered fix, shipped auto-distiller 10/10" width="920"></p>
 
 `harness/ab_runner.py` runs the **same** coding task, **same** model (`qwen-plus`, temperature 0),
-against a **hidden** `pytest`, K times — the only variable is whether a recalled lesson is injected:
+against a **hidden** `pytest` the agent never sees. The task never states our tenant convention, so
+the knowledge *must* come from memory. Three honest measurements, not one number:
 
 ```text
   A/B RESULT — get_orders tenant isolation   (model=qwen-plus, temp=0)
-  Arm A  (no memory)   : 0/5 GREEN   (0%)     →  invents  order['user_id'] == user['id']   ✗
-  Arm B  (with memory) : 5/5 GREEN   (100%)   →  scopes   order['tenant_id'] == user['tenant_id']  ✓
-  Δ pass-rate          : +100 points
+  Floor    (no memory)                       : 0/5 GREEN  →  invents order['user_id'] == user['id']   ✗
+  Ceiling  (remembered developer fix, verbatim): 5/5 GREEN  →  scopes  order['tenant_id'] == user['tenant_id']  ✓
+  Distillation reliability (shipped auto-distiller): 10/10 pass, Wilson95 [72,100]%
 ```
 
-> **Honest framing** (it survived an adversarial self-review): without the remembered project
-> convention the agent **mis-scopes data access** and fails the hidden tenant-isolation test; the
-> recalled lesson steers it to correct `tenant_id` scoping. The test enforces true isolation, so it
-> would also catch a cross-tenant leak. Both arms are genuine temp-0 Qwen runs — arm B's injected rule
-> is the *remembered human fix*, replayed deterministically so the on-camera demo can't flake (temp-0
-> code-gen varies run-to-run). Reproduce it yourself:
+> **Honest framing** (survived an adversarial self-review): the **ceiling** (5/5) is the *capability
+> ceiling* of memory injection — the remembered human fix replayed verbatim — **not** the shipped
+> default. What we actually ship is an **auto-distiller** that turns the red test + fix into a lesson;
+> measured separately, **10 of 10 independent distillations** produced a lesson that passed the hidden
+> test (Wilson95 **[72,100]%**). The core contribution is **test-grounded self-correction**: a
+> distillation that drops the concrete comparison **fails the hidden test and gets demoted**, so
+> confidence tracks what actually works. The temp-0 in-run trials are a *consistency* check, not an
+> independent sample — the independent unit is the distillation (one draw per run), which is why the
+> Wilson interval lives there. We never claim "guaranteed 100%".
+>
+> **Generalisation across 3 bug classes** (`harness/generalization.py`): memory flips the two classes
+> the base model gets **wrong** by default — *tenant isolation* and *pagination leak* — from **0/3 →
+> 3/3** each. On *money rounding* Qwen already writes correct code unaided (floor **3/3**), so memory
+> adds **no** lift and does **no** harm (ceiling 3/3). Two independent 0→100 flips kill the
+> cherry-pick objection; the third shows the memory is harmless when it isn't needed. Auto-distiller
+> **18/18** (Wilson95 82–100%) across all three. Reproduce it yourself:
 
 ```bash
-python -m harness.ab_runner --k 5 --verbose
+python -m harness.ab_runner --k 5 --distill-samples 10 --verbose   # floor / ceiling / distillation
+python -m harness.generalization --k 3 --distill-samples 6         # all 3 bug classes
 ```
 
 ---
@@ -90,10 +102,11 @@ One clinical surface — **💬 Chat · 🌐 Graph · 🏆 Proof** — toggled i
 | | Feature | What it means |
 |---|---|---|
 | 💬 | **Chat + editable memory** | Talk to the agent; beside it, a flashcard deck shows every lesson with a **Beta(α,β) confidence meter** — **pin**, **demote** or **forget** any lesson in a click. |
-| 🌐 | **3D knowledge globe** | The whole memory as a rotating globe: node size = evidence (α+β), colour = confidence, grey = forgotten, dark-red = anti-pattern. **Click a node and its strands light up by type** — *related* (blue), *supersedes* (red), *synthesizes* (violet) — so you see at a glance what a memory connects to. |
+| 🌐 | **3D knowledge globe** | The whole memory as a rotating globe (currently **58 nodes / 157 edges**): node size = evidence (α+β), colour = confidence, grey = forgotten, dark-red = anti-pattern; **synapse strength varies** as Hebbian co-recall strengthens edges. **Click a node and its strands light up by type** — *related* (blue), *supersedes* (red), *synthesizes* (violet) — so you see at a glance what a memory connects to. |
 | 🏆 | **The proof** | The signature A/B moment above, replayable on demand — the decisive token pulses, the pass-rate lift counts up. |
 | ⛔ | **Anti-pattern inhibitions** | Dead-end rules a past regression proved wrong are injected as active **⛔ DO NOT** directives — the agent is steered *away* from a known bad path, not just toward a good one. |
 | ✦ | **Crystallization (ExpeL)** | A cluster of related lessons can be distilled into one higher-level meta-lesson that then **earns its own confidence** from real tests like any other. |
+| 🧠 | **Associative memory (Hebbian + spreading activation)** | Neuroscience-*inspired*, not mystical: lessons recalled together **wire together** — the edge weight grows with co-recall (capped), never touching confidence (that stays test-earned). An opt-in **spreading-activation** recall then follows the strongest synapses to surface associated neighbours that pure search misses. |
 | 🛡 | **Poison defense** | Recalled lessons enter the prompt as *untrusted data* behind structural markers + a deterministic sanitizer — a poisoned lesson can't become a command. |
 
 <p align="center"><img src="docs/media/globe.png" alt="3D knowledge globe — clicking a node lights up its strands by type" width="820"></p>
@@ -121,6 +134,7 @@ Beyond learn → recall → grade, Regress-Guard improves its *own* retrieval an
 - **Self-tuning** — grid-searches the BM25 + vector fusion weights against measured Recall@1 and **persists new weights only if they beat baseline** (Recall@1 **0.75 → 1.00** in our runs).
 - **Contradiction detection** — a new lesson is checked (vector-cosine shortlist → Qwen judge) against active ones; a genuine contradiction tombstones the loser, so the memory never holds two opposite rules.
 - **Calibration** — a live panel shows Recall@1, the semantic lift, grounded-outcome count, and the **calibration gap** (displayed confidence vs empirical pass-rate, from *real* outcomes).
+- **Associative recall** — lessons recalled together strengthen a Hebbian synapse (weight grows with co-recall, capped); an opt-in spreading-activation pass then walks the strongest synapses to surface associated neighbours pure search misses. This is *associative memory* (Hebbian wiring / spreading activation) — neuroscience-inspired, and it **never** touches a lesson's confidence, which stays earned from real test outcomes.
 
 Every real **pytest pass/fail** updates a lesson's confidence as the posterior mean of a Beta distribution:
 
@@ -153,7 +167,7 @@ uvicorn backend.main:app --workers 1   # then open http://localhost:8000
 ```
 
 > **`--workers 1` is required** — the live-update fan-out (SSE) is in-process.
-> Tests: `pytest` (offline, 48/48) · `pytest -m live` (hits Qwen).
+> Tests: `pytest` (offline, 53/53) · `pytest -m live` (hits Qwen).
 
 ---
 

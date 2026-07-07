@@ -289,6 +289,32 @@ def add_link(from_id: int, to_id: int, *, type: str = "related", weight: float =
         conn.commit()
 
 
+def reinforce_link(a: int, b: int, *, delta: float = 0.10, cap: float = 1.0,
+                   path: str | None = None) -> None:
+    """Hebbian synapse growth: strengthen (or create) the undirected 'related' link between two
+    co-recalled lessons — 'cells that fire together wire together'. Weight accumulates with repeated
+    co-recall up to `cap`. Purely associative wiring; it NEVER touches alpha/beta/confidence (that
+    stays earned from real test outcomes). Idempotent, atomic."""
+    if a == b:
+        return
+    if a > b:
+        a, b = b, a
+    now = _now()
+    with _connect(path) as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT weight FROM links WHERE from_id=? AND to_id=? AND type='related'", (a, b)).fetchone()
+        if row is None:
+            conn.execute(
+                "INSERT INTO links (from_id, to_id, type, weight, created_at) VALUES (?,?, 'related', ?, ?)",
+                (a, b, float(delta), now))
+        else:
+            new_w = min(float(cap), float(row["weight"]) + float(delta))
+            conn.execute("UPDATE links SET weight=? WHERE from_id=? AND to_id=? AND type='related'",
+                         (new_w, a, b))
+        conn.commit()
+
+
 def list_links(*, path: str | None = None) -> list[dict]:
     with _connect(path) as conn:
         rows = conn.execute("SELECT from_id, to_id, type, weight FROM links").fetchall()

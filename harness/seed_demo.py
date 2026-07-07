@@ -140,6 +140,53 @@ SEED: list[tuple[str, str, str, str]] = [
     ("returning JSON to the browser",
      "Send correct security headers (Content-Type, X-Content-Type-Options: nosniff); don't let the browser sniff a type.",
      "api", "low"),
+    # --- async / concurrency ---
+    ("holding a lock across an await",
+     "Never hold an async lock across an await that does I/O; release it first or you serialize the whole service.",
+     "async", "med"),
+    ("giving a function a default argument",
+     "Never use a mutable default argument ([] or {}); it is shared across calls — default to None and create inside.",
+     "async", "med"),
+    ("starting a background task",
+     "Await or keep a reference to every background task; a fire-and-forget coroutine swallows its exception silently.",
+     "async", "med"),
+    # --- observability ---
+    ("writing a log line",
+     "Log structured key/values with a correlation id, not string concatenation, so a request is traceable across services.",
+     "observability", "med"),
+    ("catching an exception",
+     "Log the exception with its stack server-side before returning; a swallowed error is an invisible outage.",
+     "observability", "med"),
+    ("calling an external dependency",
+     "Wrap external calls in a counter and a timer (RED metrics) so latency and error spikes surface before users complain.",
+     "observability", "low"),
+    # --- testing ---
+    ("fixing a reported bug",
+     "Add a regression test that fails before the fix and passes after; a fix without a test invites the same bug back.",
+     "testing", "high"),
+    ("testing code that reads the clock or random",
+     "Inject the clock and the RNG so tests are deterministic; never assert against the real wall clock.",
+     "testing", "med"),
+    ("mocking an external service in a test",
+     "Assert the call contract (arguments, count), not only the return value, or a wrong call passes silently.",
+     "testing", "med"),
+    # --- web / frontend security ---
+    ("setting a session cookie",
+     "Set HttpOnly, Secure and SameSite on session cookies so script can't read them and they don't leak cross-site.",
+     "web", "high"),
+    ("reflecting user input into a page",
+     "Escape output or use safe templating; never build HTML by concatenating request data (XSS).",
+     "web", "high"),
+    ("configuring CORS",
+     "Never reflect the request Origin into Access-Control-Allow-Origin with credentials; allowlist exact origins.",
+     "web", "high"),
+    # --- config / rollout ---
+    ("reading required configuration",
+     "Fail fast at startup with a clear message if a required config or secret is missing — don't 500 on the first request.",
+     "config", "med"),
+    ("adding a feature flag",
+     "Default a new flag to off and roll out gradually; a default-on flag ships untested behaviour to everyone at once.",
+     "config", "low"),
 ]
 
 # Anti-patterns: dead-end memories (known past regressions) rendered as active ⛔ DO-NOT inhibitions.
@@ -162,6 +209,19 @@ SUPERSEDED_OLD = ("formatting a money amount",
 SUPERSEDED_NEW = ("representing a money amount",
                   "Store and compute money in integer minor units (cents); binary floats can't represent 0.10 and drift over sums.",
                   "payments", "high")
+
+# Typical coding situations used for Hebbian consolidation — each co-recalls a cluster of related
+# lessons, so the synapses that genuinely co-fire grow (real usage, not hand-set weights).
+CONSOLIDATION_CONTEXTS = [
+    "building a login and session flow with password storage and tokens",
+    "writing an endpoint that returns a user's records filtered by tenant",
+    "validating and parsing untrusted request input before using it",
+    "charging a customer and moving money between account balances",
+    "writing async handlers that call external services with locks and timeouts",
+    "rendering user-supplied content into an HTML page and setting cookies",
+    "adding logging, metrics and tests around a new feature",
+    "paginating and caching a list endpoint safely",
+]
 
 
 def _add(trigger: str, lesson: str, scope: str, severity: str, *, kind: str = "guard",
@@ -199,14 +259,14 @@ def enrich(path: str | None = None) -> dict:
     ledger.tombstone(old_id, superseded_by=new_id, path=path)
     stats["superseded"] = 1
 
-    # 'related' constellations from real embedding cosine
-    stats["links"] = backfill_links.backfill(path=path, threshold=0.55, top_k=4)
+    # 'related' constellations from real embedding cosine (denser: more/lower-threshold edges)
+    backfill_links.backfill(path=path, threshold=0.52, top_k=5)
 
-    # ExpeL crystallization — real Qwen synthesis, accept up to two, best-effort
+    # ExpeL crystallization — real Qwen synthesis, accept up to four, best-effort
     try:
         from backend import synthesis
         proposals = synthesis.propose_synthesis(path=path, min_group=3).get("proposals", [])
-        for p in proposals[:2]:
+        for p in proposals[:4]:
             try:
                 synthesis.accept(p, path=path)
                 stats["syntheses"] += 1
@@ -215,6 +275,16 @@ def enrich(path: str | None = None) -> dict:
     except Exception:
         pass
 
+    # Hebbian consolidation — real recalls over typical coding contexts grow the synapses that
+    # actually co-fire (varied edge weights = a used, brain-like graph). Best-effort (needs Qwen).
+    try:
+        from backend import memory
+        for ctx in CONSOLIDATION_CONTEXTS:
+            memory.recall(ctx, k=5, path=path)   # RG_HEBBIAN wires the co-recalled lessons
+    except Exception:
+        pass
+
+    stats["links"] = len(ledger.list_links(path=path))
     return stats
 
 

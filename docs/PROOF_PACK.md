@@ -6,12 +6,12 @@ venv (`.venv/bin/...`). Qwen-backed items need the `.env` key; the rest are offl
 
 ---
 
-## 1. Test suite — 51 / 51 green (offline, deterministic)
+## 1. Test suite — 53 / 53 green (offline, deterministic)
 ```
 .venv/bin/pytest -q
 ```
-Includes the 6 memory-injection-defense tests, the concurrency test (§4), and the calibration
-tests (§3). No network, no Qwen — pure logic + math.
+Includes the 6 memory-injection-defense tests, the concurrency test (§4), the calibration
+tests (§3), and the associative-memory tests (§7). No network, no Qwen — pure logic + math.
 
 ## 2. The A/B proof — floor vs ceiling + distillation reliability (honest 3-part)
 ```
@@ -72,21 +72,61 @@ Recalled lessons enter the prompt as untrusted data behind structural markers + 
 sanitizer, so a poisoned lesson can't become a command (2nd-order prompt injection). Our own
 red-team flipped the probe vulnerable→safe; a 60-case scan passed clean.
 
-## 6. Knowledge globe — 42 nodes, all edge/node types (honest data)
+## 6. Knowledge globe — 58 nodes / 157 edges, all edge/node types (honest data)
 ```
-.venv/bin/python -m harness.seed_demo <ledger-path>         # 35 guards + enrich
+.venv/bin/python -m harness.seed_demo <ledger-path>         # guards + enrich
 ```
-Rebuilds a memory of **42 nodes / 51 edges** with every type the globe renders:
-`related` (42, from real embedding cosine) · `synthesizes` (8, real Qwen ExpeL crystallization) ·
+Rebuilds a memory of **58 nodes / 157 edges** with every type the globe renders:
+`related` (141, from real embedding cosine) · `synthesizes` (15, real Qwen ExpeL crystallization) ·
 `supersedes` (1, a real belief-revision) · 3 anti-pattern nodes (dark red) · 1 forgotten node (grey).
+Edge strength varies because Hebbian co-recall (§7) has strengthened synapses through use.
 Every lesson is a genuine coding rule — nothing invented.
+
+## 7. Associative memory — Hebbian wiring + spreading activation (honest, non-mystical)
+```
+.venv/bin/pytest tests/test_associative_memory.py -v
+```
+Neuroscience-*inspired*, deliberately named as what it is (**associative memory / Hebbian wiring /
+spreading activation**) — not consciousness, not a brain. Two mechanisms, both test-covered:
+- **Hebbian synapses.** Lessons recalled together strengthen a shared edge: the co-recall weight grows
+  with use and is **capped**, so it can't run away. It is stored on the graph edge and shown as
+  variable synapse strength on the globe (§6).
+- **Spreading-activation recall (opt-in).** From the query's top hits, activation spreads along the
+  **strongest** synapses to surface associated neighbours that pure BM25+vector recall misses.
+- **Firewall to confidence.** The wiring **never** touches a lesson's Beta confidence — association
+  changes *what surfaces*, only real pytest outcomes change *how much a lesson is trusted*. The tests
+  assert exactly this separation.
+
+## 8. Generalization across 3 bug classes (kills the cherry-pick objection)
+```
+.venv/bin/python -m harness.generalization --k 3 --distill-samples 6   # writes generalization_result.json
+```
+Three independent bug classes, each floor (no memory) vs ceiling (remembered verbatim fix) vs the
+shipped auto-distiller over independent samples (Wilson95):
+
+| Bug class | Floor | Ceiling | Auto-distiller |
+|---|---|---|---|
+| **tenant_isolation** | **0/3** | **3/3** | 6/6 (Wilson95 61–100%) |
+| **pagination_leak** | **0/3** | **3/3** | 6/6 (Wilson95 61–100%) |
+| **money_rounding** | **3/3** | **3/3** | 6/6 (Wilson95 61–100%) |
+| **aggregate** | **3/9** | **9/9** | **18/18** (Wilson95 82–100%) |
+
+**Honest interpretation** (from `generalization_result.json` → `interpretation`): memory flips the two
+classes the base model gets **wrong** by default (tenant isolation, pagination leak) from 0/3 → 3/3.
+On **money_rounding the base model already writes correct code unaided** (floor 3/3), so memory
+correctly adds **no** lift and does **no** harm (ceiling 3/3) — this class is **not** a memory win and
+must never be sold as one. Two independent 0→100 flips defeat cherry-picking; the third proves the
+memory is harmless when it isn't needed.
 
 ---
 
 ## Honest limitations (stated up front)
 - Distillation reliability is a measured **10/10 (CI 72–100%)**, not a guarantee; the hidden-test
   backstop is what makes an occasional bad distillation safe.
-- The A/B demonstrates **one** bug class (tenant isolation). A second class would strengthen the
-  generalisation claim (planned).
+- Generalisation is now shown across **three** bug classes (§8), of which **two** are genuine memory
+  wins (tenant isolation, pagination leak); the third (money rounding) is included precisely because
+  memory does *nothing* there — evidence of harmlessness, not a win.
 - The ceiling arm injects the developer's verbatim fix; it is labelled as the ceiling, never as
   default behaviour.
+- Associative wiring (§7) is neuroscience-*inspired* only; it is kept out of the confidence signal and
+  makes no claim to cognition.

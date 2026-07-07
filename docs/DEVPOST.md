@@ -30,7 +30,9 @@ You can watch and steer it live from one clean surface: **Chat** with the agent,
 
 The memory also carries **anti-patterns** — dead-end rules a past regression proved wrong — which are injected as active **⛔ DO NOT** inhibitions rather than guidance, so the agent is steered *away* from a known bad path, not just toward a good one. And it can **crystallize** a cluster of related lessons into one higher-level meta-lesson (ExpeL-style synthesis) that then earns its own confidence from real tests like any other.
 
-**The 3D knowledge globe** makes the whole memory legible: every lesson is a node (size = evidence α+β, colour = confidence, grey = forgotten, dark-red = anti-pattern), wired by *related* / *supersedes* (belief revision) / *synthesizes* (crystallization) edges. Click any node and its strands light up by type — you see at a glance what a memory connects to, what replaced it, and what it was distilled into.
+The memory is also **associative in a brain-*inspired* way** (honest wording — associative memory, not consciousness): lessons recalled together **wire together** via a Hebbian synapse whose weight grows with co-recall (capped), and an opt-in **spreading-activation** recall follows the strongest synapses to surface associated neighbours pure search misses. Crucially, this wiring **never touches a lesson's confidence** — that stays earned from real test outcomes.
+
+**The 3D knowledge globe** makes the whole memory legible (currently **58 nodes / 157 edges**): every lesson is a node (size = evidence α+β, colour = confidence, grey = forgotten, dark-red = anti-pattern), wired by *related* (141) / *supersedes* (1, belief revision) / *synthesizes* (15, crystallization) edges whose strength varies as Hebbian co-recall strengthens them. Click any node and its strands light up by type — you see at a glance what a memory connects to, what replaced it, and what it was distilled into.
 
 **The memory also measures, tunes and corrects itself:**
 - **Self-evaluation.** Qwen writes *keyword-free* paraphrase questions (so lexical BM25 can't win on word overlap) and we measure **Recall@1 / MRR** with the semantic leg on vs off — the memory grades its own retrieval quality on evidence, not vibes.
@@ -39,13 +41,15 @@ The memory also carries **anti-patterns** — dead-end rules a past regression p
 A live "memory-quality" panel surfaces Recall@1, the semantic lift, a **calibration gap** (displayed confidence vs empirical pass-rate), and grounded-outcome count.
 
 ## The proof
-An A/B harness runs the same task, same model (`qwen-plus`, temperature 0) against a hidden `pytest`, K times — the only variable is the injected memory:
+An A/B harness runs the same task, same model (`qwen-plus`, temperature 0) against a hidden `pytest` the agent never sees. The task never states our tenant convention, so the knowledge must come from memory. Three honest measurements, not one number:
 
-    Arm A  (no memory)   : 0/5 GREEN   (0%)
-    Arm B  (with memory) : 5/5 GREEN   (100%)
-    Δ pass-rate          : +100 points
+    Floor    (no memory)                          : 0/5 GREEN   → invents order['user_id'] == user['id']
+    Ceiling  (remembered developer fix, verbatim)  : 5/5 GREEN   → scopes  order['tenant_id'] == user['tenant_id']
+    Distillation reliability (shipped auto-distiller): 10/10 pass, Wilson95 [72,100]%
 
-> **Honest framing:** without the remembered convention the agent mis-scopes data access (it invents an unsupported `user_id` filter) and fails the hidden tenant-isolation test; the recalled lesson steers it to the correct `tenant_id` scoping. It's statistical (pass-rate over K runs), not one lucky run.
+> **Honest framing:** the **ceiling** (5/5) is the *capability ceiling* of memory injection — the remembered human fix replayed verbatim — not the shipped default. What we ship is an **auto-distiller** that turns the red test + fix into a lesson; measured separately, **10 of 10 independent distillations** passed the hidden test (Wilson95 [72,100]%). The core contribution is **test-grounded self-correction**: a distillation that drops the concrete comparison **fails the hidden test and is demoted**, so confidence tracks what actually works. The temp-0 in-run trials are a consistency check, not an independent sample — only the distillations are, which is why the Wilson interval lives there. We never claim "guaranteed 100%".
+
+**Generalisation across 3 bug classes** (`harness/generalization.py`) kills the cherry-pick objection. Memory flips the two classes the base model gets **wrong** by default — *tenant isolation* and *pagination leak* — from **0/3 → 3/3** each. On *money rounding* Qwen already writes correct code unaided (floor **3/3**), so memory adds **no** lift and does **no** harm (ceiling 3/3). Two independent 0→100 flips defeat cherry-picking; the third shows the memory is harmless when it isn't needed. The shipped auto-distiller is **18/18** (Wilson95 82–100%) across all three classes.
 
 ## How we built it
 - **Qwen Cloud** in four roles: DISTILL (`qwen-plus`, JSON), RECALL (`text-embedding-v4`), REVISE (`qwen-plus`), and SELF-CHECK (`qwen-plus` — paraphrase-based self-evaluation + contradiction judging).
@@ -53,6 +57,7 @@ An A/B harness runs the same task, same model (`qwen-plus`, temperature 0) again
 - **FastAPI + SQLite (WAL)** backend with atomic in-SQL Beta updates and Server-Sent Events for the live UI.
 - **Vanilla JS/CSS** frontend (no build): one clinical surface — Chat, an editable memory deck with a Beta confidence meter, a **3D force-directed knowledge globe** (self-contained, CDN-free) with click-to-highlight strands, and the 🏆 Proof view.
 - **A-MEM auto-linking + ExpeL crystallization** (`graph.py`, `synthesis.py`): lessons wire themselves into a graph (related / supersedes / synthesizes) and clusters can be distilled into meta-lessons that earn their own confidence.
+- **Associative memory** (Hebbian wiring + spreading activation): lessons recalled together strengthen a capped synapse weight, and an opt-in spreading-activation recall walks the strongest synapses to surface neighbours pure retrieval misses — neuroscience-*inspired*, and deliberately kept separate from confidence (which stays test-earned). The globe now shows **58 nodes / 157 edges** with variable synapse strength.
 - **Anti-pattern inhibitions**: dead-end lessons render as **⛔ DO NOT** directives so the agent avoids a known regression, not just repeats a known fix.
 - **MCP tool** (`recall` / `record`) so any agent — Claude Code, Qwen, any coding agent — can use the memory as a drop-in.
 - **Memory-injection defense** (`memory.py`): recalled lessons enter the prompt as *untrusted data* behind structural markers and a **deterministic sanitizer** that strips embedded instruction/role directives — so a poisoned lesson can't become a command (second-order prompt injection). Validated by our own red-team.
@@ -62,15 +67,15 @@ An A/B harness runs the same task, same model (`qwen-plus`, temperature 0) again
 Making the proof honest: an adversarial self-review caught us over-claiming, so we re-framed the demo to exactly what the model does and made it statistical (pass-rate over K runs) instead of one lucky run.
 
 ## Accomplishments that we're proud of
-A memory whose confidence is grounded in real test outcomes, that can **demote and tombstone** wrong advice, and that **measures and tunes its own retrieval** and **resolves contradictions on teach** — things the big chat assistants' memory structurally can't do — proven with a reproducible **0/5 → 5/5** result and a self-measured **Recall@1 0.75 → 1.00**.
+A memory whose confidence is grounded in real test outcomes, that can **demote and tombstone** wrong advice, and that **measures and tunes its own retrieval** and **resolves contradictions on teach** — things the big chat assistants' memory structurally can't do. Proven with a reproducible **floor 0/5 → ceiling 5/5**, a shipped auto-distiller measured at **10/10 (Wilson95 72–100%)**, **generalisation across 3 bug classes** (two independent 0→100 flips plus one class where memory is correctly harmless), and a self-measured **Recall@1 0.75 → 1.00**.
 
 We also **red-teamed our own agent**: because recalled lessons are injected into the system prompt, a poisoned lesson is a real attack surface (memory-poisoning). We hardened it — structural isolation + a deterministic sanitizer + persona rules — flipping our poisoned-memory probe from **vulnerable → safe** and passing a 60-case automated red-team scan clean.
 
 ## What we learned
-Retrieval plus an LLM isn't enough for a memory you can trust: you also need an **outcome signal** (real test pass/fail) so confidence is *earned*, and a **revision path** (obsolescence detection) so the memory stays correct as the codebase changes. Grounding trust in evidence — not the model's own confidence — was the key insight.
+Retrieval plus an LLM isn't enough for a memory you can trust: you also need an **outcome signal** (real test pass/fail) so confidence is *earned*, and a **revision path** (obsolescence detection) so the memory stays correct as the codebase changes. Grounding trust in evidence — not the model's own confidence — was the key insight. Generalising the proof to three bug classes taught us a second discipline: to be honest you have to **show the class where your idea does nothing** (money rounding), not just the ones where it shines. And when we added brain-*inspired* associative wiring (Hebbian synapses, spreading activation), the rule that kept it honest was to keep that wiring **out of the confidence signal** — association helps recall find things; only real tests move trust.
 
 ## What's next for Regress-Guard
-Multiple bug patterns, editor/CI integrations, and shared per-repo team memories.
+More bug patterns beyond the current three, editor/CI integrations, and shared per-repo team memories.
 ---
 
 ## Built with (tags)

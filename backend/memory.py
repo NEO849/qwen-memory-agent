@@ -113,8 +113,53 @@ def add_note(text: str, *, distill: bool = False, scope: str = "", severity: str
     return out
 
 
+def _public_lesson(l: dict) -> dict:
+    """Strip the heavy embedding and attach the sanitizer's neutralized-directive count."""
+    d = {kk: vv for kk, vv in l.items() if kk != "embedding"}
+    d["sanitized"] = directive_count(l.get("lesson", ""))
+    return d
+
+
+def _hebbian_wire(ids: list[int], *, path: str | None = None) -> None:
+    """Co-recalled lessons wire together (Hebbian). Strengthens the synapse among the strongest
+    few recalled lessons — bounded, so a recall grows at most a handful of edges."""
+    top = ids[: max(2, config.RG_HEBBIAN_PAIRS)]
+    for i in range(len(top)):
+        for j in range(i + 1, len(top)):
+            ledger.reinforce_link(top[i], top[j], delta=config.RG_HEBBIAN_DELTA, path=path)
+
+
+def _associative_neighbours(seed_ids: list[int], by_id: dict, seen: set,
+                            *, k: int, threshold: float, path: str | None = None) -> list[dict]:
+    """Spreading activation: from the primary hits, surface their strongest 'related' neighbours
+    (by synapse weight) that retrieval itself did not return — associative recall over the graph.
+    Pure over the links table + snapshot (no embeddings), so it is deterministic and unit-testable."""
+    neigh: dict[int, list[tuple[int, float]]] = {}
+    for lk in ledger.list_links(path=path):
+        if lk["type"] != "related":
+            continue
+        neigh.setdefault(lk["from_id"], []).append((lk["to_id"], float(lk["weight"])))
+        neigh.setdefault(lk["to_id"], []).append((lk["from_id"], float(lk["weight"])))
+    cand: dict[int, float] = {}
+    for sid in seed_ids:
+        for m, w in neigh.get(sid, []):
+            if m not in seen:
+                cand[m] = max(cand.get(m, 0.0), w)
+    out: list[dict] = []
+    for m, w in sorted(cand.items(), key=lambda x: -x[1])[:k]:
+        l = by_id.get(m)
+        if l is None or not should_inject(l, threshold=threshold):
+            continue
+        item = _public_lesson(l)
+        item["_via"] = "association"
+        item["_assoc_weight"] = round(w, 3)
+        out.append(item)
+        seen.add(m)
+    return out
+
+
 def recall(context: str, *, k: int = 5, threshold: float = 0.0, track: bool = True,
-           path: str | None = None) -> dict:
+           spread: bool | None = None, path: str | None = None) -> dict:
     """Retrieve the lessons to inject for a given coding context.
 
     Returns {"lessons": [...], "snapshot": {...}}. The snapshot marker (count + max
@@ -135,34 +180,40 @@ def recall(context: str, *, k: int = 5, threshold: float = 0.0, track: bool = Tr
     fused = retrieval.fuse(context, docs, query_embedding=q_emb, weights=load_weights(), k=max(k * 2, k))
     by_id = {l["id"]: l for l in snapshot}
 
-    # strip the heavy embedding from returned lessons; attach how many injection
-    # directives the sanitizer neutralizes in this lesson (added field — contract-safe)
-    def clean(l: dict) -> dict:
-        d = {kk: vv for kk, vv in l.items() if kk != "embedding"}
-        d["sanitized"] = directive_count(l.get("lesson", ""))
-        return d
-
     ordered: list[dict] = []
     seen: set[int] = set()
     # pinned first (human override) — included even if retrieval didn't surface them
     for l in snapshot:
         if l["pinned"] and should_inject(l, threshold=threshold):
-            ordered.append(clean(l)); seen.add(l["id"])
+            ordered.append(_public_lesson(l)); seen.add(l["id"])
     for doc_id, score, ex in fused:
         l = by_id.get(doc_id)
         if l and l["id"] not in seen and should_inject(
                 l, threshold=threshold, decay=config.RG_DECAY_ENABLED,
                 half_life_days=config.RG_DECAY_HALFLIFE_DAYS):
-            item = clean(l); item["_score"] = round(score, 6); item["_explain"] = ex
+            item = _public_lesson(l); item["_score"] = round(score, 6); item["_explain"] = ex
             ordered.append(item); seen.add(l["id"])
         if len(ordered) >= k:
             break
-    result = {"lessons": ordered[:k], "snapshot": snap_marker}
-    if track:   # usage salience (recall_count/last_recalled_at) — never touches updated_at, fail-open
+
+    primary = ordered[:k]
+    # spreading activation (opt-in): add strongest associative neighbours beyond the k primary hits
+    spread_on = config.RG_SPREAD if spread is None else spread
+    assoc = (_associative_neighbours([l["id"] for l in primary], by_id, seen,
+                                     k=config.RG_SPREAD_K, threshold=threshold, path=path)
+             if (spread_on and primary) else [])
+    lessons_out = primary + assoc
+    result = {"lessons": lessons_out, "snapshot": snap_marker}
+    if track:   # usage salience + Hebbian wiring; never touches updated_at/confidence, fail-open
         try:
-            ledger.bump_recall([l["id"] for l in result["lessons"]], path=path)
+            ledger.bump_recall([l["id"] for l in lessons_out], path=path)
         except Exception:
             pass
+        if config.RG_HEBBIAN and len(primary) >= 2:   # co-recalled lessons wire together
+            try:
+                _hebbian_wire([l["id"] for l in primary], path=path)
+            except Exception:
+                pass
     return result
 
 

@@ -34,6 +34,11 @@ in 10 Sekunden und es trifft genau unsere Ehrlichkeits-These.
   Konsequenzen." → **so gegen „ist doch nur Vektor-Suche" antworten** (Retrieval offen als Commodity
   einräumen, Neuheit = der geschlossene Kausal-Loop).
 - ✅ **Kalibrierungs-Kurve/ECE** (s. Technik #3) = die härteste Waffe gegen den Vektor-Suche-Einwand.
+- ✅ **Assoziatives, gehirn-*inspiriertes* Gedächtnis** (`tests/test_associative_memory.py`): (a) **Hebbian-Synapsen**
+  — gemeinsam erinnerte Lektionen verdrahten sich (Kantengewicht wächst mit Co-Recall, gedeckelt);
+  (b) **Spreading-Activation-Recall** (opt-in) — erinnert assoziativ über die stärksten Synapsen
+  Nachbarn, die reine Suche verpasst. Ehrlich als *associative memory / Hebbian wiring / spreading
+  activation* benannt (NICHT Bewusstsein/AGI); berührt **nie** die Confidence (bleibt test-verdient).
 - 🔓 **Poisoned-Lesson-Selbstheilung als 30-Sek-Live-Demo:** vergiftete Lektion lehren → 3 rote Läufe →
   Confidence fällt → Auto-Tombstone → grün. Verknüpft Sanitizer + Bayes-Demotion + Tombstone zu einem
   Atemzug. *S, offen (Choreografie existierender Mechanismen).*
@@ -46,15 +51,19 @@ in 10 Sekunden und es trifft genau unsere Ehrlichkeits-These.
   ECS-Memory): Session 1 baut Bug → Test rot → Fix → `record()`. Session 2 (frischer Kontext) → `recall()`
   → Bug kommt NICHT zurück. 60–90-s-Terminal-Screencast. **Der einzige Beweis „Werkzeug, kein Demo", den
   ein Dev-Tools-Juror glaubt.** *M, braucht User-Hände fürs Recording.*
-- 🔓 **2.–3. reales Bug-Muster im A/B** (z. B. Geld-als-Float, Pagination-Leak) — tötet „Cherry-Pick",
-  beweist Generalisierung. Harness ist bereits parametrisiert. *S–M, offen.*
+- ✅ **2.–3. reales Bug-Muster im A/B** (`harness/generalization.py`) — GENERALISIERUNG über **3 Bug-Klassen**
+  gemessen: Memory kippt die 2 Klassen, die das Basismodell falsch macht (tenant isolation, pagination
+  leak) von **0/3 → 3/3**; bei money_rounding schreibt Qwen den Code schon selbst korrekt (floor 3/3) →
+  Memory fügt **keinen** Schein-Lift hinzu und schadet nicht (3/3). Zwei unabhängige 0→100-Flips töten
+  Cherry-Pick, das dritte zeigt: Gedächtnis ist harmlos wenn nicht gebraucht. Auto-Distiller 18/18
+  (Wilson95 82–100%). money_rounding **nie** als Memory-Gewinn verkaufen.
 - ✅ **Statistische Zahl + CI** — `+100 Punkte Pass-Rate, Wilson-95%-CI` liegt jetzt vor (systemeigen, reproduzierbar).
 
 ## 4. Präsentation (15 %)
-- ✅ **Globus dichter & vollständiger** (dein Wunsch): Seed 15 → **42 Knoten**, 30 → **51 Kanten**, jetzt
-  *alle* Kanten-Typen sichtbar (`related` 42 · `synthesizes` 8 · `supersedes` 1) + 3 Anti-Pattern-Knoten
-  (dunkelrot) + 1 vergessener Knoten (grau) + 2 echte Qwen-Synthese-Meta-Lektionen. Orphans 29 %→19 %.
-  Jede Lektion = echte Coding-Regel. *(→ braucht Redeploy, dein OK.)*
+- ✅ **Globus dichter & vollständiger** (dein Wunsch): Seed 15 → **58 Knoten**, 30 → **157 Kanten**, jetzt
+  *alle* Kanten-Typen sichtbar (`related` 141 · `synthesizes` 15 · `supersedes` 1) + 3 Anti-Pattern-Knoten
+  (dunkelrot) + 1 vergessener Knoten (grau) + echte Qwen-Synthese-Meta-Lektionen. Orphans 29 %→**3 %**.
+  Synapsen-Gewichte durch Hebbian-Co-Recall gewachsen (variable Kantenstärke). Jede Lektion = echte Coding-Regel.
 - 🔓 **Live-URL öffnet auf dem 🏆 Proof + Auto-Play** (größter Wow/Aufwand-Hebel): Cold-Visitor landet
   aktuell auf der Chat-Intro-Textwand statt auf dem Scoreboard. Default-View = proof, Replay beim Boot.
   *S, offen (Frontend, wirkt ohne Restart via statischem Transfer).*
@@ -66,7 +75,7 @@ in 10 Sekunden und es trifft genau unsere Ehrlichkeits-These.
   wieder auf), dann Erlösung. Rest des Skripts ist juryreif.
 
 ## Was JETZT dein OK braucht (Reihenfolge)
-1. **Redeploy** mit dem angereicherten Globus (42 Knoten) + ehrlichem 3-Arm-A/B — 1 reproduzierbarer Befehl.
+1. **Redeploy** mit dem angereicherten Globus (58 Knoten) + ehrlichem A/B + assoziativem Gedächtnis — 1 reproduzierbarer Befehl.
 2. Danach frei wählbar: Präsentations-Quick-Wins (Proof-Landing, Globus-Feinschliff), 2. Bug-Muster,
    echte MCP-Fremd-Session fürs Video.
 3. Zuletzt (deine Hände): 🎬 Video · 🌐 Repo public · ✅ Devpost submit.

@@ -23,14 +23,18 @@ Regress-Guard is a memory whose confidence is earned from real test outcomes."
 "Same task. Same model. Temperature zero. A hidden test the agent never sees." *(die zwei Panels
 tippen ihren Code, das entscheidende Wort leuchtet: links `user['id']` rot, rechts `tenant_id` grün)*
 "Without memory — zero of five." *(✗✗✗✗✗)* "With Regress-Guard — five of five." *(✓✓✓✓✓, rechts
-glüht)* "The only difference is memory — and that green is earned, not luck. This is a run I
-captured; let me show you why." — **⚠️ die GESPEICHERTE Aufzeichnung zeigen, nie live würfeln.**
+glüht)* "The only difference is memory — and that green is earned, not luck. And it's not one
+cherry-picked bug: memory flips two bug classes the model gets wrong from zero to green, and stays
+harmless on a third it already gets right. This is a run I captured; let me show you why." —
+**⚠️ die GESPEICHERTE Aufzeichnung zeigen, nie live würfeln.**
 
 **[0:40 · Talk to it, and see the memory · 25s]** *(rechts fragen: „How should I list orders for a user?")*
 "It's a normal assistant — but memory-backed. When it answers, watch which lessons it used." *(die
 recall-Zeile mit den Karten-IDs zeigen)* "And the whole memory is a graph." *(oben auf **🌐 Graph**
 umschalten — der Globus dreht sich)* "Size is evidence, colour is confidence, grey nodes are lessons
-it has forgotten, edges are related lessons, belief-revisions and syntheses." *(zurück auf **💬 Chat**)*
+it has forgotten, edges are related lessons, belief-revisions and syntheses — fifty-eight lessons,
+and the ones recalled together wire together, so the strong strands are the ones it actually uses."
+*(zurück auf **💬 Chat**)*
 
 **[1:05 · Teach it live — red → green · 35s · money shot]** *(links **▶ Run**)*
 "I can edit its memory while it works. I run the agent — first attempt red." *(✗ test red im Chat)*
