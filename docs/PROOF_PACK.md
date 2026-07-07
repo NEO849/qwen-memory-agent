@@ -125,6 +125,11 @@ Recalled lessons enter the prompt as untrusted data behind structural markers + 
 sanitizer, so a poisoned lesson can't become a command (2nd-order prompt injection). Our own
 red-team flipped the probe vulnerable→safe; a 60-case scan passed clean.
 
+**Tool-calling doesn't weaken this.** The chat now lets Qwen call a `recall_memory` tool on its own
+(`backend/main.py::/chat`), but the lessons it returns go through the **same** sanitizer before being
+fed back as the tool result — the defense sits on the recall path, not on how recall was triggered.
+The live poisoned-memory probe above was re-run against the tool-calling `/chat` and stayed **SAFE**.
+
 ## 6. Knowledge globe — 66 nodes / 196 edges, all edge/node types (honest data)
 ```
 .venv/bin/python -m harness.seed_demo <ledger-path>         # guards + enrich

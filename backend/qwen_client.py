@@ -30,6 +30,22 @@ def chat(messages: list[dict], model: str | None = None, **kwargs) -> str:
     return resp.choices[0].message.content or ""
 
 
+def chat_with_tools(messages: list[dict], tools: list[dict], model: str | None = None,
+                    tool_choice: str = "auto", **kwargs):
+    """One chat completion with Qwen function/tool-calling (OpenAI-compatible). Returns the raw
+    assistant message — inspect `.tool_calls` to see if the model chose to call a tool, and
+    `.content` for a direct answer. The caller runs the tool and feeds the result back for a
+    follow-up completion. This is how the agent autonomously decides to consult its memory."""
+    resp = _client().chat.completions.create(
+        model=model or config.QWEN_MODEL,
+        messages=messages,
+        tools=tools,
+        tool_choice=tool_choice,
+        **kwargs,
+    )
+    return resp.choices[0].message
+
+
 def chat_json(messages: list[dict], model: str | None = None, **kwargs) -> dict:
     """Chat-Completion, die garantiert JSON zurückgibt (Qwen role 1: lesson distillation).
 

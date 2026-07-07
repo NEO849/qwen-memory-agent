@@ -122,7 +122,7 @@ One clinical surface — a **living-memory** layout: the **editable memory on th
 
 ---
 
-## Qwen's four roles
+## Qwen's five roles
 
 | # | Role | Model | Where |
 |---|------|-------|-------|
@@ -130,8 +130,11 @@ One clinical surface — a **living-memory** layout: the **editable memory on th
 | 2 | **RECALL** — embed lessons + context, fuse with BM25 (RRF) | `text-embedding-v4` (1024-d) | `backend/retrieval.py`, `memory.py` |
 | 3 | **REVISE** — is a lesson now obsolete? → tombstone | `qwen-plus` | `backend/reviser.py` |
 | 4 | **SELF-CHECK** — keyword-free paraphrase eval + contradiction judge | `qwen-plus` | `backend/evaluation.py`, `reviser.py` |
+| 5 | **FUNCTION-CALLING** — chat gives Qwen a `recall_memory` tool; the model decides on its own to call it for coding questions and writes the query itself | `qwen-plus` (tool-calling) | `backend/qwen_client.py::chat_with_tools`, `backend/main.py::/chat` |
 
 *Even the coding agent in the proof harness is Qwen — Qwen both **causes** and **cures** the bug via memory.*
+
+In chat, we don't decide when to consult the memory — **Qwen does**. It's handed a `recall_memory` tool and *autonomously* calls it for coding/engineering questions (formulating its own query, e.g. *"password storage best practices"*), while skipping it for casual ones (*"What is the capital of France?"* → no tool call). We run the real recall, **sanitize** the lessons (the poisoned-memory defense stays intact) and feed them back as the tool result before Qwen answers — shown in the UI as *"🔧 Qwen called recall('…') → answered using N lessons"*. It fails open to the direct pre-injection path if tool-calling is unavailable.
 
 ---
 

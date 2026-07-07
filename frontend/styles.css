@@ -388,3 +388,7 @@ button { font-family: inherit; cursor: pointer; }
 /* honest caption under Proof / Duel — the ceiling is not the shipped default (juror-visible) */
 .honesty-note { flex: none; font-size: 11px; line-height: 1.4; color: var(--ink-dim); opacity: .72; text-align: center; margin-top: 2px; }
 .honesty-note b { color: var(--ink); font-weight: 600; }
+
+/* Qwen function-calling indicator in the recall strip — the model chose to consult its memory */
+.tool-call { color: var(--memory); }
+.tool-call code { font-family: var(--mono); font-size: 11px; color: #d9caf0; background: rgba(185,166,232,.12); padding: 1px 6px; border-radius: 5px; }

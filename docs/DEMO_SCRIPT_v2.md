@@ -42,9 +42,10 @@ memory. Five of five with it — happening right now." *(0/5 vs 5/5, das Memory-
 > **hier mit dem Duell eröffnen** (noch stärker „es ist echt"), Proof nur zum Schluss.
 
 **[0:40 · Talk to it — the living memory · 25s]** *(in der Mitte fragen: „How do I safely list a user's orders in a multi-tenant service?"; der Globus ist rechts schon sichtbar)*
-"It's a normal assistant — but memory-backed. Watch the globe on the right as it answers." *(die Antwort
-streamt; die recall-Zeile zeigt die genutzten Karten-IDs, z. B. #1 #24 #60)* "The exact lessons it just
-used **light up on the globe, live** — memory and its *use* on one screen, not two tabs. Sixty-five
+"It's a normal assistant — but memory-backed. And it decides for itself when to consult that memory:
+Qwen **calls a `recall` tool** with a query it writes itself." *(auf die recall-Zeile zeigen: „🔧 Qwen
+called recall('multi-tenant order listing')")* "Then the exact lessons it recalled **light up on the
+globe, live** — memory and its *use* on one screen, not two tabs. Sixty-five
 lessons: size is evidence, colour is confidence, grey is forgotten, dark-red is a *don't*; edges are
 similarity, belief-revisions and syntheses." *(kurz einen Knoten anklicken — seine Stränge leuchten farbig)*
 *(zurück auf **💬 Chat**)*
@@ -82,7 +83,7 @@ sessions, entirely over MCP. Any coding agent — Claude Code, Qwen — plugs in
 > räumt selbst auf (Deck bleibt sauber). Das ist der stärkste „echtes Werkzeug"-Impact-Beat.
 
 **[2:45 · Close — slam back to the proof · 15s]** *(zurück auf den Tab **🏆 Proof** — das 0/5 → 5/5 ist das LETZTE Bild)*
-"Four Qwen roles on Alibaba Cloud. A memory earned from real tests, that forgets what's wrong, blocks
+"Five Qwen roles on Alibaba Cloud. A memory earned from real tests, that forgets what's wrong, blocks
 what failed, and is hardened against poison — usable in any agent as an MCP tool." *(auf 0/5 → 5/5
 zeigen)* "Confidence you can audit. Zero of five, to five of five — because it earned it. That's
 Regress-Guard." *(ECS-URL + GitHub einblenden)*

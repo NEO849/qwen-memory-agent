@@ -170,6 +170,8 @@
       });
       addEventListener('mousemove', e => { tip.style.left = (e.clientX + 16) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; });
       G.d3Force('charge').strength(-120);
+      // centre + zoom the whole constellation to fill the frame once the force layout settles
+      setTimeout(() => { try { G.zoomToFit(700, 60); } catch (_) {} }, 1300);
       // gentle idle auto-rotate (this build ships TrackballControls — no built-in autoRotate),
       // so orbit the camera around the centre ourselves; pause on interaction and while a node is focused.
       let ang = 0, radius = null, resumeAt = 0;

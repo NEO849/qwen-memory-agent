@@ -296,15 +296,18 @@ function bubble(who, text) { const intro = $('#intro'); if (intro) intro.remove(
 async function ask(q) {
   $('#askSend').disabled = true; bubble('user', q);
   const t = bubble('agent', '…');
-  try { const r = await api('/chat', json({ message: q })); t.innerHTML = `<div class="who">agent</div>${escapeHtml(r.reply)}`; showRecalled(r.recalled, r.sanitized_total, r.inhibited); }
+  try { const r = await api('/chat', json({ message: q })); t.innerHTML = `<div class="who">agent</div>${escapeHtml(r.reply)}`; showRecalled(r.recalled, r.sanitized_total, r.inhibited, r.used_tool, r.tool_query); }
   catch { t.innerHTML = `<div class="who">agent</div>(error contacting agent)`; }
   $('#askSend').disabled = false;
 }
-function showRecalled(ids, sanitizedTotal = 0, inhibited = []) {
+function showRecalled(ids, sanitizedTotal = 0, inhibited = [], usedTool = false, toolQuery = '') {
   const strip = $('#recall');
   if (!ids || !ids.length) { strip.hidden = true; strip.innerHTML = ''; return; }
   strip.hidden = false;
-  strip.innerHTML = `<span>answered using ${ids.length} lesson${ids.length === 1 ? '' : 's'}:</span>`;
+  const lead = usedTool
+    ? `<span class="tool-call">🔧 Qwen called <code>recall(${toolQuery ? '“' + escapeHtml(toolQuery.slice(0, 40)) + '”' : ''})</code> →</span> `
+    : '';
+  strip.innerHTML = `${lead}<span>answered using ${ids.length} lesson${ids.length === 1 ? '' : 's'}:</span>`;
   ids.forEach(id => { const l = state.byId.get(id); if (!l) return;
     const s = document.createElement('span'); s.className = 'lz'; s.textContent = `#${id}`; s.title = l.lesson; s.onclick = () => jumpTo(id); strip.appendChild(s); });
   if (sanitizedTotal > 0) {
@@ -480,7 +483,7 @@ function setView(v) {
 document.querySelectorAll('.vbtn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#btnReplay') && $('#btnReplay').addEventListener('click', playProof);
 $('#btnDuel') && $('#btnDuel').addEventListener('click', runDuel);
-{ const gf = $('#graphFrame'); if (gf) gf.src = '/graph.html?n=1'; }   // load the persistent globe once
+{ const gf = $('#graphFrame'); if (gf) gf.src = '/graph.html?n=2'; }   // load the persistent globe once
 paintTeach();
 // Land on the signature 🏆 Proof moment and auto-play it once — a cold visitor sees 0→5/5 first
 // (jurors decide in the first 30s); Chat is one click away. playProof respects reduced-motion.
