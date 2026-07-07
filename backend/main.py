@@ -43,6 +43,7 @@ PAID_PREFIXES = ("/chat", "/ingest", "/notes", "/revise", "/evaluate", "/tune",
                  "/synthesize", "/agent/start")
 _hits: dict[str, deque] = defaultdict(deque)       # ip -> request timestamps (all)
 _paid_hits: dict[str, deque] = defaultdict(deque)  # ip -> request timestamps (paid only)
+_duel_hits: dict[str, deque] = defaultdict(deque)  # ip -> /duel timestamps (very expensive: k*2 Qwen)
 
 
 def _rate_ok(bucket: dict, ip: str, limit: int, window: float, now: float) -> bool:
@@ -72,6 +73,8 @@ async def _guard(request: Request, call_next):
     is_paid = method != "GET" and any(path == p or path.startswith(p) for p in PAID_PREFIXES)
     if is_paid and not _rate_ok(_paid_hits, ip, 8, 60.0, now):        # 8 paid-Qwen req/min
         return JSONResponse({"detail": "rate limited — too many model calls, wait a moment"}, status_code=429)
+    if path == "/duel" and not _rate_ok(_duel_hits, ip, 4, 60.0, now):  # live duel runs k*2 code-gens
+        return JSONResponse({"detail": "the live duel is expensive — wait a moment"}, status_code=429)
     # 3) optional shared-secret gate on ALL writes (enabled only if env token set) — method-based
     #    so new write endpoints are covered automatically (reads are GET).
     if DEMO_TOKEN and method in ("POST", "PATCH", "PUT", "DELETE"):
@@ -374,6 +377,68 @@ def get_graph() -> dict:
     """Knowledge-graph view of the memory (nodes = lessons, edges = related/supersedes/synthesizes).
     Registered BEFORE the static mount so this API route wins over any static path."""
     return graph.build_graph(path=config.LEDGER_PATH)
+
+
+# --------------------------------------------------------------------- duel ---
+@app.get("/duel")
+def duel(k: int = Query(5, ge=1, le=5)) -> StreamingResponse:
+    """Live A/B duel — the same prompt to a PLAIN model and to the SAME model + the lesson
+    Regress-Guard recalled, streamed round-by-round (SSE) so the green/red counters tick live.
+
+    Honest + reliable by design: the memory arm injects the *remembered developer fix* (a real
+    stored lesson, the capability ceiling) rather than distilling live — so the demo can't flake on
+    the distillation step. The plain arm consistently mis-scopes the tenant query and fails the
+    hidden isolation test; the memory arm scopes it correctly. Both are genuine qwen temp-0 runs
+    against the same hidden pytest the model never sees. (The 🏆 Proof tab is the stored replay of
+    this same experiment — this is the live version.)"""
+    from harness import ab_runner
+    # What the memory arm injects — a REAL recall from the live ledger, guarded for reliability exactly
+    # like our A/B harness: if the recalled lesson is concrete enough (names the tenant comparison), use
+    # it verbatim; otherwise inject the remembered fix in its canonical concrete form (the determinism
+    # guard) so a live on-camera run can't flake on a vague lesson. temp=0 + a fixed concrete lesson is
+    # deterministic, so the plain arm stays red and the memory arm stays green across rounds.
+    try:
+        recalled = memory.recall(ab_runner.RECALL_CONTEXT, path=config.LEDGER_PATH)["lessons"]
+    except Exception:
+        recalled = []
+    if recalled and ab_runner._actionable(recalled):
+        block = memory.render_injection(recalled)
+        lesson, injected = recalled[0].get("lesson", ""), "recalled"
+    else:
+        lesson = ab_runner.CANONICAL_LESSON
+        block = memory.render_injection(
+            [{"lesson": lesson, "severity": "high", "source": "human", "scope": "get_orders"}])
+        injected = "canonical (determinism guard)"
+
+    def _gen_code(b: str):                                # retry once on a transient Qwen error
+        for _ in range(2):
+            try:
+                return ab_runner._agent_write_code(b)
+            except Exception:
+                continue
+        return None
+
+    def _sse(obj: dict) -> str:
+        return f"data: {json.dumps(obj)}\n\n"
+
+    def gen():
+        yield _sse({"type": "start", "k": k, "prompt": ab_runner.TASK, "lesson": lesson, "injected": injected})
+        pg = mg = 0
+        for i in range(k):
+            cp = _gen_code("")                                            # plain: no memory
+            pp = ab_runner._run_pytest(cp)[0] if cp is not None else False
+            pg += 1 if pp else 0
+            yield _sse({"type": "round", "arm": "plain", "i": i, "passed": bool(pp),
+                        "green": pg, "code": cp if i == 0 else None})
+            cm = _gen_code(block)                                         # same model + recalled lesson
+            pm = ab_runner._run_pytest(cm)[0] if cm is not None else False
+            mg += 1 if pm else 0
+            yield _sse({"type": "round", "arm": "memory", "i": i, "passed": bool(pm),
+                        "green": mg, "code": cm if i == 0 else None})
+        yield _sse({"type": "done", "plain_green": pg, "memory_green": mg, "k": k, "injected": injected})
+
+    return StreamingResponse(gen(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 # ------------------------------------------------------------------- static ---

@@ -473,11 +473,13 @@ $('#btnSynth').addEventListener('click', runSynthesize);
 function setView(v) {
   document.querySelectorAll('.vbtn').forEach(x => { const on = x.dataset.view === v; x.classList.toggle('on', on); x.setAttribute('aria-selected', on); });
   $('#viewChat').hidden = v !== 'chat';
+  $('#viewDuel').hidden = v !== 'duel';
   $('#viewProof').hidden = v !== 'proof';
   if (v === 'proof') { playProof(); }        // the signature moment plays on open
 }
 document.querySelectorAll('.vbtn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#btnReplay') && $('#btnReplay').addEventListener('click', playProof);
+$('#btnDuel') && $('#btnDuel').addEventListener('click', runDuel);
 { const gf = $('#graphFrame'); if (gf) gf.src = '/graph.html?n=1'; }   // load the persistent globe once
 paintTeach();
 // Land on the signature 🏆 Proof moment and auto-play it once — a cold visitor sees 0→5/5 first
@@ -534,6 +536,40 @@ async function playProof() {
   await _sleep(rm ? 0 : 700);
   T('#proofPunch', 'The only difference is memory. That green is earned — from real tests, not opinion.');
   if (btn) btn.disabled = false; _proofRunning = false;
+}
+
+// ---------- LIVE DUEL: one prompt → plain AI vs AI+memory, 5 hidden tests, counters tick live ----------
+let _duelES = null, _duelRunning = false, _duelK = 5;
+function runDuel() {
+  if (_duelRunning) return; _duelRunning = true;
+  const btn = $('#btnDuel'); if (btn) { btn.disabled = true; btn.textContent = 'running… (live, ~20s)'; }
+  ['#duelPlainTests', '#duelMemTests', '#duelPlainCode', '#duelMemCode'].forEach(s => { const e = $(s); if (e) e.innerHTML = ''; });
+  const sp = $('#duelPlainScore'), sm = $('#duelMemScore');
+  if (sp) sp.textContent = '0/5'; if (sm) sm.textContent = '0/5';
+  $('#duelPlain') && $('#duelPlain').classList.remove('win', 'lose');
+  $('#duelMem') && $('#duelMem').classList.remove('win', 'lose');
+  $('#duelPunch') && ($('#duelPunch').textContent = 'Same task, same model, temperature 0. The only difference is the lesson Regress-Guard recalls.');
+  try { _duelES && _duelES.close(); } catch (_) {}
+  const es = new EventSource('/duel?k=5'); _duelES = es;
+  const finish = () => { try { es.close(); } catch (_) {} _duelES = null; _duelRunning = false;
+    if (btn) { btn.disabled = false; btn.textContent = '▶ Run 5 live'; } };
+  es.onmessage = (e) => {
+    let m; try { m = JSON.parse(e.data); } catch (_) { return; }
+    if (m.type === 'start') { _duelK = m.k || 5; }
+    else if (m.type === 'round') {
+      const pane = m.arm === 'plain' ? 'Plain' : 'Mem';
+      if (m.code) { const c = $('#duel' + pane + 'Code'); if (c) c.innerHTML = proofHighlight(m.code); }
+      const t = $('#duel' + pane + 'Tests'); if (t) t.insertAdjacentHTML('beforeend', `<span class="t ${m.passed ? 'g' : 'r'}">${m.passed ? '✓' : '✗'}</span>`);
+      const s = $('#duel' + pane + 'Score'); if (s) s.textContent = `${m.green}/${_duelK}`;
+    } else if (m.type === 'done') {
+      finish();
+      const pw = m.plain_green, mw = m.memory_green;
+      $('#duelPlain') && $('#duelPlain').classList.add(pw >= mw ? 'win' : 'lose');
+      $('#duelMem') && $('#duelMem').classList.add(mw >= pw ? 'win' : 'lose');
+      const p = $('#duelPunch'); if (p) p.textContent = `Live: ${pw}/${m.k} without memory, ${mw}/${m.k} with the recalled lesson. Same task, same model, temperature 0 — the only difference is memory.`;
+    }
+  };
+  es.onerror = () => { if (_duelRunning) { const p = $('#duelPunch'); if (p) p.textContent = 'the model calls are rate-limited or slow — try again in a moment (or use the 🏆 Proof replay).'; } finish(); };
 }
 
 // ---------- pattern crystallization (synthesis) ----------

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Regress-Guard — memory that forgets what's wrong</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=16">
+  <link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body>
   <div class="app">
@@ -64,6 +64,7 @@
       <header class="stage-head">
         <div class="view-toggle" role="tablist" aria-label="view">
           <button class="vbtn" data-view="chat" role="tab" aria-selected="false">💬 Chat</button>
+          <button class="vbtn" data-view="duel" role="tab" aria-selected="false">⚔️ Duel</button>
           <button class="vbtn vbtn-proof on" data-view="proof" role="tab" aria-selected="true">🏆 Proof</button>
         </div>
         <div class="ab" id="ab" title="A representative captured run — the hidden test is deterministic; temp-0 code-gen varies slightly. Re-run the A/B harness to reproduce."><span class="ab-label">proof</span><span class="pill">loading…</span></div>
@@ -91,6 +92,30 @@
           <input id="askInput" autocomplete="off" placeholder="Ask me anything…">
           <button id="askSend">Send</button>
         </div>
+      </div>
+
+      <!-- DUEL VIEW — LIVE A/B: one prompt → two AIs (plain vs memory), 5 hidden tests, live counters -->
+      <div class="view view-duel" id="viewDuel" hidden>
+        <div class="duel-head">
+          <div>
+            <div class="duel-title">Same prompt, two AIs — one <em>remembers</em>.</div>
+            <div class="duel-sub">the task: a real multi-tenant bug the base model gets wrong · a hidden test · temp 0 · <b>live</b></div>
+          </div>
+          <button id="btnDuel">▶ Run 5 live</button>
+        </div>
+        <div class="duel-arena">
+          <div class="duel-pane" id="duelPlain">
+            <div class="duel-pane-head"><span class="arm-dot red"></span>plain AI · no memory <b class="duel-score" id="duelPlainScore">0/5</b></div>
+            <div class="arm-tests" id="duelPlainTests"></div>
+            <pre class="arm-code" id="duelPlainCode"></pre>
+          </div>
+          <div class="duel-pane" id="duelMem">
+            <div class="duel-pane-head"><span class="arm-dot green"></span>AI + Regress-Guard <b class="duel-score" id="duelMemScore">0/5</b></div>
+            <div class="arm-tests" id="duelMemTests"></div>
+            <pre class="arm-code" id="duelMemCode"></pre>
+          </div>
+        </div>
+        <div class="duel-punch" id="duelPunch">Same task, same model, temperature 0. The only difference is the lesson Regress-Guard recalls.</div>
       </div>
 
       <!-- PROOF VIEW — the signature moment: same AI twice, only difference is memory -->
@@ -144,6 +169,6 @@
       <iframe class="graph-frame" id="graphFrame" title="knowledge graph" src="about:blank"></iframe>
     </aside>
   </div>
-  <script src="app.js?v=16" type="module"></script>
+  <script src="app.js?v=17" type="module"></script>
 </body>
 </html>

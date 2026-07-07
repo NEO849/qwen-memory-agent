@@ -354,6 +354,23 @@ button { font-family: inherit; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .arm-tests .t, .tok-win, .tok-lose { animation: none; } }
 @media (max-width: 900px) { .proof-arena { grid-template-columns: 1fr; } }
 
+/* live duel — one prompt, two AIs, counters tick live */
+.view-duel { position: relative; }
+.duel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex: none; }
+.duel-title { font-weight: 600; } .duel-title em { color: var(--green); font-style: normal; }
+.duel-sub { font-size: 12px; color: var(--ink-dim); margin-top: 2px; } .duel-sub b { color: var(--green); }
+#btnDuel { background: var(--panel-2); color: var(--ink); border: 1px solid var(--blue); border-radius: 10px; padding: 8px 14px; font-weight: 600; white-space: nowrap; }
+#btnDuel:hover:not(:disabled) { border-color: var(--green); } #btnDuel:disabled { opacity: .6; cursor: default; }
+.duel-arena { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.duel-pane { border: 1px solid var(--line); border-radius: 14px; background: #0b0e15; padding: 12px; display: flex; flex-direction: column; gap: 8px; min-height: 0; transition: border-color .3s, box-shadow .3s, opacity .3s; }
+.duel-pane-head { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-dim); }
+.duel-pane-head .duel-score { margin-left: auto; font-size: 16px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.duel-pane.win { border-color: var(--green); box-shadow: 0 0 0 1px var(--green), 0 8px 30px rgba(95,215,135,.12); }
+.duel-pane.win .duel-score { color: var(--green); }
+.duel-pane.lose { opacity: .82; } .duel-pane.lose .duel-score { color: var(--red); }
+.duel-punch { flex: none; color: var(--ink-dim); font-size: 13px; text-align: center; }
+@media (max-width: 900px) { .duel-arena { grid-template-columns: 1fr; } }
+
 /* final polish: focus states + camera-legible on-card evidence */
 .teach-row:focus-within { border-color: var(--memory); }
 .teach.steer .teach-row:focus-within { border-color: var(--green); }
