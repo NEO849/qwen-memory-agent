@@ -72,10 +72,14 @@ anti-pattern actively inhibits the agent. And on the **Graph** tab it grades and
 lessons into one meta-lesson — which starts unproven and earns confidence from real tests, like
 everything here."
 
-**[2:25 · It's a real tool, not a demo · 20s · Impact]** *(kurz die MCP-README / eine Claude-Code-Sitzung zeigen)*
-"And this isn't a closed demo. Regress-Guard is an MCP tool: any coding agent — Claude Code, Qwen —
-plugs in with three lines of config and gains this memory, hosted on Alibaba Cloud. It calls recall
-before writing code and record after fixing a test. One outcome-grounded memory, shared across agents."
+**[2:25 · It's a real tool, not a demo · 20s · Impact]** *(Terminal: `python -m harness.mcp_vignette` — vorher einmal laufen lassen, im Take draufzeigen ODER live mit ~15 s Fast-Forward)*
+"And this isn't a closed demo. It's an MCP tool against the cloud memory — watch it across two
+sessions." *(auf das Terminal zeigen)* "Session one, a fresh agent, no memory — it writes the tenant
+bug, the hidden test goes **red**. The developer records the fix to the cloud. Session two, a brand-new
+agent, calls **recall** first — and the bug is **gone, green**. The memory carried the fix across
+sessions, entirely over MCP. Any coding agent — Claude Code, Qwen — plugs in with three lines of config."
+> 💡 Der Terminal-Beweis (`harness/mcp_vignette.py`) läuft gegen die echte Cloud (regressguard.duckdns.org),
+> räumt selbst auf (Deck bleibt sauber). Das ist der stärkste „echtes Werkzeug"-Impact-Beat.
 
 **[2:45 · Close — slam back to the proof · 15s]** *(zurück auf den Tab **🏆 Proof** — das 0/5 → 5/5 ist das LETZTE Bild)*
 "Four Qwen roles on Alibaba Cloud. A memory earned from real tests, that forgets what's wrong, blocks

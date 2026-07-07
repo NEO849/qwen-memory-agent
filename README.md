@@ -188,8 +188,24 @@ Code, Cursor) gains a shared, outcome-grounded memory with **zero local setup** 
 the cloud does the distilling + retrieval). An agent calls `recall` before writing code and `record`
 after fixing a red test, so the same bug can't come back in a later session.
 
+**See it carry a fix across two sessions** — a recordable terminal proof against the *live* cloud memory:
+
+```bash
+python -m harness.mcp_vignette
+```
+
+**Session 1** (a fresh agent, empty memory) writes `get_orders` → the hidden test goes **RED** (it invents
+a `user_id` filter — a cross-tenant bug); the developer **records** the fix to the cloud memory. **Session 2**
+(a later, fresh agent) **recalls** that exact rule from the cloud → **GREEN**. The bug didn't come back —
+carried across sessions by the cloud memory alone, over the same `recall`/`record` data path as
+`mcp_tool/server.py`. It self-cleans (the recorded lesson is tombstoned so the live deck stays pristine).
+
 **30-second setup + verified transcript:** [`mcp_tool/README.md`](mcp_tool/README.md) · config: [`.mcp.json`](.mcp.json)
 (`REGRESS_GUARD_LOCAL=1` switches to a fully local ledger + your own Qwen key.)
+
+> Both the **🏆 Proof** and **⚔️ Duel** views now carry a visible *"ceiling ≠ default"* caption: **5/5 is the
+> capability ceiling** — the remembered fix injected verbatim, not a guaranteed default — while the shipped
+> auto-distiller is measured separately (**10/10, 95% CI 72–100%**). The honesty is now on screen, not just in the JSON.
 
 ---
 

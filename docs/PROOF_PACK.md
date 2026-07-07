@@ -80,6 +80,24 @@ confidence vs. empirical pass-rate, from real outcomes) instead of a misleading 
 gap is reported as `null` / "n/a" rather than a fake 0. This is "a memory that forgets what's wrong", shown live
 with real test evidence. Reproduce with the `ground_demo` command above.
 
+## 2c. MCP cross-session — a tool, not a demo
+```
+python -m harness.mcp_vignette
+```
+A recordable terminal proof against the **live** cloud memory (`regressguard.duckdns.org`) that the memory is a
+**drop-in tool**, not a closed demo — it drives the exact `recall`/`record` data path of the MCP tools
+(`mcp_tool/server.py`) end-to-end across two sessions:
+
+| Session | What it does | Hidden test |
+|---|---|---|
+| **Session 1** (fresh agent, empty memory) | writes `get_orders`, inventing a `user_id` filter (cross-tenant bug); the developer then **records** the concrete fix to the cloud | **RED** |
+| **Session 2** (later, fresh agent) | **recalls** that exact rule from the cloud before coding | **GREEN** |
+
+The bug the first session fixed does **not** come back in the second — **carried across sessions by the cloud
+memory over MCP**, with no local state. It **self-cleans** (the recorded lesson is tombstoned) so the live demo
+deck stays pristine. Honest note: the recorded rule *is* the developer's concrete fix (verbatim), so it's
+reliable — not a staged result; this is the injection path, distinct from the auto-distiller reliability in §2.
+
 ## 3. Calibration & convergence — the property a cosine score can't have
 ```
 .venv/bin/pytest tests/test_calibration.py -v

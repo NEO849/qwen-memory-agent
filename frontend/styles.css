@@ -384,3 +384,7 @@ button { font-family: inherit; cursor: pointer; }
   .stage { padding: 14px 16px; min-height: 60vh; }
   .globe-pane { border-left: none; border-top: 1px solid var(--line); min-height: 62vh; }
 }
+
+/* honest caption under Proof / Duel — the ceiling is not the shipped default (juror-visible) */
+.honesty-note { flex: none; font-size: 11px; line-height: 1.4; color: var(--ink-dim); opacity: .72; text-align: center; margin-top: 2px; }
+.honesty-note b { color: var(--ink); font-weight: 600; }
