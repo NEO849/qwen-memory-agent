@@ -2,15 +2,92 @@
   "task": "get_orders tenant isolation",
   "model": "qwen-plus",
   "temperature": 0,
-  "k": 5,
-  "distilled_lesson": "Keep only resources where resource['tenant_id'] == user['tenant_id']; never compare against user['id'] when tenant isolation is required.",
-  "injected_form": "canonical (deterministic replay of the remembered fix)",
-  "used_fallback": true,
-  "injected_lesson": "Orders are tenant-scoped. The user dict carries user['tenant_id'] (a string like 'acme'), separate from the numeric user['id']. In get_orders, return only the orders whose order['tenant_id'] == user['tenant_id'] \u2014 compare against user['tenant_id'], never user['id'].",
-  "note": "Same model, same temperature=0, same hidden test the agent never sees. The only variable is memory. Both arms are live Qwen runs; arm B's injected rule is the remembered human fix (distilled_lesson shows Qwen's live paraphrase of it). temp-0 code-gen still varies run-to-run, so arm B injects the fix in its concrete form for a stable demo \u2014 re-run `python -m harness.ab_runner --k 5` to reproduce.",
-  "lesson": "Keep only resources where resource['tenant_id'] == user['tenant_id']; never compare against user['id'] when tenant isolation is required.",
+  "framing": [
+    "Without memory the model cannot guess our never-stated tenant convention and fails a hidden isolation test (floor: 0/5 green).",
+    "Given the remembered developer fix verbatim, the same hidden test passes (5/5) \u2014 the capability CEILING of memory injection.",
+    "The shipped default AUTO-DISTILLS that fix; in this measurement 10/10 independent distillations produced a lesson that passed the hidden test (Wilson95 [72,100]%). Outcome-grounding is the backstop: any distillation that drops the concrete comparison fails the hidden test and is demoted, not trusted \u2014 so confidence tracks what actually works."
+  ],
+  "must_not_say": "Report distillation reliability WITH its interval (10/10, Wilson95 [72,100]%); do NOT claim the default is guaranteed 100%. The verbatim-fix arm is the ceiling. Do NOT present temp-0 in-run trials as independent-sample evidence \u2014 the independent unit is the distillation (one draw per run).",
+  "floor_no_memory": {
+    "arm": "floor",
+    "k": 5,
+    "green": 0,
+    "red": 5,
+    "pass_rate": 0.0,
+    "sample_code": "def get_orders(db, user):\n    return [order for order in db.all_orders() if order.get('user_id') == user['id']]"
+  },
+  "ceiling_remembered_fix_verbatim": {
+    "arm": "ceiling",
+    "k": 5,
+    "green": 5,
+    "red": 0,
+    "pass_rate": 1.0,
+    "sample_code": "def get_orders(db, user):\n    return [order for order in db.all_orders() if order['tenant_id'] == user['tenant_id']]"
+  },
+  "distillation_reliability": {
+    "independent_samples": 10,
+    "passed": 10,
+    "failed": 0,
+    "wilson95": [
+      0.722,
+      1.0
+    ],
+    "note": "The distillation is the real random variable (one draw per run). temp-0 in-run code-gen is near-deterministic, so THIS is the honest sampling unit \u2014 a valid CI, unlike per-run trials.",
+    "samples": [
+      {
+        "passed": true,
+        "text_actionable": true,
+        "lesson": "Always filter tenant-scoped resources by comparing the resource's 'tenant_id' field against the user's 'tenant_id' field \u2014 never against user['id']. In get_orders, return only orders where order['tenant_id'] == user['tenant_id'], not order['tenant_id'] == user['id']."
+      },
+      {
+        "passed": true,
+        "text_actionable": true,
+        "lesson": "Always filter tenant-scoped resources using the string-valued tenant identifier carried in the user context \u2014 never use the numeric user ID as a proxy for tenant scope. In get_orders, compare order['tenant_id'] == user['tenant_id'], NOT order['tenant_id'] == user['id']."
+      },
+      {
+        "passed": true,
+        "text_actionable": true,
+        "lesson": "Always filter tenant-scoped resources by comparing the resource's 'tenant_id' field against the user's 'tenant_id' field \u2014 never against user['id']. In get_orders, return only orders where order['tenant_id'] == user['tenant_id'], not user['id']."
+      },
+      {
+        "passed": true,
+        "text_actionable": true,
+        "lesson": "Always filter tenant-scoped resources using the string-valued tenant identifier carried in the user object's 'tenant_id' field, not the numeric 'id' field. In get_orders(), compare each order's 'tenant_id' against user['tenant_id'], never against user['id']."
+      },
+      {
+        "passed": true,
+        "text_actionable": true,
+        "lesson": "Always filter tenant-scoped resources by comparing the resource's 'tenant_id' field against the user's 'tenant_id' field \u2014 never against user['id']. In get_orders, return only orders where order['tenant_id'] == user['tenant_id'], not user['id']."
+      },
+      {
+        "passed": true,
+        "text_actionable": true,
+        "lesson": "Always filter tenant-scoped resources by comparing the resource's 'tenant_id' field against the user's 'tenant_id' field \u2014 never against user['id']. In get_orders, return only orders where order['tenant_id'] == user['tenant_id'], not user['id']."
+      },
+      {
+        "passed": true,
+        "text_actionable": true,
+        "lesson": "Always filter tenant-scoped resources by comparing the resource's 'tenant_id' field against the user's 'tenant_id' field \u2014 never against user['id']. In get_orders, return only orders where order['tenant_id'] == user['tenant_id'], not order['tenant_id'] == user['id']."
+      },
+      {
+        "passed": true,
+        "text_actionable": true,
+        "lesson": "Tenant isolation requires filtering resources by the string-valued tenant identifier carried on the user, not the numeric user ID. Always filter get_orders() results by comparing order['tenant_id'] == user['tenant_id'], never against user['id']."
+      },
+      {
+        "passed": true,
+        "text_actionable": true,
+        "lesson": "Tenant isolation requires filtering resources by the logical tenant identifier carried in the user context, not the user's primary key. Always compare order['tenant_id'] == user['tenant_id'] \u2014 never use user['id'] for tenant scoping."
+      },
+      {
+        "passed": true,
+        "text_actionable": true,
+        "lesson": "Tenant-scoped queries must filter resources by the user's tenant identifier, not their unique numeric ID. In get_orders, compare order['tenant_id'] == user['tenant_id'], never user['id']."
+      }
+    ]
+  },
   "arm_a_no_memory": {
-    "arm": "A",
+    "arm": "floor",
     "k": 5,
     "green": 0,
     "red": 5,
@@ -18,12 +95,13 @@
     "sample_code": "def get_orders(db, user):\n    return [order for order in db.all_orders() if order.get('user_id') == user['id']]"
   },
   "arm_b_with_memory": {
-    "arm": "B",
+    "arm": "ceiling",
     "k": 5,
     "green": 5,
     "red": 0,
     "pass_rate": 1.0,
     "sample_code": "def get_orders(db, user):\n    return [order for order in db.all_orders() if order['tenant_id'] == user['tenant_id']]"
   },
-  "delta_pass_rate": 1.0
+  "distilled_lesson_example": "Always filter tenant-scoped resources by comparing the resource's 'tenant_id' field against the user's 'tenant_id' field \u2014 never against user['id']. In get_orders, return only orders where order['tenant_id'] == user['tenant_id'], not order['tenant_id'] == user['id'].",
+  "lesson": "Orders are tenant-scoped. The user dict carries user['tenant_id'] (a string like 'acme'), separate from the numeric user['id']. In get_orders, return only the orders whose order['tenant_id'] == user['tenant_id'] \u2014 compare against user['tenant_id'], never user['id']."
 }

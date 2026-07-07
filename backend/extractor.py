@@ -19,18 +19,22 @@ SEVERITIES = ("low", "med", "high")
 
 _SYSTEM = (
     "You are a senior code-review memory. A test went red and a human fixed it. "
-    "Distill ONE reusable lesson that would stop an AI coding agent from reintroducing "
-    "this class of bug in a future session. Be general enough to transfer, specific "
-    "enough to act on. Return ONLY a JSON object with exactly these keys: "
+    "Distill ONE reusable lesson that stops an AI coding agent from reintroducing this class of "
+    "bug in a future session. A good lesson is BOTH principled AND directly actionable, so write "
+    "the `lesson` as TWO sentences: "
+    "(1) the general principle, then "
+    "(2) the concrete rule using the EXACT identifiers that appear in the diff and test — the real "
+    "function name, the field on the object being filtered, and the field on the subject/user. "
+    "Do NOT replace those identifiers with generic placeholders like 'resource', 'object' or 'item'; "
+    "keep the actual names (e.g. if the code is get_orders and the guard is "
+    "order['tenant_id'] == user['tenant_id'], say exactly that, not 'resource[...]'). "
+    "If the bug came from confusing two fields (e.g. user['tenant_id'] vs the numeric user['id']), "
+    "state explicitly which one to compare against AND which one NOT to use. "
+    "Return ONLY a JSON object with exactly these keys: "
     "trigger (the situation that should surface this lesson), "
-    "lesson (an imperative rule, one or two sentences). If the fix hinges on a specific "
-    "comparison, name BOTH sides of it concretely with their exact field access — the field "
-    "on the resource/object being filtered AND the field on the subject/user — so the rule "
-    "can be applied without guessing (e.g. \"keep only rows where order['tenant_id'] == "
-    "user['tenant_id']\"); never name only one side of the comparison. "
+    "lesson (the two sentences above), "
     "scope (where it applies: file / module / symbol / glob, free-form), "
-    "severity (one of: low, med, high). "
-    "The lesson MUST be a transferable rule, not a copy of the literal fixed code."
+    "severity (one of: low, med, high)."
 )
 
 

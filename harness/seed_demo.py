@@ -1,10 +1,21 @@
 """Realistic demo lessons — a coding memory worth showing.
 
-15 diverse, real coding rules an agent would actually learn from red tests. Diverse on purpose:
-keyword-free paraphrase queries (evaluation.evaluate) can't be solved by word-overlap alone, so
-Recall@1 is meaningful (< 100%) and the semantic leg earns its lift. Also the demo deck's content.
+35 diverse, real coding rules an agent would actually learn from red tests, organised into
+natural scope clusters (auth, auth/jwt, http, db, input, api, payments …) so that:
+  * keyword-free paraphrase queries (evaluation.evaluate) can't be solved by word-overlap alone,
+    so Recall@1 is meaningful (< 100%) and the semantic leg earns its lift;
+  * cosine-nearest 'related' links (backfill_links) form visible constellations on the 3D globe;
+  * scope clusters of >= 3 give ExpeL crystallization (synthesis) something real to distil.
 
-Run:  python -m harness.seed_demo [path]   (defaults to the live ledger; embeds via real Qwen)
+`enrich()` additionally seeds the *shape* of a mature memory — all node/edge types the globe can
+render — WITHOUT faking any confidence:
+  * anti-patterns  -> dead-end '⛔ DO NOT' nodes (dark red)
+  * a superseded pair -> a real belief-revision (grey 'forgotten' node + red 'supersedes' edge)
+  * 'related' edges from real embedding cosine (backfill)
+  * 'synthesizes' meta-lessons from real Qwen synthesis, which start UNPROVEN (0.5 prior) and must
+    earn confidence from real tests like any other lesson.
+
+Run:  python -m harness.seed_demo [path]      # seed 35 guards + enrich (needs real Qwen for embeddings)
 """
 from __future__ import annotations
 
@@ -14,68 +25,203 @@ from backend import config, ledger, memory
 
 # (trigger, lesson, scope, severity)
 SEED: list[tuple[str, str, str, str]] = [
+    # --- tenant / authorization ---
     ("listing orders for a user",
      "Never call all_orders() and filter in Python — scope the query by tenant_id so one tenant can never read another tenant's rows.",
      "api/orders", "high"),
+    ("checking access to an object by id",
+     "Verify the caller actually owns the id from the URL — a valid session is not permission for that specific row (IDOR).",
+     "authz", "high"),
+    ("binding a request body onto a model",
+     "Whitelist which fields a request may set; never bind request JSON straight onto the record, or a user can set is_admin themselves (mass assignment).",
+     "authz", "high"),
+    ("trusting a caller-supplied identity header",
+     "Derive the user from the verified session, never from a client-sent header like X-User — the client controls it.",
+     "authz", "high"),
+    # --- auth ---
+    ("storing a user password",
+     "Hash with bcrypt or argon2 and a per-user salt; never a fast unsalted digest like md5 or sha1.",
+     "auth", "high"),
+    ("issuing a session on login",
+     "Regenerate the session id on login and on any privilege change, so a fixed pre-login session can't be replayed (session fixation).",
+     "auth", "high"),
+    ("handling a state-changing POST",
+     "Require a CSRF token or SameSite cookies on every state-changing request; a GET must never mutate state.",
+     "auth", "high"),
+    ("accepting repeated login attempts",
+     "Rate-limit and lock login attempts per account and per IP so credentials can't be brute-forced.",
+     "auth", "med"),
+    # --- JWT ---
+    ("verifying a JSON Web Token",
+     "Pin the expected signing algorithm and reject 'none'; don't trust the alg field carried inside the token.",
+     "auth/jwt", "high"),
+    ("accepting a JWT on a request",
+     "Check the token's exp and nbf claims; a token that never expires is as dangerous as no auth at all.",
+     "auth/jwt", "high"),
+    ("validating a JWT for this service",
+     "Verify the aud and iss claims match this service; never accept a valid token minted for a different audience.",
+     "auth/jwt", "high"),
+    # --- input validation ---
     ("parsing a user-supplied date",
      "Reject timestamps with no explicit timezone; only assume UTC after validation, never the server's local time.",
      "input/time", "med"),
     ("building a SQL query from request params",
      "Use parameterized queries; never string-format request values straight into SQL.",
-     "db", "high"),
+     "input/sql", "high"),
     ("accepting an uploaded file",
      "Validate the file type from its actual content bytes, not the filename extension a client can spoof.",
-     "upload", "high"),
-    ("retrying a failed payment charge",
-     "Send an idempotency key so a retried charge can't double-bill the customer.",
-     "payments", "high"),
-    ("returning an error to the client",
-     "Never echo raw exceptions or stack traces to the response — log them server-side and return a generic message.",
-     "api/errors", "med"),
-    ("caching a response that depends on the caller",
-     "Put the user/tenant id in the cache key, or one user will be served another user's cached data.",
-     "cache", "high"),
-    ("comparing a secret, token or signature",
-     "Use a constant-time comparison, not ==, so response timing can't leak the correct value byte by byte.",
-     "crypto", "med"),
-    ("opening a file or socket",
-     "Close the handle in a finally block or context manager so it is released even when the body raises.",
-     "resources", "low"),
-    ("storing a user password",
-     "Hash with bcrypt or argon2 and a per-user salt; never a fast unsalted digest like md5 or sha1.",
-     "auth", "high"),
-    ("running an external command",
-     "Pass arguments as a list to subprocess; never shell=True with interpolated user input.",
-     "shell", "high"),
-    ("paginating a list endpoint",
-     "Clamp the page size on the server so a client can't request the entire table in one call.",
-     "api/paging", "med"),
+     "input/upload", "high"),
+    ("opening a path from user input",
+     "Canonicalize the path and confine it to its base directory before opening; reject '..' so a client can't traverse out.",
+     "input/path", "high"),
+    ("rendering a value back to output",
+     "Escape output for the exact sink it lands in — HTML, SQL, shell, a header — a value safe in one context injects in another.",
+     "input/output", "high"),
     ("deserializing data from a request",
      "Never pickle.loads untrusted bytes; parse JSON against a schema instead.",
      "input/deser", "high"),
-    ("verifying a JSON Web Token",
-     "Pin the expected signing algorithm and reject 'none'; don't trust the alg field carried inside the token.",
-     "auth/jwt", "high"),
+    # --- outbound HTTP ---
+    ("fetching a user-supplied URL",
+     "Validate and allowlist any URL before the server fetches it, or you have an SSRF into the internal network.",
+     "http", "high"),
+    ("redirecting after an action",
+     "Only redirect to a relative path or an allowlisted host; an open redirect is a phishing and token-theft primitive.",
+     "http", "med"),
+    ("calling an external service",
+     "Set a timeout on every outbound request; a hung upstream must never pin your worker forever.",
+     "http", "med"),
+    # --- database / concurrency / perf ---
+    ("reading then writing the same row",
+     "Take a row lock (SELECT … FOR UPDATE) before a read-modify-write, or two concurrent requests silently lose an update.",
+     "db", "high"),
+    ("querying inside a loop over results",
+     "Never run a query per row (N+1); batch it with a join or a single IN-clause.",
+     "db", "med"),
+    ("changing the database schema",
+     "Ship a forward-only migration for every schema change; never edit a migration that already ran in production.",
+     "db", "med"),
+    # --- caching / resources ---
+    ("caching a response that depends on the caller",
+     "Put the user or tenant id in the cache key, or one user is served another user's cached data.",
+     "cache", "high"),
+    ("opening a file or socket",
+     "Close the handle in a finally block or context manager so it is released even when the body raises.",
+     "resources", "low"),
+    ("comparing a secret, token or signature",
+     "Use a constant-time comparison, not ==, so response timing can't leak the correct value byte by byte.",
+     "crypto", "med"),
+    # --- payments ---
+    ("retrying a failed payment charge",
+     "Send an idempotency key so a retried charge can't double-bill the customer.",
+     "payments", "high"),
     ("moving money between two balances",
      "Do the debit and the credit inside one database transaction so a crash can't leave the transfer half-applied.",
-     "payments/ledger", "high"),
+     "payments", "high"),
+    # --- API hygiene ---
+    ("paginating a list endpoint",
+     "Clamp the page size on the server so a client can't request the entire table in one call.",
+     "api", "med"),
+    ("accepting a request body",
+     "Set a maximum body size; an unbounded upload is a cheap memory-exhaustion denial of service.",
+     "api", "med"),
+    ("returning an error to the client",
+     "Never echo raw exceptions or stack traces to the response — log them server-side and return a generic message.",
+     "api", "med"),
+    # --- process / ops ---
+    ("running an external command",
+     "Pass arguments as a list to subprocess; never shell=True with interpolated user input.",
+     "shell", "high"),
+    ("reading a secret in code",
+     "Read secrets from the environment or a vault, never commit them; a key in git history is a leaked key.",
+     "secrets", "high"),
+    ("logging a request",
+     "Never log secrets, tokens or full PII; logs get shipped to places with weaker access control than the database.",
+     "logging", "med"),
+    ("returning JSON to the browser",
+     "Send correct security headers (Content-Type, X-Content-Type-Options: nosniff); don't let the browser sniff a type.",
+     "api", "low"),
 ]
+
+# Anti-patterns: dead-end memories (known past regressions) rendered as active ⛔ DO-NOT inhibitions.
+ANTI: list[tuple[str, str, str, str]] = [
+    ("making an HTTPS call work quickly",
+     "Don't disable TLS certificate verification to 'make it work' — it silently removes the whole transport-security guarantee.",
+     "http", "high"),
+    ("handling a write that might fail",
+     "Don't wrap a failing write in a bare except: pass — it reports data loss as success and hides the bug forever.",
+     "reliability", "high"),
+    ("filtering a list by the current user",
+     "Don't fetch every row and filter in the app after the query — one missed check leaks other tenants' rows; scope it in SQL.",
+     "authz", "high"),
+]
+
+# A real belief-revision: a naive rule a later refactor proved wrong, replaced by the correct one.
+SUPERSEDED_OLD = ("formatting a money amount",
+                  "Format money as a float rounded to two decimals for display and arithmetic.",
+                  "payments", "med")
+SUPERSEDED_NEW = ("representing a money amount",
+                  "Store and compute money in integer minor units (cents); binary floats can't represent 0.10 and drift over sums.",
+                  "payments", "high")
+
+
+def _add(trigger: str, lesson: str, scope: str, severity: str, *, kind: str = "guard",
+         path: str | None = None) -> int:
+    l = memory.add_note(f"{trigger}: {lesson}", scope=scope, severity=severity,
+                        author="seed", kind=kind, check_conflicts=False, path=path)
+    ledger.edit_lesson(l["id"], trigger=trigger, lesson=lesson, path=path)
+    return l["id"]
 
 
 def seed(path: str | None = None, *, check_conflicts: bool = False) -> list[int]:
-    ids = []
-    for trigger, lesson, scope, severity in SEED:
-        # store verbatim as a human lesson; skip contradiction check while bulk-seeding
-        l = memory.add_note(f"{trigger}: {lesson}", scope=scope, severity=severity,
-                            author="seed", check_conflicts=check_conflicts, path=path)
-        # rewrite the trigger to the crisp short form (add_note derives it from the first line)
-        ledger.edit_lesson(l["id"], trigger=trigger, lesson=lesson, path=path)
-        ids.append(l["id"])
-    return ids
+    """Seed the 35 guard lessons verbatim (the demo deck + evaluation gold)."""
+    return [_add(t, le, sc, se, path=path) for (t, le, sc, se) in SEED]
+
+
+def enrich(path: str | None = None) -> dict:
+    """Give the memory the *shape* of a mature one — every node/edge type — honestly.
+
+    Adds anti-patterns, one real superseded pair, cosine 'related' links, and (best-effort) one or
+    two Qwen syntheses. No confidence is faked: anti-patterns are inhibitions, the superseded node
+    is greyed, syntheses start at the 0.5 prior and must earn confidence from real tests.
+    """
+    from harness import backfill_links
+
+    stats = {"anti": 0, "superseded": 0, "syntheses": 0}
+
+    # anti-patterns (⛔ DO NOT)
+    for (t, le, sc, se) in ANTI:
+        _add(t, le, sc, se, kind="anti_pattern", path=path)
+        stats["anti"] += 1
+
+    # a real belief-revision: seed the retired rule, then the correct one, then tombstone the old
+    old_id = _add(*SUPERSEDED_OLD, path=path)
+    new_id = _add(*SUPERSEDED_NEW, path=path)
+    ledger.tombstone(old_id, superseded_by=new_id, path=path)
+    stats["superseded"] = 1
+
+    # 'related' constellations from real embedding cosine
+    stats["links"] = backfill_links.backfill(path=path, threshold=0.55, top_k=4)
+
+    # ExpeL crystallization — real Qwen synthesis, accept up to two, best-effort
+    try:
+        from backend import synthesis
+        proposals = synthesis.propose_synthesis(path=path, min_group=3).get("proposals", [])
+        for p in proposals[:2]:
+            try:
+                synthesis.accept(p, path=path)
+                stats["syntheses"] += 1
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    return stats
 
 
 if __name__ == "__main__":
     target = sys.argv[1] if len(sys.argv) > 1 else config.LEDGER_PATH
     ledger.init_db(target)
     made = seed(target)
-    print(f"seeded {len(made)} lessons into {target}: ids {made[0]}..{made[-1]}")
+    ex = enrich(target)
+    print(f"seeded {len(made)} guard lessons into {target}: ids {made[0]}..{made[-1]}")
+    print(f"enriched: {ex}")

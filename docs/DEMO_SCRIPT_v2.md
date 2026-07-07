@@ -86,5 +86,10 @@ Regress-Guard." *(ECS-URL + GitHub einblenden)*
 
 ## Honesty guardrails (do NOT break on camera)
 - Say "mis-scopes access, fails the isolation test", NOT "leaks across tenants".
-- Present 0/5→5/5 as a representative captured run (temp-0 varies), not guaranteed every run.
+- The 0→5/5 you show is the **floor** (no memory) vs the **remembered-fix ceiling** (temp-0 = a
+  *consistency* check, not an independent sample). The shipped **auto-distiller** is separately
+  measured at **10/10, Wilson95 72–100%** — say "reliable in our measurement", never "guaranteed
+  100%". The real contribution: a bad distillation **fails the hidden test and gets demoted**
+  (self-correction), not the ceiling number. Full detail: `docs/PROOF_PACK.md`, `ab_result.json`
+  (`framing` / `must_not_say`).
 - The shield number is an exact count of neutralized directives; merge/decay/synthesis never fake confidence; a synthesized meta-lesson starts unproven.

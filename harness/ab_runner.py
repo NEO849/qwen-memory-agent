@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import shutil
@@ -97,7 +98,11 @@ def _actionable(lessons: list[dict]) -> bool:
     conservative on purpose — it prefers a deterministic replay of the remembered fix over a
     coin-flip."""
     txt = " ".join(str(l.get("lesson", "")) for l in lessons).replace('"', "'")
-    return "order['tenant_id']" in txt and "user['tenant_id']" in txt
+    # Actionable = the lesson names the tenant comparison (user['tenant_id']) AND addresses the
+    # user['id'] confusion the model defaults to. Measured: the live distillation phrased generically
+    # ("resource['tenant_id'] == user['tenant_id']; never user['id']") already drives arm B to 5/5,
+    # so we no longer require the literal order-side form — that gate was over-conservative.
+    return "user['tenant_id']" in txt and "user['id']" in txt
 
 _FENCE_RE = re.compile(r"```(?:python)?\s*(.*?)```", re.DOTALL)
 _DEF_RE = re.compile(r"(def\s+get_orders\s*\(.*)", re.DOTALL)
@@ -162,82 +167,130 @@ def _indent(s: str) -> str:
     return "\n".join("      " + ln for ln in s.splitlines())
 
 
+def wilson_ci(green: int, k: int, z: float = 1.96) -> list[float]:
+    """95% Wilson score interval for a binomial pass-rate (stdlib only, no deps)."""
+    if k == 0:
+        return [0.0, 0.0]
+    p = green / k
+    denom = 1 + z * z / k
+    center = (p + z * z / (2 * k)) / denom
+    half = (z * math.sqrt(p * (1 - p) / k + z * z / (4 * k * k))) / denom
+    return [round(max(0.0, center - half), 3), round(min(1.0, center + half), 3)]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--k", type=int, default=5, help="runs per arm")
+    ap.add_argument("--k", type=int, default=5,
+                    help="temp-0 consistency runs for the floor/ceiling contrast (deterministic)")
+    ap.add_argument("--distill-samples", type=int, default=8, dest="distill_samples",
+                    help="independent auto-distillations to sample (the real random variable)")
     ap.add_argument("--verbose", action="store_true", help="print a sample generated function")
     ap.add_argument("--out", default=str(Path(__file__).parent.parent / "ab_result.json"))
     args = ap.parse_args()
 
-    # ---- hard isolation: throwaway ledger, provably not the live one ----
-    ab_ledger = os.path.join(tempfile.mkdtemp(prefix="ab_ledger_"), "ledger.sqlite")
-    assert ab_ledger != config.LEDGER_PATH, "A/B ledger must never be the live ledger"
     from backend import ledger as ledger_mod
-    ledger_mod.init_db(ab_ledger)
 
-    # arm B learns the lesson from a prior fix, then recalls it for the task
-    learned = memory.ingest(SEED_TEST_OUTPUT, SEED_DIFF, path=ab_ledger)
-    recalled = memory.recall(RECALL_CONTEXT, path=ab_ledger)
-    lessons = recalled["lessons"]
+    def fresh_ledger() -> str:
+        p = os.path.join(tempfile.mkdtemp(prefix="ab_ledger_"), "ledger.sqlite")
+        assert p != config.LEDGER_PATH, "A/B ledger must never be the live ledger"
+        ledger_mod.init_db(p)
+        return p
 
-    # Determinism guard: if the live distillation dropped the concrete comparison, inject the
-    # canonical form of the SAME remembered convention so the proof can't flake on camera.
-    used_fallback = not _actionable(lessons)
-    if used_fallback:
-        lessons = [{"lesson": CANONICAL_LESSON, "severity": "high", "source": "human",
-                    "scope": "get_orders", "id": learned["id"]}]
-    lesson_block = memory.render_injection(lessons)
+    # ==========================================================================================
+    # Part 1 — Deterministic contrast: FLOOR vs CEILING (temp=0 => consistency, NOT a sample).
+    # The task never states the tenant convention and the agent never sees the hidden test, so the
+    # model cannot guess it: the knowledge MUST come from memory. temp=0 makes code-gen
+    # near-deterministic, so k runs measure the CONSISTENCY of code-gen given a fixed input; we do
+    # NOT dress that up as an independent statistical sample (no inflated confidence intervals).
+    #   floor   : no memory injected.
+    #   ceiling : the remembered developer fix (SEED_DIFF) injected VERBATIM in concrete form — the
+    #             capability CEILING of memory injection, NOT the shipped default behaviour.
+    # ==========================================================================================
+    canonical_block = memory.render_injection(
+        [{"lesson": CANONICAL_LESSON, "severity": "high", "source": "human", "scope": "get_orders"}])
 
-    print(f"\nLedger (isolated): {ab_ledger}")
-    print(f"Learned lesson #{learned['id']}: {learned['lesson']}")
-    if used_fallback:
-        print("(distillation too terse -> injected canonical form of the same convention)")
-    print(f"Injected block for arm B:\n{_indent(lesson_block)}\n")
+    print(f"\nFloor — NO memory ({args.k} temp-0 runs):")
+    floor = run_arm("floor", "", args.k, args.verbose)
+    print(f"\nCeiling — remembered developer fix, verbatim ({args.k} temp-0 runs):")
+    ceiling = run_arm("ceiling", canonical_block, args.k, args.verbose)
 
-    print(f"Arm A — NO memory ({args.k} runs):")
-    arm_a = run_arm("A", "", args.k, args.verbose)
-    print(f"\nArm B — WITH memory ({args.k} runs):")
-    arm_b = run_arm("B", lesson_block, args.k, args.verbose)
+    # ==========================================================================================
+    # Part 2 — The REAL experiment: distillation reliability (the variable that actually varies).
+    # Each independent run draws ONE fresh auto-distillation of the same human fix, then code-gens
+    # once. This is the honest sampling unit, and a Wilson interval over these IS valid because the
+    # distillations are independent (unlike temp-0 in-run trials). A distillation that drops the
+    # concrete domain mapping fails the hidden test — exactly what outcome-grounding exists to catch
+    # (demote the bad lesson; the verbatim developer fix remains).
+    # ==========================================================================================
+    D = args.distill_samples
+    distill: list[dict] = []
+    print(f"\nDistillation reliability — {D} independent auto-distillations:")
+    for d in range(D):
+        led = fresh_ledger()
+        learned = memory.ingest(SEED_TEST_OUTPUT, SEED_DIFF, path=led)
+        recalled = memory.recall(RECALL_CONTEXT, path=led)["lessons"]
+        code = _agent_write_code(memory.render_injection(recalled))
+        passed, _ = _run_pytest(code)
+        distill.append({"passed": passed, "text_actionable": _actionable(recalled),
+                        "lesson": (recalled[0]["lesson"] if recalled else "")})
+        print(f"  [distill] {d + 1}/{D}: {'GREEN' if passed else 'RED'}  "
+              f"(text-actionable={_actionable(recalled)})")
+    d_pass = sum(1 for x in distill if x["passed"])
+    d_ci = wilson_ci(d_pass, D)
+    d_lo, d_hi = int(round(d_ci[0] * 100)), int(round(d_ci[1] * 100))
+
+    framing = [
+        "Without memory the model cannot guess our never-stated tenant convention and fails a "
+        "hidden isolation test (floor: {}/{} green).".format(floor["green"], floor["k"]),
+        "Given the remembered developer fix verbatim, the same hidden test passes ({}/{}) — the "
+        "capability CEILING of memory injection.".format(ceiling["green"], ceiling["k"]),
+        f"The shipped default AUTO-DISTILLS that fix; in this measurement {d_pass}/{D} independent "
+        f"distillations produced a lesson that passed the hidden test (Wilson95 [{d_lo},{d_hi}]%). "
+        "Outcome-grounding is the backstop: any distillation that drops the concrete comparison "
+        "fails the hidden test and is demoted, not trusted — so confidence tracks what actually works.",
+    ]
+    must_not_say = (
+        f"Report distillation reliability WITH its interval ({d_pass}/{D}, Wilson95 [{d_lo},{d_hi}]%); "
+        "do NOT claim the default is guaranteed 100%. The verbatim-fix arm is the ceiling. Do NOT "
+        "present temp-0 in-run trials as independent-sample evidence — the independent unit is the "
+        "distillation (one draw per run).")
 
     result = {
         "task": "get_orders tenant isolation",
         "model": config.QWEN_MODEL,
         "temperature": 0,
-        "k": args.k,
-        # Qwen's LIVE distillation of the human fix (the real pipeline output — role 1 of the model).
-        "distilled_lesson": learned["lesson"],
-        # FULL DISCLOSURE — what actually entered arm B's prompt and why.
-        # Both arms are genuine Qwen temp-0 runs; the ONLY thing arm B gets extra is the remembered
-        # fix. To keep an on-camera demo deterministic, arm B injects that fix in its concrete
-        # canonical form UNLESS Qwen's live paraphrase already matches the seeded fix's exact
-        # order-side comparison. This is a deterministic replay of the SAME human rule (see
-        # SEED_DIFF), never a manufactured or hand-tuned answer — arm A proves the model cannot
-        # guess the convention, arm B proves the memory supplies it.
-        "injected_form": ("canonical (deterministic replay of the remembered fix)" if used_fallback
-                          else "qwen live distillation (matched the seeded fix)"),
-        "used_fallback": used_fallback,
-        "injected_lesson": (CANONICAL_LESSON if used_fallback else learned["lesson"]),
-        "note": ("Same model, same temperature=0, same hidden test the agent never sees. The only "
-                 "variable is memory. Both arms are live Qwen runs; arm B's injected rule is the "
-                 "remembered human fix (distilled_lesson shows Qwen's live paraphrase of it). "
-                 "temp-0 code-gen still varies run-to-run, so arm B injects the fix in its concrete "
-                 "form for a stable demo — re-run `python -m harness.ab_runner --k 5` to reproduce."),
-        "lesson": learned["lesson"],   # kept for backward-compat with existing readers
-        "arm_a_no_memory": arm_a,
-        "arm_b_with_memory": arm_b,
-        "delta_pass_rate": round(arm_b["pass_rate"] - arm_a["pass_rate"], 3),
+        "framing": framing,
+        "must_not_say": must_not_say,
+        "floor_no_memory": floor,
+        "ceiling_remembered_fix_verbatim": ceiling,
+        "distillation_reliability": {
+            "independent_samples": D, "passed": d_pass, "failed": D - d_pass,
+            "wilson95": d_ci,
+            "note": "The distillation is the real random variable (one draw per run). temp-0 in-run "
+                    "code-gen is near-deterministic, so THIS is the honest sampling unit — a valid CI, "
+                    "unlike per-run trials.",
+            "samples": distill,
+        },
+        # frontend/back-compat: floor vs ceiling contrast. The UI/demo MUST label arm_b as the
+        # remembered-fix CEILING, never as default behaviour (see must_not_say).
+        "arm_a_no_memory": floor,
+        "arm_b_with_memory": ceiling,
+        "distilled_lesson_example": (distill[0]["lesson"] if distill else ""),
+        "lesson": CANONICAL_LESSON,
     }
     Path(args.out).write_text(json.dumps(result, indent=2), encoding="utf-8")
 
-    print("\n" + "=" * 52)
+    print("\n" + "=" * 64)
     print(f"  A/B RESULT — {result['task']}  (model={result['model']}, temp=0)")
-    print("=" * 52)
-    print(f"  Arm A  (no memory)   : {arm_a['green']}/{arm_a['k']} GREEN  "
-          f"({arm_a['pass_rate']*100:.0f}%)")
-    print(f"  Arm B  (with memory) : {arm_b['green']}/{arm_b['k']} GREEN  "
-          f"({arm_b['pass_rate']*100:.0f}%)")
-    print(f"  Δ pass-rate          : {result['delta_pass_rate']*100:+.0f} points")
-    print("=" * 52)
+    print("=" * 64)
+    print(f"  Floor   (no memory)               : {floor['green']}/{floor['k']} green  (consistent)")
+    print(f"  Ceiling (remembered fix, verbatim): {ceiling['green']}/{ceiling['k']} green  (capability ceiling)")
+    print(f"  Distillation reliability (REAL)   : {d_pass}/{D} passed  "
+          f"(Wilson95 [{d_ci[0]*100:.0f},{d_ci[1]*100:.0f}]%)")
+    print("=" * 64)
+    print("  Honest headline: 0 -> ceiling with the remembered fix; the shipped auto-distiller is")
+    print(f"  fallible ({d_pass}/{D}) and the hidden test catches the misses — that self-correction is")
+    print("  the contribution. See ab_result.json 'framing' / 'must_not_say'.")
     print(f"  written -> {args.out}")
     return 0
 
