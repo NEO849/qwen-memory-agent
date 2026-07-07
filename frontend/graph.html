@@ -86,6 +86,8 @@
       const DIM_NODE = 'rgba(92,101,119,.20)', DIM_LINK = 'rgba(92,101,119,.05)';
       let selId = null, autoRot = true;
       const hlNodes = new Set(), hlLinks = new Set();
+      const pulse = new Set();               // live recall pulse — separate from click-select
+      let pulseTimer = null, lastPulse = [];
       const _id = e => (e && typeof e === 'object') ? e.id : e;
       function selectNode(n) {
         selId = n ? n.id : null;
@@ -105,15 +107,20 @@
       const G = ForceGraph3D()(el)
         .backgroundColor('#090b11')
         .graphData(data)
-        .nodeVal('val')
-        .nodeColor(n => (selId && !hlNodes.has(n.id)) ? DIM_NODE : n.color)
+        .nodeVal(n => pulse.has(n.id) ? (n.val * 1.7) : n.val)
+        .nodeColor(n => pulse.has(n.id) ? '#ffffff' : ((selId && !hlNodes.has(n.id)) ? DIM_NODE : n.color))
         .nodeOpacity(0.96)
         .nodeResolution(14)
-        .linkColor(l => !selId ? (EDGE[l.type] || 'rgba(120,150,190,.3)')
-                                : (hlLinks.has(l) ? (EDGE_BRIGHT[l.type] || '#8ee3b0') : DIM_LINK))
-        .linkWidth(l => { const base = Math.max(0.4, (l.weight || 1) * (l.type === 'related' ? 1.2 : 2));
+        .linkColor(l => { const s = _id(l.source), t = _id(l.target);
+          if (pulse.has(s) || pulse.has(t)) return EDGE_BRIGHT[l.type] || '#8ee3b0';
+          return !selId ? (EDGE[l.type] || 'rgba(120,150,190,.3)') : (hlLinks.has(l) ? (EDGE_BRIGHT[l.type] || '#8ee3b0') : DIM_LINK); })
+        .linkWidth(l => { const s = _id(l.source), t = _id(l.target);
+          const base = Math.max(0.4, (l.weight || 1) * (l.type === 'related' ? 1.2 : 2));
+          if (pulse.has(s) || pulse.has(t)) return base * 2.2;
           return selId ? (hlLinks.has(l) ? base * 2.4 : 0.25) : base; })
-        .linkDirectionalParticles(l => (selId && hlLinks.has(l)) ? 4 : (l.type === 'supersedes' ? 2 : 0))
+        .linkDirectionalParticles(l => { const s = _id(l.source), t = _id(l.target);
+          if (pulse.has(s) || pulse.has(t)) return 6;
+          return (selId && hlLinks.has(l)) ? 4 : (l.type === 'supersedes' ? 2 : 0); })
         .linkDirectionalParticleWidth(2.4)
         .onBackgroundClick(() => selectNode(null))
         .onNodeHover(n => {
@@ -135,6 +142,32 @@
           const r = 1 + d / (Math.hypot(n.x, n.y, n.z) || 1);
           G.cameraPosition({ x: n.x * r, y: n.y * r, z: n.z * r }, n, 900);
         });
+      // ---- live recall pulse: the parent app tells us which lessons were just recalled; those exact
+      // nodes flare white + particles race their real edges, then fade. Honest: only real recall IDs. ----
+      function reEval() {
+        G.nodeColor(G.nodeColor()).nodeVal(G.nodeVal())
+         .linkColor(G.linkColor()).linkWidth(G.linkWidth()).linkDirectionalParticles(G.linkDirectionalParticles());
+      }
+      function pulseNodes(ids) {
+        const want = new Set((ids || []).map(Number));
+        pulse.clear(); data.nodes.forEach(n => { if (want.has(Number(n.id))) pulse.add(n.id); });
+        window.__pulseIds = [...pulse];        // observable for verification/debug (harmless)
+        if (!pulse.size) return;
+        reEval(); clearTimeout(pulseTimer);
+        pulseTimer = setTimeout(() => { pulse.clear(); reEval(); }, 2800);
+      }
+      function refreshGraph() {                       // structure changed (taught/forgotten) — no camera reset
+        fetch('/graph').then(r => r.json()).then(g => {
+          data.nodes = g.nodes; data.links = (g.edges || []).map(e => ({ ...e })); G.graphData(data);
+          if (lastPulse.length) pulseNodes(lastPulse);
+        }).catch(() => {});
+      }
+      window.addEventListener('message', (e) => {
+        if (e.source !== window.parent) return;       // ignore anything but our host frame
+        const m = e.data || {};
+        if (m.type === 'recall-pulse' && Array.isArray(m.ids)) { lastPulse = m.ids; pulseNodes(m.ids); }
+        else if (m.type === 'graph-refresh') refreshGraph();
+      });
       addEventListener('mousemove', e => { tip.style.left = (e.clientX + 16) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; });
       G.d3Force('charge').strength(-120);
       // gentle idle auto-rotate (this build ships TrackballControls — no built-in autoRotate),

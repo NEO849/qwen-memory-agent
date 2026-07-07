@@ -320,6 +320,13 @@ function showRecalled(ids, sanitizedTotal = 0, inhibited = []) {
     strip.appendChild(s);
   }
   ids.forEach(id => flashCard(id, 'highlight'));
+  pulseGlobe(ids);                       // ← light up the SAME lessons live on the globe (chat + agent)
+}
+// bridge: tell the persistent globe iframe which lessons were just recalled (only real recall IDs)
+function pulseGlobe(ids) {
+  const f = $('#graphFrame');
+  if (f && f.contentWindow && ids && ids.length)
+    f.contentWindow.postMessage({ type: 'recall-pulse', ids }, location.origin);
 }
 function jumpTo(id) { const i = state.lessons.findIndex(l => l.id === id); const n = state.lessons.length;
   if (i >= 0) { state.targetF = state.activeF + wrapD(i - state.activeF, n); kick(); } flashCard(id, 'highlight'); }
@@ -402,7 +409,9 @@ async function runTune() {
 function live() {
   try { const es = new EventSource('/events');
     es.onmessage = (e) => { const m = JSON.parse(e.data);
-      if (m.type === 'ledger_changed') { refresh(true); flashCard(m.lesson_id, 'react'); loadMetrics(); }
+      if (m.type === 'ledger_changed') { refresh(true); flashCard(m.lesson_id, 'react'); loadMetrics();
+        clearTimeout(window._grT); window._grT = setTimeout(() => {   // nudge the globe to re-read structure (no camera reset)
+          const gf = $('#graphFrame'); if (gf && gf.contentWindow) gf.contentWindow.postMessage({ type: 'graph-refresh' }, location.origin); }, 400); }
       else if (m.type === 'agent_step') onAgentStep(m); };
     es.onerror = () => {};
   } catch {}
@@ -459,18 +468,17 @@ $('#btnMeasure').addEventListener('click', runEvaluate);
 $('#btnTune').addEventListener('click', runTune);
 $('#btnSynth').addEventListener('click', runSynthesize);
 
-// view toggle — Chat vs the knowledge Graph, in the same frame (globe embedded, reloads on open)
-let graphN = 0;
+// centre toggle — Chat vs the Proof moment. The knowledge globe is a PERSISTENT right pane
+// (always visible), so 'memory' and 'use' are on screen together — no switching away to see it.
 function setView(v) {
   document.querySelectorAll('.vbtn').forEach(x => { const on = x.dataset.view === v; x.classList.toggle('on', on); x.setAttribute('aria-selected', on); });
   $('#viewChat').hidden = v !== 'chat';
-  $('#viewGraph').hidden = v !== 'graph';
   $('#viewProof').hidden = v !== 'proof';
-  if (v === 'graph') { $('#graphFrame').src = '/graph.html?n=' + (++graphN); }   // fresh render of the current memory
-  if (v === 'proof') { playProof(); }                                            // the signature moment plays on open
+  if (v === 'proof') { playProof(); }        // the signature moment plays on open
 }
 document.querySelectorAll('.vbtn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#btnReplay') && $('#btnReplay').addEventListener('click', playProof);
+{ const gf = $('#graphFrame'); if (gf) gf.src = '/graph.html?n=1'; }   // load the persistent globe once
 paintTeach();
 // Land on the signature 🏆 Proof moment and auto-play it once — a cold visitor sees 0→5/5 first
 // (jurors decide in the first 30s); Chat is one click away. playProof respects reduced-motion.

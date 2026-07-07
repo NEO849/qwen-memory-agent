@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Regress-Guard — memory that forgets what's wrong</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=15">
+  <link rel="stylesheet" href="styles.css?v=16">
 </head>
 <body>
   <div class="app">
@@ -64,7 +64,6 @@
       <header class="stage-head">
         <div class="view-toggle" role="tablist" aria-label="view">
           <button class="vbtn" data-view="chat" role="tab" aria-selected="false">💬 Chat</button>
-          <button class="vbtn" data-view="graph" role="tab" aria-selected="false">🌐 Graph</button>
           <button class="vbtn vbtn-proof on" data-view="proof" role="tab" aria-selected="true">🏆 Proof</button>
         </div>
         <div class="ab" id="ab" title="A representative captured run — the hidden test is deterministic; temp-0 code-gen varies slightly. Re-run the A/B harness to reproduce."><span class="ab-label">proof</span><span class="pill">loading…</span></div>
@@ -92,21 +91,6 @@
           <input id="askInput" autocomplete="off" placeholder="Ask me anything…">
           <button id="askSend">Send</button>
         </div>
-      </div>
-
-      <!-- GRAPH VIEW (memory as a graph + self-improvement analytics) -->
-      <div class="view view-graph" id="viewGraph" hidden>
-        <div class="analytics" id="metrics" title="The memory measures, tunes and crystallizes itself.">
-          <button id="btnMeasure" title="Measure how often the memory finds the right lesson — Qwen writes fresh questions to test it">Measure</button>
-          <button id="btnTune" title="Auto-tune the search weights — kept only if it beats the baseline">Self-tune</button>
-          <button id="btnSynth" title="Crystallize a cluster of related lessons into one meta-lesson (ExpeL) — it earns confidence from real tests like any other">✦ Crystallize</button>
-          <span class="astat" title="How often the correct lesson is ranked #1"><span class="mk">recall@1</span><b id="mRecall">—</b></span>
-          <span class="astat" title="Share of lessons that still surface themselves by their own trigger (retrievability, not correctness)"><span class="mk">retrievable</span><b id="mHealth">—</b></span>
-          <span class="astat" title="Keyword (bm25) vs meaning (vector) search weight"><span class="mk">weights</span><b id="mWeights">—</b></span>
-          <span class="astat-hidden"><b id="mLift"></b><b id="mCal"></b><b id="mGround"></b></span>
-        </div>
-        <div class="graph-loading">rendering the memory graph…</div>
-        <iframe class="graph-frame" id="graphFrame" title="knowledge graph" src="about:blank"></iframe>
       </div>
 
       <!-- PROOF VIEW — the signature moment: same AI twice, only difference is memory -->
@@ -139,7 +123,27 @@
         <div class="proof-punch" id="proofPunch"></div>
       </div>
     </main>
+
+    <!-- RIGHT = THE LIVING MEMORY · the knowledge globe, always on. Recalled lessons pulse here
+         live as the chat/agent uses them — memory and use on screen at the same time. -->
+    <aside class="globe-pane">
+      <header class="globe-head">
+        <div class="globe-title">🌐 the living memory</div>
+        <div class="globe-sub">recalled lessons light up as I use them</div>
+      </header>
+      <div class="analytics" id="metrics" title="The memory measures, tunes and crystallizes itself.">
+        <button id="btnMeasure" title="Measure how often the memory finds the right lesson — Qwen writes fresh questions to test it">Measure</button>
+        <button id="btnTune" title="Auto-tune the search weights — kept only if it beats the baseline">Self-tune</button>
+        <button id="btnSynth" title="Crystallize a cluster of related lessons into one meta-lesson (ExpeL) — it earns confidence from real tests like any other">✦ Crystallize</button>
+        <span class="astat" title="How often the correct lesson is ranked #1"><span class="mk">recall@1</span><b id="mRecall">—</b></span>
+        <span class="astat" title="Share of lessons that still surface themselves by their own trigger (retrievability, not correctness)"><span class="mk">retrievable</span><b id="mHealth">—</b></span>
+        <span class="astat" title="Keyword (bm25) vs meaning (vector) search weight"><span class="mk">weights</span><b id="mWeights">—</b></span>
+        <span class="astat-hidden"><b id="mLift"></b><b id="mCal"></b><b id="mGround"></b></span>
+      </div>
+      <div class="graph-loading">rendering the memory graph…</div>
+      <iframe class="graph-frame" id="graphFrame" title="knowledge graph" src="about:blank"></iframe>
+    </aside>
   </div>
-  <script src="app.js?v=15" type="module"></script>
+  <script src="app.js?v=16" type="module"></script>
 </body>
 </html>

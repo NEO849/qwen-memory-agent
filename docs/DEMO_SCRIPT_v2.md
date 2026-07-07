@@ -1,16 +1,18 @@
 # Regress-Guard — Demo Script (v12 UI + all features + MCP) · < 3:00 · English
 
-> The live UI (`regressguard.duckdns.org`): **LEFT = the memory** (card deck; click a card then
-> Pin / Demote / Forget / Revise act on it; a teach box with **Teach** and **⛔ Don't**; the agent
-> **▶ Run / ⏸ / ⏹**). **RIGHT = a normal AI chat** with a **[💬 Chat · 🌐 Graph]** toggle (Graph shows
-> the 3D globe + Measure / Self-tune / ✦ Crystallize). A **proof pill** sits top-right.
+> The live UI (`regressguard.duckdns.org`) is a **three-part living memory**:
+> **LEFT = the memory** (card deck; click a card then Pin / Demote / Forget / Revise; a teach box
+> with **Teach** and **⛔ Don't**; the agent **▶ Run / ⏸ / ⏹**). **CENTRE = a normal AI chat** with a
+> **[💬 Chat · 🏆 Proof]** toggle. **RIGHT = the 3D knowledge globe, always on** — when the chat or the
+> agent recalls a lesson, that **exact node pulses live on the globe** while the answer streams, so
+> memory and its *use* are on screen at the same time. Measure / Self-tune / ✦ Crystallize sit above it.
 >
 > English narration (video rule). German stage directions in *(Klammern)*.
 >
-> **Before recording (Trockenlauf):** hard-reload; run `python -m harness.ab_runner --k 5` once so
-> the stored proof reads 0/5→5/5 (temp-0 is flaky — show the **stored** pill, don't gamble live);
-> open the **Graph** tab once and click **Measure** + **Self-tune** and note the real numbers; teach
-> the poisoned lesson + pin it once so the shield is primed.
+> **Before recording (Trockenlauf):** hard-reload (it lands on the 🏆 Proof tab and auto-plays; the
+> globe loads on the right by itself); run `python -m harness.ab_runner --k 5` once so the stored
+> proof reads 0/5→5/5 (temp-0 is flaky — show the **stored** pill, don't gamble live); click
+> **Measure** + **Self-tune** once and note the real numbers; teach the poisoned lesson + pin it.
 
 ---
 
@@ -28,12 +30,12 @@ cherry-picked bug: memory flips two bug classes the model gets wrong from zero t
 harmless on a third it already gets right. This is a run I captured; let me show you why." —
 **⚠️ die GESPEICHERTE Aufzeichnung zeigen, nie live würfeln.**
 
-**[0:40 · Talk to it, and see the memory · 25s]** *(rechts fragen: „How should I list orders for a user?")*
-"It's a normal assistant — but memory-backed. When it answers, watch which lessons it used." *(die
-recall-Zeile mit den Karten-IDs zeigen)* "And the whole memory is a graph." *(oben auf **🌐 Graph**
-umschalten — der Globus dreht sich)* "Size is evidence, colour is confidence, grey nodes are lessons
-it has forgotten, edges are related lessons, belief-revisions and syntheses — sixty-five lessons,
-wired by similarity, and the ones recalled together wire together, so the graph reflects both meaning and use."
+**[0:40 · Talk to it — the living memory · 25s]** *(in der Mitte fragen: „How do I safely list a user's orders in a multi-tenant service?"; der Globus ist rechts schon sichtbar)*
+"It's a normal assistant — but memory-backed. Watch the globe on the right as it answers." *(die Antwort
+streamt; die recall-Zeile zeigt die genutzten Karten-IDs, z. B. #1 #24 #60)* "The exact lessons it just
+used **light up on the globe, live** — memory and its *use* on one screen, not two tabs. Sixty-five
+lessons: size is evidence, colour is confidence, grey is forgotten, dark-red is a *don't*; edges are
+similarity, belief-revisions and syntheses." *(kurz einen Knoten anklicken — seine Stränge leuchten farbig)*
 *(zurück auf **💬 Chat**)*
 
 **[1:05 · Teach it live — red → green · 35s · money shot]** *(links **▶ Run**)*

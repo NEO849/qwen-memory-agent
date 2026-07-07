@@ -97,10 +97,13 @@ Or just open **[regressguard.duckdns.org](http://regressguard.duckdns.org)** →
 
 ## What you can see and steer
 
-One clinical surface — **💬 Chat · 🌐 Graph · 🏆 Proof** — toggled in the same frame:
+One clinical surface — a **living-memory** layout: the **editable memory on the left**, a normal AI chat in the **middle** (toggle **💬 Chat · 🏆 Proof**), and the **persistent 3D knowledge globe on the right, always visible**. When chat or the agent recalls lessons, exactly those nodes pulse **live** on the globe while the answer streams — memory *and* its use on one screen:
+
+<p align="center"><img src="docs/media/living-memory.png" alt="Living memory — editable memory deck (left), chat (middle), persistent 3D globe (right); recalled lessons pulse live on the globe" width="920"></p>
 
 | | Feature | What it means |
 |---|---|---|
+| 🧠 | **Living memory (globe + chat together, live recall highlight)** | Three columns in one frame: **LEFT** the editable memory (card deck — **pin / demote / forget / revise**, **Teach** a rule, add a **⛔ don't**, and **Run / Pause / Stop** the agent), **MIDDLE** a normal AI chat with a **[💬 Chat · 🏆 Proof]** toggle, **RIGHT** the **persistent 3D globe (always visible)**. **Live-recall highlight:** when chat or the agent recalls lessons, exactly those nodes pulse live on the globe (white flash + particles over their real edges) while the answer streams. Only the **real recalled lesson IDs** pulse — the same IDs as the "answered using N lessons: #.." strip (verified via Playwright). Mobile degrades to a stack. |
 | 💬 | **Chat + editable memory** | Talk to the agent; beside it, a flashcard deck shows every lesson with a **Beta(α,β) confidence meter** — **pin**, **demote** or **forget** any lesson in a click. |
 | 🌐 | **3D knowledge globe** | The whole memory as a rotating globe (currently **66 nodes / 196 edges**): node size = evidence (α+β), colour = confidence, grey = forgotten, dark-red = anti-pattern; **edge strength is initialised from embedding-cosine similarity**, then further strengthened by Hebbian co-recall on the synapses that co-fire (capped). **Click a node and its strands light up by type** — *related* (blue), *supersedes* (red), *synthesizes* (violet) — so you see at a glance what a memory connects to. |
 | 🏆 | **The proof** | The signature A/B moment above, replayable on demand — the decisive token pulses, the pass-rate lift counts up. |
@@ -130,8 +133,8 @@ One clinical surface — **💬 Chat · 🌐 Graph · 🏆 Proof** — toggled i
 
 Beyond learn → recall → grade, Regress-Guard improves its *own* retrieval and consistency:
 
-- **Self-evaluation** — Qwen writes *keyword-free* paraphrase queries so BM25 can't win on word overlap; it measures **Recall@1 / MRR** with the vector leg on vs off. Retrieval quality graded on evidence, not vibes.
-- **Self-tuning** — grid-searches the BM25 + vector fusion weights against measured Recall@1 and **persists new weights only if they beat baseline** (Recall@1 **0.75 → 1.00** in our runs).
+- **Self-evaluation** — Qwen writes *keyword-free* paraphrase queries so BM25 can't win on word overlap; it measures **Recall@1 / MRR** with the vector leg on vs off. Turning the semantic (vector) arm on lifts **Recall@1 0.35 → 0.50** (MRR 0.46 → 0.63) on those paraphrases (gold_sample = 20). Retrieval quality graded on evidence, not vibes.
+- **Self-tuning** — grid-searches the BM25 + vector fusion weights on a **TRAIN split** and **adopts them only if they beat the neutral baseline on a HELD-OUT val split** — held-out **Recall@1 0.40 → 0.60** (adopted; *n=10 held-out probes — illustrative, not statistically significant; the point is the holdout discipline*). The result is committed to [`tune_result.json`](tune_result.json), like [`ab_result.json`](ab_result.json).
 - **Contradiction detection** — a new lesson is checked (vector-cosine shortlist → Qwen judge) against active ones; a genuine contradiction tombstones the loser, so the memory never holds two opposite rules.
 - **Calibration** — a live panel shows Recall@1, the semantic lift, grounded-outcome count, and the **calibration gap** (displayed confidence vs empirical pass-rate, from *real* outcomes).
 - **Associative recall** — lessons recalled together strengthen a Hebbian synapse (weight grows with co-recall, capped); an opt-in spreading-activation pass then walks the strongest synapses to surface associated neighbours pure search misses. This is *associative memory* (Hebbian wiring / spreading activation) — neuroscience-inspired, and it **never** touches a lesson's confidence, which stays earned from real test outcomes.

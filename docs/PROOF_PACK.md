@@ -83,6 +83,11 @@ Edge strength is initialised from embedding-cosine similarity; Hebbian co-recall
 strengthens the synapses that actually co-fire (capped), so a used graph diverges from the raw-cosine seed.
 Every lesson is a genuine coding rule — nothing invented.
 
+In the **living-memory** UI this same globe stays **persistent on the right** while you chat/run the agent; when a
+response recalls lessons, **exactly those nodes pulse live** (white flash + particles over their real edges). Only the
+**real recalled lesson IDs** light up — the same IDs shown in the "answered using N lessons: #.." strip — verified
+end-to-end with Playwright, so the highlight is honest, not decorative.
+
 ## 7. Associative memory — Hebbian wiring + spreading activation (honest, non-mystical)
 ```
 .venv/bin/pytest tests/test_associative_memory.py -v
@@ -118,6 +123,27 @@ On **money_rounding the base model already writes correct code unaided** (floor 
 correctly adds **no** lift and does **no** harm (ceiling 3/3) — this class is **not** a memory win and
 must never be sold as one. Two independent 0→100 flips defeat cherry-picking; the third proves the
 memory is harmless when it isn't needed.
+
+## 9. Self-tuning — train/val holdout (committed `tune_result.json`)
+```
+# committed artifact: tune_result.json (gold_sample = 20). Reproduce against the live ledger:
+.venv/bin/python -c "import json,backend.evaluation as e; \
+print(json.dumps({'evaluate':e.evaluate(sample=20),'tune':e.tune(sample=20)}, indent=2))"
+```
+(A live `POST /tune` on the deployment does the same tuning online, capped at sample≤10.)
+Two honest, held-out measurements on the demo seed (65 active lessons), keyword-free paraphrase queries:
+
+| Measurement | Baseline | Result | Meaning |
+|---|---|---|---|
+| **Semantic (vector) arm on vs off** (`evaluate`, n=20) | Recall@1 **0.35** (MRR 0.458) | Recall@1 **0.50** (MRR 0.628) | the vector leg is a real retrieval lift, not decoration |
+| **Self-tuned RRF weights, HELD-OUT val split** (`tune`, n_train=10 / n_val=10) | Recall@1 **0.40** (MRR 0.599) | Recall@1 **0.60** (MRR 0.708) | tuned weights `{bm25:0.5, vector:3.0}` **adopted** — they beat the neutral baseline on data they were **not** searched on |
+
+The self-tuner grid-searches fusion weights on a **TRAIN split** and **adopts them only if they also beat the neutral
+baseline on a HELD-OUT val split** — reported numbers are the held-out ones. This is why the win is
+trustworthy rather than overfit: the +0.20 held-out Recall@1 lift is measured on queries the search never optimised
+against. **Honest caveat:** with `n_val=10` this is an *illustrative* lift (2 extra hits of 10), not a statistically
+significant one — the point is the holdout **discipline** (no adoption without a held-out win), not the magnitude.
+`tune_result.json` is committed (like `ab_result.json`); reproduce with the command above.
 
 ---
 
