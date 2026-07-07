@@ -194,7 +194,9 @@ def metrics(path: str | None = None) -> dict:
         "lessons_active": n, "lessons_obsolete": len(obsolete),
         "grounded_outcomes": grounded,
         "avg_confidence": round(conf_sum / n, 3) if n else 0.0,
-        "calibration_gap": round(gap_sum / gap_n, 3) if gap_n else 0.0,
+        # honest: null (n/a) when NO real outcomes exist yet — 0.0 would read as "perfectly
+        # calibrated" when it actually means "nothing has been graded against a real test".
+        "calibration_gap": (round(gap_sum / gap_n, 3) if gap_n else None),
         "weights": _current_weights(),
         "total_recalls": total_recalls,
         "most_recalled_id": (top["id"] if top and (top.get("recall_count") or 0) > 0 else None),

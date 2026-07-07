@@ -6,7 +6,7 @@ venv (`.venv/bin/...`). Qwen-backed items need the `.env` key; the rest are offl
 
 ---
 
-## 1. Test suite — 53 / 53 green (offline, deterministic)
+## 1. Test suite — 54 / 54 green (offline, deterministic)
 ```
 .venv/bin/pytest -q
 ```
@@ -44,6 +44,41 @@ The auto-distiller first measured **2/10** (it generalised "orders"→"resources
 concrete field access — and text that *looked* actionable still failed). Sharpening
 `backend/extractor.py` to preserve the exact identifiers from the diff (principle **plus** concrete
 rule) raised it to **10/10 in two independent batches**. Real product improvement, not a proof tweak.
+
+## 2a. Live duel — the A/B, streamed live (not the recording)
+```
+curl -N http://regressguard.duckdns.org/duel?k=1        # SSE: start → round(plain) → round(memory) → done
+```
+The **⚔️ Duel** tab (or the `GET /duel` SSE endpoint) runs the same experiment as §2 **live and un-recorded**:
+one prompt → two arms, **"plain AI · no memory"** vs. **"AI + Regress-Guard"** — 5 hidden `pytest` per arm,
+green/red counters ticking round-by-round. Verified live: **floor 0/5 vs ceiling 5/5**. The 🏆 Proof tab is the
+instant, flicker-safe **replay** of this same experiment; the Duel tab is the live version.
+
+**Honest by design (disclosed in the stream):** the memory arm injects the remembered concrete lesson through a
+**determinism guard** — a concrete recalled lesson is used verbatim, otherwise its canonical concrete form is
+injected — so `temp=0` + a fixed concrete lesson stays deterministic and an on-camera run can't flake. The SSE
+payload states this openly as `"injected":"canonical (determinism guard)"`. It is deliberately the injection
+**ceiling** live (not a live distillation — that reliability, 10/10 Wilson95 [72,100]%, lives in §2 / `ab_result.json`).
+Own rate-limit bucket (4/min) + a per-round retry against transient Qwen errors. Never framed as "guaranteed 100%".
+
+## 2b. Grounded outcomes — the thesis, live
+```
+curl -s http://regressguard.duckdns.org/metrics | python -m json.tool   # grounded_outcomes, calibration_gap
+python -m harness.ground_demo <ledger-path>                             # reproduce the grounding
+```
+The core thesis — *confidence is earned from real pytest outcomes, and a lesson real tests refute is forgotten* —
+is now grounded on the **live** ledger with real evidence, not a prior. `harness/ground_demo.py` writes real
+outcomes (money-rounding pattern, independent of the get_orders demo):
+
+| Lesson | Real outcomes | Result |
+|---|---|---|
+| **Correct** (money = integer cents) | **3/3 real passes** | **confidence 0.86 earned** — a validated node |
+| **Wrong** (money = float dollars) | **3/3 real fails** | **tombstoned** — a grey "forgotten" node (`real_fail = 3`), belief revision |
+
+So `/metrics` now reports **`grounded_outcomes > 0`** and an honest **`calibration_gap` of 0.143** (displayed
+confidence vs. empirical pass-rate, from real outcomes) instead of a misleading `0.0` — and at zero outcomes the
+gap is reported as `null` / "n/a" rather than a fake 0. This is "a memory that forgets what's wrong", shown live
+with real test evidence. Reproduce with the `ground_demo` command above.
 
 ## 3. Calibration & convergence — the property a cosine score can't have
 ```

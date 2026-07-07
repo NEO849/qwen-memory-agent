@@ -12,7 +12,7 @@
 <p align="center">
   <a href="http://regressguard.duckdns.org"><img src="https://img.shields.io/badge/live_demo-online-5FD787?style=for-the-badge&labelColor=0c1119" alt="Live demo"></a>
   <img src="https://img.shields.io/badge/A%2FB_proof-floor→ceiling_×_3_bug_classes-5FD787?style=for-the-badge&labelColor=0c1119" alt="A/B proof floor to ceiling across 3 bug classes">
-  <img src="https://img.shields.io/badge/tests-53%2F53_green-5FD787?style=for-the-badge&labelColor=0c1119" alt="53/53 tests">
+  <img src="https://img.shields.io/badge/tests-54%2F54_green-5FD787?style=for-the-badge&labelColor=0c1119" alt="54/54 tests">
 </p>
 
 <p align="center">
@@ -89,9 +89,14 @@ curl -s http://regressguard.duckdns.org/graph | python -m json.tool | head -40
 # 3) ask the agent — the answer is steered by recalled, outcome-grounded lessons
 curl -s http://regressguard.duckdns.org/chat -H 'content-type: application/json' \
      -d '{"message":"How should I list orders for a user?"}'
+
+# 4) the memory's own honesty panel — confidence earned from REAL test outcomes
+curl -s http://regressguard.duckdns.org/metrics | python -m json.tool   # grounded_outcomes, calibration_gap
 ```
 
-Or just open **[regressguard.duckdns.org](http://regressguard.duckdns.org)** → the **🏆 Proof** tab.
+The live instance ships **grounded outcomes**: a correct money lesson (integer cents) earned **confidence 0.86** from **3/3 real pytest passes** (a validated node), while a refuted one (float dollars) was **live-tombstoned** on **3/3 real fails** — a grey "forgotten" node. So `/metrics` now reports `grounded_outcomes > 0` and an honest **`calibration_gap` (0.143)** — displayed confidence vs. empirical pass-rate from real outcomes, not a prior.
+
+Or just open **[regressguard.duckdns.org](http://regressguard.duckdns.org)** → the **🏆 Proof** or **⚔️ Duel** tab.
 
 ---
 
@@ -104,6 +109,7 @@ One clinical surface — a **living-memory** layout: the **editable memory on th
 | | Feature | What it means |
 |---|---|---|
 | 🧠 | **Living memory (globe + chat together, live recall highlight)** | Three columns in one frame: **LEFT** the editable memory (card deck — **pin / demote / forget / revise**, **Teach** a rule, add a **⛔ don't**, and **Run / Pause / Stop** the agent), **MIDDLE** a normal AI chat with a **[💬 Chat · 🏆 Proof]** toggle, **RIGHT** the **persistent 3D globe (always visible)**. **Live-recall highlight:** when chat or the agent recalls lessons, exactly those nodes pulse live on the globe (white flash + particles over their real edges) while the answer streams. Only the **real recalled lesson IDs** pulse — the same IDs as the "answered using N lessons: #.." strip (verified via Playwright). Mobile degrades to a stack. |
+| ⚔️ | **Live duel (plain AI vs. AI + Regress-Guard)** | A third middle tab beside **💬 Chat · 🏆 Proof**: one prompt → two AIs side by side, **"plain AI · no memory"** vs. **"AI + Regress-Guard"**. Hit **▶ Run 5 live** and 5 hidden `pytest` run in real time — a green/red counter ticks over each arm and the winner pane glows: **0/5 vs 5/5**, verified live. It is the *live, un-recorded* twin of the 🏆 Proof tab (which stays the instant, flicker-safe replay of the **same** experiment). Honest by design: the memory arm injects the remembered concrete lesson through a **determinism guard** (the same one `harness/ab_runner` uses), disclosed in the SSE stream as `"injected":"canonical (determinism guard)"`; the plain arm structurally mis-scopes and fails. It is deliberately the injection *ceiling* live — not a live distillation (that lives separately in [`ab_result.json`](ab_result.json): auto-distiller 10/10, Wilson95 [72,100]%). Never framed as "guaranteed". |
 | 💬 | **Chat + editable memory** | Talk to the agent; beside it, a flashcard deck shows every lesson with a **Beta(α,β) confidence meter** — **pin**, **demote** or **forget** any lesson in a click. |
 | 🌐 | **3D knowledge globe** | The whole memory as a rotating globe (currently **66 nodes / 196 edges**): node size = evidence (α+β), colour = confidence, grey = forgotten, dark-red = anti-pattern; **edge strength is initialised from embedding-cosine similarity**, then further strengthened by Hebbian co-recall on the synapses that co-fire (capped). **Click a node and its strands light up by type** — *related* (blue), *supersedes* (red), *synthesizes* (violet) — so you see at a glance what a memory connects to. |
 | 🏆 | **The proof** | The signature A/B moment above, replayable on demand — the decisive token pulses, the pass-rate lift counts up. |
@@ -170,7 +176,7 @@ uvicorn backend.main:app --workers 1   # then open http://localhost:8000
 ```
 
 > **`--workers 1` is required** — the live-update fan-out (SSE) is in-process.
-> Tests: `pytest` (offline, 53/53) · `pytest -m live` (hits Qwen).
+> Tests: `pytest` (offline, 54/54) · `pytest -m live` (hits Qwen).
 
 ---
 

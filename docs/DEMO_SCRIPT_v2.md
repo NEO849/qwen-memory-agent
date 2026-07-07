@@ -1,9 +1,11 @@
-# Regress-Guard — Demo Script (v12 UI + all features + MCP) · < 3:00 · English
+# Regress-Guard — Demo Script (living-memory UI: Chat · ⚔️ Duel · 🏆 Proof + persistent globe) · < 3:00 · English
 
 > The live UI (`regressguard.duckdns.org`) is a **three-part living memory**:
 > **LEFT = the memory** (card deck; click a card then Pin / Demote / Forget / Revise; a teach box
 > with **Teach** and **⛔ Don't**; the agent **▶ Run / ⏸ / ⏹**). **CENTRE = a normal AI chat** with a
-> **[💬 Chat · 🏆 Proof]** toggle. **RIGHT = the 3D knowledge globe, always on** — when the chat or the
+> **[💬 Chat · ⚔️ Duel · 🏆 Proof]** toggle (⚔️ Duel = a **live** A/B: one prompt → two AIs → 5 hidden
+> tests → live green/red counters; 🏆 Proof = the stored replay of the same experiment).
+> **RIGHT = the 3D knowledge globe, always on** — when the chat or the
 > agent recalls a lesson, that **exact node pulses live on the globe** while the answer streams, so
 > memory and its *use* are on screen at the same time. Measure / Self-tune / ✦ Crystallize sit above it.
 >
@@ -29,6 +31,15 @@ glüht)* "The only difference is memory — and that green is earned, not luck. 
 cherry-picked bug: memory flips two bug classes the model gets wrong from zero to green, and stays
 harmless on a third it already gets right. This is a run I captured; let me show you why." —
 **⚠️ die GESPEICHERTE Aufzeichnung zeigen, nie live würfeln.**
+
+**[0:40 · …and it's LIVE, not a recording · optional 20–25s · ⚔️ Duel]** *(oben auf **⚔️ Duel**, dann **▶ Run 5 live**)*
+"And that isn't a canned recording. Same prompt, two AIs side by side — a plain model, and the same
+model plus the lesson Regress-Guard recalls. Five hidden tests, live." *(die grünen/roten Zähler ticken
+hoch; die ~20 s Wartezeit im Schnitt 2× beschleunigen ODER drübersprechen)* "Zero of five without
+memory. Five of five with it — happening right now." *(0/5 vs 5/5, das Memory-Fenster glüht)*
+> ⏱️ **Timing:** willst du diesen Live-Beweis, kürze dafür **[2:05 blocks+improves]** auf ~10 s ODER
+> **[2:25 MCP]** auf ~12 s, damit du unter 3:00 bleibst. Alternativ: den 🏆-Proof-Open weglassen und
+> **hier mit dem Duell eröffnen** (noch stärker „es ist echt"), Proof nur zum Schluss.
 
 **[0:40 · Talk to it — the living memory · 25s]** *(in der Mitte fragen: „How do I safely list a user's orders in a multi-tenant service?"; der Globus ist rechts schon sichtbar)*
 "It's a normal assistant — but memory-backed. Watch the globe on the right as it answers." *(die Antwort
