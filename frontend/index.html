@@ -63,15 +63,15 @@
     <main class="stage">
       <header class="stage-head">
         <div class="view-toggle" role="tablist" aria-label="view">
-          <button class="vbtn on" data-view="chat" role="tab" aria-selected="true">💬 Chat</button>
+          <button class="vbtn" data-view="chat" role="tab" aria-selected="false">💬 Chat</button>
           <button class="vbtn" data-view="graph" role="tab" aria-selected="false">🌐 Graph</button>
-          <button class="vbtn vbtn-proof" data-view="proof" role="tab" aria-selected="false">🏆 Proof</button>
+          <button class="vbtn vbtn-proof on" data-view="proof" role="tab" aria-selected="true">🏆 Proof</button>
         </div>
         <div class="ab" id="ab" title="A representative captured run — the hidden test is deterministic; temp-0 code-gen varies slightly. Re-run the A/B harness to reproduce."><span class="ab-label">proof</span><span class="pill">loading…</span></div>
       </header>
 
       <!-- CHAT VIEW -->
-      <div class="view view-chat" id="viewChat">
+      <div class="view view-chat" id="viewChat" hidden>
         <section class="thread" id="thread">
           <div class="intro" id="intro">
             <p class="intro-hi">Ask me to write or fix code.</p>
@@ -110,7 +110,7 @@
       </div>
 
       <!-- PROOF VIEW — the signature moment: same AI twice, only difference is memory -->
-      <div class="view view-proof" id="viewProof" hidden>
+      <div class="view view-proof" id="viewProof">
         <div class="proof-head">
           <div>
             <div class="proof-title">The same AI, twice. The only difference is <em>memory</em>.</div>

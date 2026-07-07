@@ -123,7 +123,7 @@ def _public_lesson(l: dict) -> dict:
 def _hebbian_wire(ids: list[int], *, path: str | None = None) -> None:
     """Co-recalled lessons wire together (Hebbian). Strengthens the synapse among the strongest
     few recalled lessons — bounded, so a recall grows at most a handful of edges."""
-    top = ids[: max(2, config.RG_HEBBIAN_PAIRS)]
+    top = ids[: max(2, config.RG_HEBBIAN_TOPN)]
     for i in range(len(top)):
         for j in range(i + 1, len(top)):
             ledger.reinforce_link(top[i], top[j], delta=config.RG_HEBBIAN_DELTA, path=path)

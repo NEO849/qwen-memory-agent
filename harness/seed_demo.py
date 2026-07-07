@@ -1,6 +1,6 @@
 """Realistic demo lessons — a coding memory worth showing.
 
-35 diverse, real coding rules an agent would actually learn from red tests, organised into
+57 diverse, real coding rules an agent would actually learn from red tests, organised into
 natural scope clusters (auth, auth/jwt, http, db, input, api, payments …) so that:
   * keyword-free paraphrase queries (evaluation.evaluate) can't be solved by word-overlap alone,
     so Recall@1 is meaningful (< 100%) and the semantic leg earns its lift;
@@ -15,7 +15,7 @@ render — WITHOUT faking any confidence:
   * 'synthesizes' meta-lessons from real Qwen synthesis, which start UNPROVEN (0.5 prior) and must
     earn confidence from real tests like any other lesson.
 
-Run:  python -m harness.seed_demo [path]      # seed 35 guards + enrich (needs real Qwen for embeddings)
+Run:  python -m harness.seed_demo [path]      # seed 57 guards + enrich (needs real Qwen for embeddings)
 """
 from __future__ import annotations
 
@@ -187,6 +187,37 @@ SEED: list[tuple[str, str, str, str]] = [
     ("adding a feature flag",
      "Default a new flag to off and roll out gradually; a default-on flag ships untested behaviour to everyone at once.",
      "config", "low"),
+    # --- resilience / reliability ---
+    ("retrying a transient failure",
+     "Retry with exponential backoff and jitter, capped; a tight immediate retry loop amplifies an outage into a self-inflicted DDoS.",
+     "reliability", "med"),
+    ("calling a dependency that can be slow",
+     "Give each dependency a timeout and a circuit breaker, so one slow upstream sheds load instead of cascading a full outage.",
+     "reliability", "high"),
+    # --- data migration ---
+    ("adding a column to a large table",
+     "Backfill in batches behind a nullable default first; a single blocking UPDATE on a big table locks it and stalls writes.",
+     "db", "med"),
+    # --- upstream contracts ---
+    ("reading a response from an upstream API",
+     "Validate the shape of an upstream response before using it; never assume a field exists just because the docs say so.",
+     "http", "med"),
+    # --- dependencies / supply chain ---
+    ("adding or updating a dependency",
+     "Pin versions and review the lockfile diff; an unpinned transitive dependency can ship a breaking or malicious update silently.",
+     "config", "high"),
+    # --- bounded concurrency ---
+    ("fanning out concurrent work",
+     "Bound concurrency with a semaphore or a worker pool; unbounded fan-out exhausts connections, file handles and memory.",
+     "async", "med"),
+    # --- cache stampede ---
+    ("caching an expensive computation",
+     "Set a TTL and a stampede guard (lock or early-recompute); when a hot key expires, a thundering herd can crush the origin.",
+     "cache", "med"),
+    # --- distributed tracing ---
+    ("tracing a request across services",
+     "Propagate a trace/correlation id across every service boundary so one request is followable end-to-end in the logs.",
+     "observability", "low"),
 ]
 
 # Anti-patterns: dead-end memories (known past regressions) rendered as active ⛔ DO-NOT inhibitions.
@@ -221,6 +252,9 @@ CONSOLIDATION_CONTEXTS = [
     "rendering user-supplied content into an HTML page and setting cookies",
     "adding logging, metrics and tests around a new feature",
     "paginating and caching a list endpoint safely",
+    "making a service resilient with retries, timeouts and circuit breakers on slow dependencies",
+    "migrating a large table and updating pinned dependencies safely",
+    "handling cache expiry and stampedes on a hot key under concurrent load",
 ]
 
 
@@ -229,11 +263,19 @@ def _add(trigger: str, lesson: str, scope: str, severity: str, *, kind: str = "g
     l = memory.add_note(f"{trigger}: {lesson}", scope=scope, severity=severity,
                         author="seed", kind=kind, check_conflicts=False, path=path)
     ledger.edit_lesson(l["id"], trigger=trigger, lesson=lesson, path=path)
+    # edit_lesson doesn't re-embed; recompute from the canonical lesson text so the stored vector
+    # matches what recall embeds (not the duplicated "trigger: lesson trigger: lesson" of add_note).
+    try:
+        emb = memory._embed_one(memory._lesson_text({"trigger": trigger, "lesson": lesson}))
+        if emb:
+            ledger.set_embedding(l["id"], emb, path=path)
+    except Exception:
+        pass
     return l["id"]
 
 
 def seed(path: str | None = None, *, check_conflicts: bool = False) -> list[int]:
-    """Seed the 35 guard lessons verbatim (the demo deck + evaluation gold)."""
+    """Seed the 57 guard lessons verbatim (the demo deck + evaluation gold)."""
     return [_add(t, le, sc, se, path=path) for (t, le, sc, se) in SEED]
 
 

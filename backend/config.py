@@ -33,7 +33,7 @@ RG_DECAY_HALFLIFE_DAYS = float(os.environ.get("RG_DECAY_HALFLIFE_DAYS", "30"))
 # NEVER touch a lesson's confidence (that stays earned from real tests).
 RG_HEBBIAN = os.environ.get("RG_HEBBIAN", "1") == "1"        # co-recalled lessons wire together
 RG_HEBBIAN_DELTA = float(os.environ.get("RG_HEBBIAN_DELTA", "0.10"))  # synapse growth per co-recall
-RG_HEBBIAN_PAIRS = int(os.environ.get("RG_HEBBIAN_PAIRS", "3"))       # top-N co-recalled to wire
+RG_HEBBIAN_TOPN = int(os.environ.get("RG_HEBBIAN_TOPN", "3"))       # top-N co-recalled to wire
 RG_SPREAD = os.environ.get("RG_SPREAD", "0") == "1"          # spreading-activation recall (opt-in)
 RG_SPREAD_K = int(os.environ.get("RG_SPREAD_K", "2"))               # extra associative neighbours
 

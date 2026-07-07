@@ -472,6 +472,10 @@ function setView(v) {
 document.querySelectorAll('.vbtn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#btnReplay') && $('#btnReplay').addEventListener('click', playProof);
 paintTeach();
+// Land on the signature 🏆 Proof moment and auto-play it once — a cold visitor sees 0→5/5 first
+// (jurors decide in the first 30s); Chat is one click away. playProof respects reduced-motion.
+// Deferred to a macrotask so every top-level const (api, reduceMotion, …) is initialized first.
+setTimeout(() => { try { if ($('#viewProof')) setView('proof'); } catch (_) {} }, 0);
 
 // ---------- the signature "proof" moment: same AI twice, only difference is memory ----------
 function proofHighlight(code) {

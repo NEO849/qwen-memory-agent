@@ -60,13 +60,12 @@ in 10 Sekunden und es trifft genau unsere Ehrlichkeits-These.
 - ✅ **Statistische Zahl + CI** — `+100 Punkte Pass-Rate, Wilson-95%-CI` liegt jetzt vor (systemeigen, reproduzierbar).
 
 ## 4. Präsentation (15 %)
-- ✅ **Globus dichter & vollständiger** (dein Wunsch): Seed 15 → **58 Knoten**, 30 → **157 Kanten**, jetzt
-  *alle* Kanten-Typen sichtbar (`related` 141 · `synthesizes` 15 · `supersedes` 1) + 3 Anti-Pattern-Knoten
-  (dunkelrot) + 1 vergessener Knoten (grau) + echte Qwen-Synthese-Meta-Lektionen. Orphans 29 %→**3 %**.
-  Synapsen-Gewichte durch Hebbian-Co-Recall gewachsen (variable Kantenstärke). Jede Lektion = echte Coding-Regel.
-- 🔓 **Live-URL öffnet auf dem 🏆 Proof + Auto-Play** (größter Wow/Aufwand-Hebel): Cold-Visitor landet
-  aktuell auf der Chat-Intro-Textwand statt auf dem Scoreboard. Default-View = proof, Replay beim Boot.
-  *S, offen (Frontend, wirkt ohne Restart via statischem Transfer).*
+- ✅ **Globus dichter & vollständiger** (dein Wunsch): Seed 15 → **66 Knoten**, 30 → **196 Kanten**, jetzt
+  *alle* Kanten-Typen sichtbar (`related` 179 · `synthesizes` 16 · `supersedes` 1) + 3 Anti-Pattern-Knoten
+  (dunkelrot) + 1 vergessener Knoten (grau) + echte Qwen-Synthese-Meta-Lektionen. Orphans 29 %→**~3 %**.
+  Kantenstärke aus Embedding-Cosinus initialisiert, Hebbian-Co-Recall verstärkt *zusätzlich* die co-feuernden Synapsen. Jede Lektion = echte Coding-Regel.
+- ✅ **Live-URL öffnet auf dem 🏆 Proof + Auto-Play** — HTML landet auf der Proof-View, JS spielt das
+  Rennen einmal ab (Playwright-verifiziert: 0/5→5/5, kein Konsolenfehler). Chat 1 Klick entfernt.
 - 🔓 **Erste 5 Sekunden polieren:** Proof-Pille startet mit echtem Wert statt `loading…`; Intro auf einen
   Satz; `proofHero` sichtbar. *S, offen.*
 - 🔓 **Globus-Feinschliff:** Rest-Orphans als bewusster Amber-„candidate"-Ring + Legenden-Zeile
@@ -75,7 +74,7 @@ in 10 Sekunden und es trifft genau unsere Ehrlichkeits-These.
   wieder auf), dann Erlösung. Rest des Skripts ist juryreif.
 
 ## Was JETZT dein OK braucht (Reihenfolge)
-1. **Redeploy** mit dem angereicherten Globus (58 Knoten) + ehrlichem A/B + assoziativem Gedächtnis — 1 reproduzierbarer Befehl.
+1. **Redeploy** mit dem angereicherten Globus (66 Knoten) + ehrlichem A/B + assoziativem Gedächtnis — 1 reproduzierbarer Befehl.
 2. Danach frei wählbar: Präsentations-Quick-Wins (Proof-Landing, Globus-Feinschliff), 2. Bug-Muster,
    echte MCP-Fremd-Session fürs Video.
 3. Zuletzt (deine Hände): 🎬 Video · 🌐 Repo public · ✅ Devpost submit.

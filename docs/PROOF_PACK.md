@@ -10,7 +10,7 @@ venv (`.venv/bin/...`). Qwen-backed items need the `.env` key; the rest are offl
 ```
 .venv/bin/pytest -q
 ```
-Includes the 6 memory-injection-defense tests, the concurrency test (§4), the calibration
+Includes the 15 memory-injection-defense tests, the concurrency test (§4), the calibration
 tests (§3), and the associative-memory tests (§7). No network, no Qwen — pure logic + math.
 
 ## 2. The A/B proof — floor vs ceiling + distillation reliability (honest 3-part)
@@ -65,21 +65,22 @@ and the outcomes table has exactly 200 rows. Proves the atomic in-SQL Beta incre
 
 ## 5. Memory-injection defense (red-teamed)
 ```
-.venv/bin/pytest tests/test_injection_defense.py -v         # 6/6 green
+.venv/bin/pytest tests/test_injection_defense.py -v         # 15/15 green
 BASE=http://regressguard.duckdns.org ./redteam/poisoned_memory_probe.sh   # live: SAFE
 ```
 Recalled lessons enter the prompt as untrusted data behind structural markers + a deterministic
 sanitizer, so a poisoned lesson can't become a command (2nd-order prompt injection). Our own
 red-team flipped the probe vulnerable→safe; a 60-case scan passed clean.
 
-## 6. Knowledge globe — 58 nodes / 157 edges, all edge/node types (honest data)
+## 6. Knowledge globe — 66 nodes / 196 edges, all edge/node types (honest data)
 ```
 .venv/bin/python -m harness.seed_demo <ledger-path>         # guards + enrich
 ```
-Rebuilds a memory of **58 nodes / 157 edges** with every type the globe renders:
-`related` (141, from real embedding cosine) · `synthesizes` (15, real Qwen ExpeL crystallization) ·
+Rebuilds a memory of **66 nodes / 196 edges** with every type the globe renders:
+`related` (179, from real embedding cosine) · `synthesizes` (16, real Qwen ExpeL crystallization) ·
 `supersedes` (1, a real belief-revision) · 3 anti-pattern nodes (dark red) · 1 forgotten node (grey).
-Edge strength varies because Hebbian co-recall (§7) has strengthened synapses through use.
+Edge strength is initialised from embedding-cosine similarity; Hebbian co-recall (§7) then further
+strengthens the synapses that actually co-fire (capped), so a used graph diverges from the raw-cosine seed.
 Every lesson is a genuine coding rule — nothing invented.
 
 ## 7. Associative memory — Hebbian wiring + spreading activation (honest, non-mystical)
