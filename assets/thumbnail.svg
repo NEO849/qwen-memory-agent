@@ -1,66 +1,78 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" font-family="Inter, 'Segoe UI', system-ui, sans-serif">
   <defs>
     <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#151d2b"/>
-      <stop offset="0.6" stop-color="#0b0e14"/>
+      <stop offset="0" stop-color="#131a22"/>
+      <stop offset="0.6" stop-color="#0b0f14"/>
       <stop offset="1" stop-color="#090b10"/>
     </linearGradient>
+    <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#34d399"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
     <linearGradient id="conf2" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#ff6f61"/>
+      <stop offset="0" stop-color="#f87171"/>
       <stop offset="0.5" stop-color="#F0C35A"/>
-      <stop offset="1" stop-color="#5FD787"/>
+      <stop offset="1" stop-color="#34d399"/>
     </linearGradient>
     <marker id="ar2" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
-      <path d="M0,0 L7,3 L0,6 Z" fill="#5FD787"/>
+      <path d="M0,0 L7,3 L0,6 Z" fill="#34d399"/>
     </marker>
   </defs>
 
   <rect width="1200" height="800" fill="url(#bg2)"/>
-  <circle cx="1080" cy="120" r="300" fill="#5AC8F5" opacity="0.05"/>
-  <circle cx="140" cy="700" r="260" fill="#5FD787" opacity="0.04"/>
+  <circle cx="1080" cy="110" r="300" fill="#5AC8F5" opacity="0.05"/>
+  <circle cx="140" cy="710" r="260" fill="#34d399" opacity="0.045"/>
 
-  <!-- header -->
-  <g transform="translate(600,120)" text-anchor="middle">
-    <text x="0" y="-18" fill="#8b96a8" font-size="19" letter-spacing="4">QWEN CLOUD · MEMORYAGENT</text>
-    <text x="0" y="52" fill="#e6edf3" font-size="88" font-weight="800" letter-spacing="-1">Regress-Guard</text>
-    <text x="0" y="104" fill="#5FD787" font-size="34" font-weight="600">A memory that forgets what's wrong.</text>
+  <!-- logo mark -->
+  <g transform="translate(568,32) scale(1.06)">
+    <path d="M32 5 54 13 V32 C54 45 44 54 32 59 C20 54 10 45 10 32 V13 Z"
+          fill="none" stroke="url(#rg)" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M22 33 L29 41 L46 20" fill="none" stroke="url(#rg)"
+          stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 
-  <text x="600" y="288" fill="#8b96a8" font-size="21" text-anchor="middle">Stops AI coding agents from re-introducing bugs they already fixed —</text>
-  <text x="600" y="318" fill="#8b96a8" font-size="21" text-anchor="middle">with confidence earned from real test outcomes, not the model's opinion.</text>
+  <!-- header -->
+  <g text-anchor="middle">
+    <text x="600" y="140" fill="#8b98a5" font-size="18" letter-spacing="4">QWEN CLOUD · MEMORYAGENT</text>
+    <text x="600" y="212" fill="#e6edf3" font-size="82" font-weight="800" letter-spacing="-1">Regress<tspan fill="#34d399">-Guard</tspan></text>
+    <text x="600" y="258" fill="#8b98a5" font-size="30" font-weight="600">Memory for AI coding agents that forgets what&#8217;s wrong.</text>
+  </g>
+
+  <text x="600" y="312" fill="#8b98a5" font-size="20" text-anchor="middle">Stops agents re-introducing bugs they already fixed —</text>
+  <text x="600" y="340" fill="#8b98a5" font-size="20" text-anchor="middle">confidence <tspan fill="#c9d3df">earned from real test outcomes</tspan>, not the model&#8217;s opinion.</text>
 
   <!-- the proof row -->
-  <g transform="translate(180,380)">
-    <text x="420" y="18" fill="#8b96a8" font-size="15" letter-spacing="2" text-anchor="middle">THE PROOF · SAME TASK · TEMPERATURE 0 · HIDDEN TEST</text>
+  <g transform="translate(180,378)">
+    <text x="420" y="16" fill="#8b98a5" font-size="15" letter-spacing="2" text-anchor="middle">THE PROOF · SAME TASK · TEMPERATURE 0 · HIDDEN TEST</text>
     <!-- red -->
-    <g transform="translate(70,40)">
-      <rect width="300" height="150" rx="16" fill="#1a1010" stroke="#4d1e1e"/>
-      <rect width="7" height="150" rx="16" fill="#ff6f61"/>
-      <text x="34" y="44" fill="#8b96a8" font-size="17" font-family="ui-monospace,monospace">WITHOUT memory</text>
-      <text x="34" y="94" fill="#ff6f61" font-size="40" font-weight="700" font-family="ui-monospace,monospace">TEST RED</text>
-      <text x="34" y="128" fill="#8b96a8" font-size="19" font-family="ui-monospace,monospace">0 / 5 green</text>
+    <g transform="translate(70,36)">
+      <rect width="300" height="150" rx="16" fill="#180f0f" stroke="#4d1e1e"/>
+      <rect width="7" height="150" rx="16" fill="#f87171"/>
+      <text x="34" y="44" fill="#8b98a5" font-size="17" font-family="ui-monospace,monospace">WITHOUT memory</text>
+      <text x="34" y="94" fill="#f87171" font-size="40" font-weight="700" font-family="ui-monospace,monospace">TEST RED</text>
+      <text x="34" y="128" fill="#8b98a5" font-size="19" font-family="ui-monospace,monospace">0 / 5 green</text>
     </g>
-    <line x1="378" y1="115" x2="452" y2="115" stroke="#5FD787" stroke-width="3.5" marker-end="url(#ar2)"/>
+    <line x1="378" y1="111" x2="452" y2="111" stroke="#34d399" stroke-width="3.5" marker-end="url(#ar2)"/>
     <!-- green -->
-    <g transform="translate(470,40)">
+    <g transform="translate(470,36)">
       <rect width="300" height="150" rx="16" fill="#0d1b12" stroke="#1e4d31"/>
-      <rect width="7" height="150" rx="16" fill="#5FD787"/>
-      <text x="34" y="44" fill="#8b96a8" font-size="17" font-family="ui-monospace,monospace">WITH memory</text>
-      <text x="34" y="94" fill="#5FD787" font-size="40" font-weight="700" font-family="ui-monospace,monospace">TEST GREEN</text>
-      <text x="34" y="128" fill="#8b96a8" font-size="19" font-family="ui-monospace,monospace">5 / 5 green</text>
+      <rect width="7" height="150" rx="16" fill="#34d399"/>
+      <text x="34" y="44" fill="#8b98a5" font-size="17" font-family="ui-monospace,monospace">WITH memory</text>
+      <text x="34" y="94" fill="#34d399" font-size="40" font-weight="700" font-family="ui-monospace,monospace">TEST GREEN</text>
+      <text x="34" y="128" fill="#8b98a5" font-size="19" font-family="ui-monospace,monospace">5 / 5 green</text>
     </g>
   </g>
 
   <!-- beta curve strip -->
-  <g transform="translate(180,628)">
-    <rect width="840" height="96" rx="12" fill="#0a0e16" stroke="#232c3d"/>
-    <text x="24" y="28" fill="#8b96a8" font-size="14" font-family="ui-monospace,monospace">CONFIDENCE = Beta(α, β), updated on every real pass/fail — demoted &amp; tombstoned when wrong</text>
-    <polyline points="30,86 140,84 260,80 380,72 470,60 540,42 600,64 660,78 740,84 812,88"
+  <g transform="translate(180,620)">
+    <rect width="840" height="94" rx="12" fill="#0a0e16" stroke="#232c3d"/>
+    <text x="24" y="28" fill="#8b98a5" font-size="14" font-family="ui-monospace,monospace">CONFIDENCE = Beta(α, β), updated on every real pass/fail — demoted &amp; tombstoned when wrong</text>
+    <polyline points="30,84 140,82 260,78 380,70 470,58 540,40 600,62 660,76 740,82 812,86"
       fill="none" stroke="url(#conf2)" stroke-width="3.5"/>
   </g>
 
   <!-- footer chips -->
-  <g transform="translate(600,762)" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="15">
+  <g transform="translate(600,758)" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="15">
     <text fill="#5a6577">qwen-plus · text-embedding-v4 · Alibaba Cloud ECS · FastAPI · SQLite · MCP · MIT</text>
   </g>
 </svg>
