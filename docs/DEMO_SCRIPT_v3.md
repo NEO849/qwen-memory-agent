@@ -41,8 +41,8 @@
 
 ### [0:12–0:32] · PROBLEM — make them feel the cost  ·  🎯 *Impact*
 🎬 *Switch to the **💬 Chat** tab (globe already visible on the right).*
-**🎙️ EN:** "You already fixed this bug. You reviewed it, tested it, merged it — and today a fresh agent session shipped it right back. Re-introduced regressions are the hidden tax on every AI-assisted team. Nothing today stops them."
-**🇩🇪 DE:** *„Du hast diesen Bug schon gefixt. Reviewed, getestet, gemerged — und heute hat eine frische Agenten-Session ihn direkt wieder ausgeliefert. Wieder-eingebaute Regressionen sind die versteckte Steuer jedes KI-gestützten Teams. Nichts stoppt sie heute."*
+**🎙️ EN:** "Here's the problem it solves. AI coding agents forget across sessions — you fix a bug today, and tomorrow a fresh session ships it right back. Those re-introduced regressions are the hidden tax on every AI-assisted team, and nothing today stops them."
+**🇩🇪 DE:** *„Das ist das Problem, das es löst. KI-Coding-Agenten vergessen über Sessions hinweg — du fixt heute einen Bug, und morgen liefert ihn eine frische Session direkt wieder aus. Diese wieder-eingebauten Regressionen sind die versteckte Steuer jedes KI-gestützten Teams, und nichts stoppt sie heute."* — **(bridge: erklärt die Lücke aus dem Hook, fließt vorwärts)*
 
 ### [0:32–0:52] · QWEN DECIDES FOR ITSELF — function-calling, LIVE  ·  🎯 *Innovation (highest-value beat) + Qwen visible*
 🎬 *(pre-recorded) In Chat, type a coding question. Show the strip: **"🔧 Qwen called recall('safe pagination…') → answered using 3 lessons"** and the globe nodes pulsing.*
@@ -66,8 +66,8 @@
 
 ### [2:12–2:38] · ARCHITECTURE at altitude  ·  🎯 *Technical Depth 30% — the axis teams forget to say out loud*
 🎬 *Show the **architecture diagram** (`architecture/diagram.png`), legible on screen.*
-**🎙️ EN:** "Under the hood: **Qwen Cloud in five roles**, across three Qwen APIs — the model, embeddings, and function-calling. Retrieval is **hybrid** — keyword plus embeddings, self-tuned on a held-out split. The recall path is **stateless and scales out**; database writes are **atomic**, so concurrent test results never race. **Error handling is fail-open** — drop a Qwen call and it falls back to direct recall, it doesn't crash. **Fifty-four tests** — concurrency, fail-open, and a sixty-case red-team — stay green."
-**🇩🇪 DE:** *„Unter der Haube: Qwen Cloud in fünf Rollen, über drei Qwen-APIs — das Modell, Embeddings und Function-Calling. Retrieval ist hybrid — Stichwort plus Embeddings, selbst-getunt auf einem Holdout-Split. Der Recall-Pfad ist zustandslos und skaliert horizontal; DB-Schreibvorgänge sind atomar, damit parallele Test-Ergebnisse nie racen. Fehlerbehandlung ist fail-open — fällt ein Qwen-Aufruf weg, greift der direkte Recall, es stürzt nicht ab. Vierundfünfzig Tests — Nebenläufigkeit, Fail-open und ein 60-Fälle-Red-Team — bleiben grün."*
+**🎙️ EN:** "Under the hood: Qwen Cloud in five roles, across three APIs — the model, embeddings, and function-calling. The recall path is stateless and scales out. Error handling is fail-open: if a Qwen call drops, it falls back to direct recall — it never crashes. Fifty-four tests, plus a sixty-case security red-team, stay green."
+**🇩🇪 DE:** *„Unter der Haube: Qwen Cloud in fünf Rollen, über drei APIs — das Modell, Embeddings und Function-Calling. Der Recall-Pfad ist zustandslos und skaliert horizontal. Fehlerbehandlung ist fail-open: fällt ein Qwen-Aufruf weg, greift der direkte Recall — es stürzt nie ab. Vierundfünfzig Tests plus ein 60-Fälle-Security-Red-Team bleiben grün."* — **(getrimmt: 4 klare Signale statt 8; Details zeigt das Diagramm)*
 
 ### [2:38–2:54] · CLOSE — slam back to the proof (bookend)  ·  🎯 *Presentation*
 🎬 *Back to **🏆 Proof** — `0/5 → 5/5` is the LAST image. Fade in the URLs.*
