@@ -540,7 +540,7 @@ async function playProof() {
     }
   }
   await _sleep(rm ? 0 : 700);
-  T('#proofPunch', 'The only difference is memory. That green is earned — from real tests, not opinion.');
+  T('#proofPunch', 'That green is earned — from real tests, not opinion.');
   if (btn) btn.disabled = false; _proofRunning = false;
 }
 
@@ -572,7 +572,7 @@ function runDuel() {
       const pw = m.plain_green, mw = m.memory_green;
       $('#duelPlain') && $('#duelPlain').classList.add(pw >= mw ? 'win' : 'lose');
       $('#duelMem') && $('#duelMem').classList.add(mw >= pw ? 'win' : 'lose');
-      const p = $('#duelPunch'); if (p) p.textContent = `Live: ${pw}/${m.k} without memory, ${mw}/${m.k} with the recalled lesson. Same task, same model, temperature 0 — the only difference is memory.`;
+      const p = $('#duelPunch'); if (p) p.textContent = `Live: ${pw}/${m.k} without memory · ${mw}/${m.k} with the recalled lesson.`;
     }
   };
   es.onerror = () => { if (_duelRunning) { const p = $('#duelPunch'); if (p) p.textContent = 'the model calls are rate-limited or slow — try again in a moment (or use the 🏆 Proof replay).'; } finish(); };
