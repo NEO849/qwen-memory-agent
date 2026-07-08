@@ -110,7 +110,7 @@ curl -s http://regressguard.duckdns.org/chat -H 'content-type: application/json'
 curl -s http://regressguard.duckdns.org/metrics | python -m json.tool   # grounded_outcomes, calibration_gap
 ```
 
-The live instance ships **grounded outcomes**: a correct money lesson (integer cents) earned **confidence 0.86** from **3/3 real pytest passes** (a validated node), while a refuted one (float dollars) was **live-tombstoned** on **3/3 real fails** — a grey "forgotten" node. So `/metrics` now reports `grounded_outcomes > 0` and an honest **`calibration_gap` (0.143)** — displayed confidence vs. empirical pass-rate from real outcomes, not a prior.
+The live instance ships **earned confidence**: correct lessons earn it from real pytest passes — tenant-scoping **0.92** (8/8), pagination **0.89** (5/5), money **0.86** (3/3), each a validated node with a solid meter — while a refuted money variant (float dollars) was **live-tombstoned** on **3/3 real fails** (a grey "forgotten" node). Untested lessons keep a **dashed** prior meter (never fabricated). So `/metrics` reports **`grounded_outcomes` 16** and an honest **`calibration_gap` 0.112** — displayed confidence vs. empirical pass-rate from real outcomes.
 
 Or just open **[regressguard.duckdns.org](http://regressguard.duckdns.org)** → the **🏆 Proof** or **⚔️ Duel** tab.
 
