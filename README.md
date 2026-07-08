@@ -1,8 +1,10 @@
 <p align="center">
-  <img src="assets/banner.png" alt="Regress-Guard — a memory that forgets what's wrong" width="960">
+  <picture>
+    <source media="(prefers-color-scheme: dark)"  srcset="assets/banner-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/banner-light.svg">
+    <img alt="Regress-Guard — memory for AI coding agents that forgets what's wrong" src="assets/banner-dark.svg" width="880">
+  </picture>
 </p>
-
-<h1 align="center">Regress-Guard</h1>
 
 <p align="center">
   <b>A memory that stops AI coding agents from re-introducing bugs they already fixed —<br>
@@ -10,22 +12,36 @@
 </p>
 
 <p align="center">
-  <a href="http://regressguard.duckdns.org"><img src="https://img.shields.io/badge/live_demo-online-5FD787?style=for-the-badge&labelColor=0c1119" alt="Live demo"></a>
-  <img src="https://img.shields.io/badge/A%2FB_proof-floor→ceiling_×_3_bug_classes-5FD787?style=for-the-badge&labelColor=0c1119" alt="A/B proof floor to ceiling across 3 bug classes">
-  <img src="https://img.shields.io/badge/tests-54%2F54_green-5FD787?style=for-the-badge&labelColor=0c1119" alt="54/54 tests">
+  <a href="http://regressguard.duckdns.org"><img src="https://img.shields.io/badge/live_demo-online-059669?style=for-the-badge&labelColor=0b0f14" alt="Live demo"></a>
+  <img src="https://img.shields.io/badge/tests-54%2F54_green-059669?style=for-the-badge&labelColor=0b0f14" alt="54/54 tests">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-059669?style=for-the-badge&labelColor=0b0f14" alt="MIT license"></a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Qwen_Hackathon-MemoryAgent-5AC8F5?style=flat-square&labelColor=0c1119" alt="Track: MemoryAgent">
-  <img src="https://img.shields.io/badge/Qwen_Cloud-qwen--plus_·_embedding--v4-F0C35A?style=flat-square&labelColor=0c1119&logo=alibabacloud&logoColor=white" alt="Qwen Cloud">
-  <img src="https://img.shields.io/badge/Alibaba_Cloud-ECS_Singapore-FF6A00?style=flat-square&labelColor=0c1119&logo=alibabacloud&logoColor=white" alt="Alibaba Cloud ECS">
-  <img src="https://img.shields.io/badge/FastAPI_·_SQLite_·_SSE-009688?style=flat-square&labelColor=0c1119&logo=fastapi&logoColor=white" alt="FastAPI · SQLite · SSE">
-  <img src="https://img.shields.io/badge/MCP-drop--in_tool-B9A6E8?style=flat-square&labelColor=0c1119" alt="MCP tool">
-  <img src="https://img.shields.io/badge/UI-no_build_step-8A93A0?style=flat-square&labelColor=0c1119" alt="No build">
-  <img src="https://img.shields.io/badge/License-MIT-5FD787?style=flat-square&labelColor=0c1119" alt="MIT">
+  <img src="https://img.shields.io/badge/Qwen_Cloud-qwen--plus_%C2%B7_text--embedding--v4-F0C35A?style=flat-square&labelColor=0b0f14&logo=alibabacloud&logoColor=white" alt="Powered by Qwen Cloud">
+  <img src="https://img.shields.io/badge/Alibaba_Cloud-ECS_%C2%B7_Singapore-FF6A00?style=flat-square&labelColor=0b0f14&logo=alibabacloud&logoColor=white" alt="Deployed on Alibaba Cloud">
+  <img src="https://img.shields.io/badge/MCP-drop--in_tool-B9A6E8?style=flat-square&labelColor=0b0f14" alt="MCP drop-in tool">
+  <img src="https://img.shields.io/badge/track-MemoryAgent-5AC8F5?style=flat-square&labelColor=0b0f14" alt="Track: MemoryAgent">
+</p>
+
+<p align="center">
+  <b>
+  <a href="http://regressguard.duckdns.org">▶&nbsp;Live&nbsp;demo</a> &nbsp;·&nbsp;
+  <a href="#powered-by-qwen-cloud-on-alibaba-cloud">Qwen&nbsp;usage</a> &nbsp;·&nbsp;
+  <a href="#architecture">Architecture</a> &nbsp;·&nbsp;
+  <a href="#quickstart">Quickstart</a> &nbsp;·&nbsp;
+  <a href="#use-as-an-mcp-tool">MCP&nbsp;tool</a> &nbsp;·&nbsp;
+  <a href="docs/DEMO_SCRIPT_v3.md">Demo&nbsp;script</a>
+  </b>
+</p>
+
+<p align="center">
+  <img src="docs/media/proof-globe.png" width="900" alt="The proof: same AI, same task, temperature 0 — 0/5 without memory vs 5/5 with Regress-Guard, beside the live 3D knowledge globe">
 </p>
 
 ---
+
+> **Powered by Qwen Cloud — five roles across three APIs:** DISTILL · REVISE · SELF-CHECK · function-calling (`qwen-plus`) + RECALL (`text-embedding-v4`), deployed on **Alibaba Cloud**. Deploy proof (code): [`backend/qwen_client.py`](backend/qwen_client.py). [Full role table ↓](#powered-by-qwen-cloud-on-alibaba-cloud)
 
 ## The problem
 
@@ -102,16 +118,16 @@ Or just open **[regressguard.duckdns.org](http://regressguard.duckdns.org)** →
 
 ## What you can see and steer
 
-One clinical surface — a **living-memory** layout: the **editable memory on the left**, a normal AI chat in the **middle** (toggle **💬 Chat · 🏆 Proof**), and the **persistent 3D knowledge globe on the right, always visible**. When chat or the agent recalls lessons, exactly those nodes pulse **live** on the globe while the answer streams — memory *and* its use on one screen:
+One clinical surface — a **living-memory** layout: the **editable memory on the left**, a normal AI chat in the **middle** (toggle **💬 Chat · 🏆 Proof · ⚔️ Duel**), and the **persistent 3D knowledge globe on the right, always visible**. When chat or the agent recalls lessons, exactly those nodes pulse **live** on the globe while the answer streams — memory *and* its use on one screen:
 
 <p align="center"><img src="docs/media/living-memory.png" alt="Living memory — editable memory deck (left), chat (middle), persistent 3D globe (right); recalled lessons pulse live on the globe" width="920"></p>
 
 | | Feature | What it means |
 |---|---|---|
-| 🧠 | **Living memory (globe + chat together, live recall highlight)** | Three columns in one frame: **LEFT** the editable memory (card deck — **pin / demote / forget / revise**, **Teach** a rule, add a **⛔ don't**, and **Run / Pause / Stop** the agent), **MIDDLE** a normal AI chat with a **[💬 Chat · 🏆 Proof]** toggle, **RIGHT** the **persistent 3D globe (always visible)**. **Live-recall highlight:** when chat or the agent recalls lessons, exactly those nodes pulse live on the globe (white flash + particles over their real edges) while the answer streams. Only the **real recalled lesson IDs** pulse — the same IDs as the "answered using N lessons: #.." strip (verified via Playwright). Mobile degrades to a stack. |
-| ⚔️ | **Live duel (plain AI vs. AI + Regress-Guard)** | A third middle tab beside **💬 Chat · 🏆 Proof**: one prompt → two AIs side by side, **"plain AI · no memory"** vs. **"AI + Regress-Guard"**. Hit **▶ Run 5 live** and 5 hidden `pytest` run in real time — a green/red counter ticks over each arm and the winner pane glows: **0/5 vs 5/5**, verified live. It is the *live, un-recorded* twin of the 🏆 Proof tab (which stays the instant, flicker-safe replay of the **same** experiment). Honest by design: the memory arm injects the remembered concrete lesson through a **determinism guard** (the same one `harness/ab_runner` uses), disclosed in the SSE stream as `"injected":"canonical (determinism guard)"`; the plain arm structurally mis-scopes and fails. It is deliberately the injection *ceiling* live — not a live distillation (that lives separately in [`ab_result.json`](ab_result.json): auto-distiller 10/10, Wilson95 [72,100]%). Never framed as "guaranteed". |
+| 🧠 | **Living memory (globe + chat together)** | Three columns in one frame: **LEFT** the editable card deck (**pin / demote / forget / revise**, **Teach** a rule, add a **⛔ don't**, **Run / Pause / Stop** the agent), **MIDDLE** the chat, **RIGHT** the always-on 3D globe. When chat or the agent recalls a lesson, exactly those nodes pulse **live** on the globe while the answer streams — only the **real recalled IDs** light up (verified via Playwright). Mobile stacks. |
+| ⚔️ | **Live duel (plain AI vs. AI + Regress-Guard)** | One prompt, two arms — **"plain AI · no memory"** vs **"AI + Regress-Guard"**. Hit **▶ Run 5 live** and 5 hidden `pytest` fire in real time; the counters tick to **0/5 vs 5/5**. The *live, un-recorded* twin of 🏆 Proof — the memory arm uses a **disclosed determinism guard** (`"injected":"canonical"`), so it is the injection *ceiling*, never "guaranteed". |
 | 💬 | **Chat + editable memory** | Talk to the agent; beside it, a flashcard deck shows every lesson with a **Beta(α,β) confidence meter** — **pin**, **demote** or **forget** any lesson in a click. |
-| 🌐 | **3D knowledge globe** | The whole memory as a rotating globe (currently **66 nodes / 196 edges**): node size = evidence (α+β), colour = confidence, grey = forgotten, dark-red = anti-pattern; **edge strength is initialised from embedding-cosine similarity**, then further strengthened by Hebbian co-recall on the synapses that co-fire (capped). **Click a node and its strands light up by type** — *related* (blue), *supersedes* (red), *synthesizes* (violet) — so you see at a glance what a memory connects to. |
+| 🌐 | **3D knowledge globe** | The whole memory as a rotating globe (**66 nodes and ~200 edges**): node size = evidence (α+β), colour = confidence, grey = forgotten, dark-red = anti-pattern; **edge strength is initialised from embedding-cosine similarity**, then further strengthened by Hebbian co-recall on the synapses that co-fire (capped). **Click a node and its strands light up by type** — *related* (blue), *supersedes* (red), *synthesizes* (violet) — so you see at a glance what a memory connects to. |
 | 🏆 | **The proof** | The signature A/B moment above, replayable on demand — the decisive token pulses, the pass-rate lift counts up. |
 | ⛔ | **Anti-pattern inhibitions** | Dead-end rules a past regression proved wrong are injected as active **⛔ DO NOT** directives — the agent is steered *away* from a known bad path, not just toward a good one. |
 | ✦ | **Crystallization (ExpeL)** | A cluster of related lessons can be distilled into one higher-level meta-lesson that then **earns its own confidence** from real tests like any other. |
@@ -122,7 +138,9 @@ One clinical surface — a **living-memory** layout: the **editable memory on th
 
 ---
 
-## Qwen's five roles
+## Powered by Qwen Cloud on Alibaba Cloud
+
+Five distinct Qwen roles across **three Qwen Cloud APIs** (`qwen-plus` · `text-embedding-v4` · Qwen function-calling). **Alibaba Cloud deploy proof (code):** the DashScope / Qwen Cloud client [`backend/qwen_client.py`](backend/qwen_client.py) · deployment notes [`deploy/README.md`](deploy/README.md).
 
 | # | Role | Model | Where |
 |---|------|-------|-------|
@@ -166,7 +184,7 @@ fed live over Server-Sent Events; an MCP tool exposes the memory to any agent. D
 
 ---
 
-## Run it
+## Quickstart
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
@@ -183,7 +201,7 @@ uvicorn backend.main:app --workers 1   # then open http://localhost:8000
 
 ---
 
-## MCP integration — a real tool, not just a demo
+## Use as an MCP tool
 
 `mcp_tool/server.py` exposes `recall(context)` and `record(test_output, diff)` over MCP. By default it
 talks to the **deployed memory on Alibaba Cloud over HTTP** — so any coding agent (Claude Code, Qwen
