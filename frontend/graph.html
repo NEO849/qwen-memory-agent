@@ -6,7 +6,7 @@
   <title>Regress-Guard · memory graph</title>
   <style>
     :root { --bg:#090b11; --panel:rgba(14,20,30,.88); --line:rgba(120,150,190,.16);
-      --ink:#e8edf4; --dim:#97a2b4; --faint:#596577; --green:#5FD787; --red:#ff6f61;
+      --ink:#e8edf4; --dim:#97a2b4; --faint:#596577; --green:#34d399; --red:#f87171;
       --amber:#F0C35A; --blue:#5AC8F5; --memory:#B9A6E8;
       --mono:ui-monospace,"SF Mono",Menlo,monospace; }
     * { box-sizing:border-box; }
@@ -14,7 +14,7 @@
       font:14px/1.5 "Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; overflow:hidden; }
     #graph { position:fixed; inset:0; }
     .hud { position:fixed; z-index:10; background:var(--panel); backdrop-filter:blur(12px);
-      border:1px solid var(--line); border-radius:14px; box-shadow:0 8px 40px rgba(0,0,0,.5); }
+      border:1px solid var(--line); border-radius:10px; box-shadow:0 8px 40px rgba(0,0,0,.5); }
     #top { top:16px; left:16px; padding:13px 15px; max-width:280px; }
     #top .eyebrow { font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.14em; color:var(--faint); }
     #top h1 { margin:3px 0 2px; font-size:15px; font-weight:700; }
@@ -26,7 +26,7 @@
     #stats .warn b { color:var(--red); } #stats .orph b { color:var(--amber); }
     #back { position:fixed; top:16px; right:16px; z-index:10; font-family:var(--mono); font-size:11px;
       text-transform:uppercase; letter-spacing:.08em; color:var(--dim); text-decoration:none;
-      background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:7px 14px; }
+      background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:7px 14px; }
     #back:hover { color:var(--ink); border-color:var(--blue); }
     #legend { bottom:16px; left:16px; padding:12px 15px; }
     #legend .grp { font-family:var(--mono); font-size:9px; text-transform:uppercase; letter-spacing:.1em; color:var(--faint); margin:0 0 6px; }
@@ -46,21 +46,17 @@
 <body>
   <div id="graph"></div>
   <a id="back" href="/">← back to the agent</a>
-  <div id="top" class="hud">
-    <div class="eyebrow">Regress-Guard</div>
-    <h1>the memory, as a graph</h1>
-    <div class="sub">Each node is a lesson — size = evidence (α+β), colour = confidence. Edges are related lessons, belief-revisions (supersedes) and syntheses.</div>
-    <div id="stats"></div>
-  </div>
+  <!-- info card + totals removed — the totals now live in the parent's horizontal metric strip;
+       the graph fills the calmer, smaller column. Legend stays. -->
   <div id="legend" class="hud">
     <div class="grp">nodes</div>
-    <div class="row"><span class="dot" style="color:#5FD787">●</span>trusted (high confidence)</div>
-    <div class="row"><span class="dot" style="color:#ff6f61">●</span>low confidence</div>
+    <div class="row"><span class="dot" style="color:#34d399">●</span>trusted (high confidence)</div>
+    <div class="row"><span class="dot" style="color:#f87171">●</span>low confidence</div>
     <div class="row"><span class="dot" style="color:#c0392b">●</span>anti-pattern (do-not)</div>
     <div class="row"><span class="dot" style="color:#5a6577">●</span>obsolete (forgotten)</div>
     <div class="grp">edges</div>
     <div class="row"><span class="ln" style="color:#3a6ea5"></span>related</div>
-    <div class="row"><span class="ln" style="color:#ff6f61"></span>supersedes</div>
+    <div class="row"><span class="ln" style="color:#f87171"></span>supersedes</div>
     <div class="row"><span class="ln" style="color:#B9A6E8"></span>synthesizes</div>
   </div>
   <div id="tip"></div>
@@ -71,18 +67,12 @@
   </script>
   <script src="/vendor/3d-force-graph.min.js"></script>
   <script>
-    const EDGE = { related: 'rgba(90,140,200,.35)', supersedes: 'rgba(255,111,97,.7)', synthesizes: 'rgba(185,166,232,.7)' };
+    const EDGE = { related: 'rgba(90,140,200,.35)', supersedes: 'rgba(248,113,113,.7)', synthesizes: 'rgba(185,166,232,.7)' };
     const el = document.getElementById('graph');
     const tip = document.getElementById('tip');
     fetch('/graph').then(r => r.json()).then(g => {
-      const s = g.stats || {};
-      document.getElementById('stats').innerHTML =
-        `<div><b>${s.lessons||0}</b><span>lessons</span></div>` +
-        `<div><b>${s.links||0}</b><span>links</span></div>` +
-        `<div class="orph"><b>${s.orphans||0}</b><span>orphans</span></div>` +
-        `<div><b>${s.obsolete||0}</b><span>forgotten</span></div>`;
       const data = { nodes: g.nodes, links: (g.edges || []).map(e => ({ ...e })) };
-      const EDGE_BRIGHT = { related: '#5AC8F5', supersedes: '#ff6f61', synthesizes: '#B9A6E8' };
+      const EDGE_BRIGHT = { related: '#5AC8F5', supersedes: '#f87171', synthesizes: '#B9A6E8' };
       const DIM_NODE = 'rgba(92,101,119,.20)', DIM_LINK = 'rgba(92,101,119,.05)';
       let selId = null, autoRot = true;
       const hlNodes = new Set(), hlLinks = new Set();
@@ -127,7 +117,7 @@
           if (!n) { tip.style.display = 'none'; el.style.cursor = 'default'; return; }
           el.style.cursor = 'pointer';
           const flags = [];
-          if (n.never_validated && !n.obsolete) flags.push(`<span class="t-flag" style="background:#1e1010;color:#ff6f61">no real test yet</span>`);
+          if (n.never_validated && !n.obsolete) flags.push(`<span class="t-flag" style="background:#1e1010;color:#f87171">no real test yet</span>`);
           if (n.orphan) flags.push(`<span class="t-flag" style="background:#1a1508;color:#F0C35A">orphan</span>`);
           if (n.kind === 'anti_pattern') flags.push(`<span class="t-flag" style="background:#1a0f0f;color:#e07b6f">⛔ do-not</span>`);
           tip.innerHTML = `<div class="t-rule">#${n.id} · ${n.desc || n.label}</div>` +
@@ -190,9 +180,7 @@
         }
         requestAnimationFrame(spin);
       })(0);
-    }).catch(() => {
-      document.getElementById('stats').innerHTML = '<div class="sub">graph unavailable</div>';
-    });
+    }).catch(() => { /* graph unavailable — the parent metric strip still shows the totals */ });
   </script>
 </body>
 </html>

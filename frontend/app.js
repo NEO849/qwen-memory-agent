@@ -335,16 +335,18 @@ function jumpTo(id) { const i = state.lessons.findIndex(l => l.id === id); const
   if (i >= 0) { state.targetF = state.activeF + wrapD(i - state.activeF, n); kick(); } flashCard(id, 'highlight'); }
 function flashCard(id, cls) { const el = pool.get(id); if (el) { el.classList.add(cls); setTimeout(() => el.classList.remove(cls), 1400); } }
 
-async function loadAB() {
-  try { const ab = await api('/ab'); if (ab.available === false) return;
-    const a = ab.arm_a_no_memory, b = ab.arm_b_with_memory, el = $('#ab');
-    if (el) el.innerHTML = `<span class="ab-label">proof</span>` +
-      `<span class="pill a">no memory ${a.green}/${a.k}</span>` +
-      `<span class="pill b">memory ${b.green}/${b.k}</span>`;
-    const pA = $('#pA'), pB = $('#pB'), ph = $('#proofHero');   // big landing-hero proof
-    if (pA) pA.textContent = `${a.green}/${a.k}`;
-    if (pB) pB.textContent = `${b.green}/${b.k}`;
-    if (ph) ph.hidden = false;
+// The 0/5 → 5/5 statement now lives in ONE place only — the Proof tab (playProof).
+// The redundant stage-head badge and chat landing-hero comparison were removed by design.
+async function loadAB() { /* single source of truth: the Proof tab */ }
+
+// Graph totals hoisted OUT of the in-graph info card into a horizontal strip above the globe.
+async function loadGraphStats() {
+  try {
+    const g = await api('/graph'); const s = g.stats || {};
+    const el = $('#graphMetrics'); if (!el) return;
+    const cell = (v, l, warn) => `<div class="gm${warn ? ' warn' : ''}"><b>${v ?? 0}</b><span>${l}</span></div>`;
+    el.innerHTML = cell(s.lessons, 'lessons') + cell(s.links, 'links')
+      + cell(s.orphans, 'orphans', s.orphans > 0) + cell(s.obsolete, 'forgotten');
   } catch {}
 }
 
@@ -414,7 +416,7 @@ function live() {
     es.onmessage = (e) => { const m = JSON.parse(e.data);
       if (m.type === 'ledger_changed') { refresh(true); flashCard(m.lesson_id, 'react'); loadMetrics();
         clearTimeout(window._grT); window._grT = setTimeout(() => {   // nudge the globe to re-read structure (no camera reset)
-          const gf = $('#graphFrame'); if (gf && gf.contentWindow) gf.contentWindow.postMessage({ type: 'graph-refresh' }, location.origin); }, 400); }
+          const gf = $('#graphFrame'); if (gf && gf.contentWindow) gf.contentWindow.postMessage({ type: 'graph-refresh' }, location.origin); loadGraphStats(); }, 400); }
       else if (m.type === 'agent_step') onAgentStep(m); };
     es.onerror = () => {};
   } catch {}
@@ -483,7 +485,8 @@ function setView(v) {
 document.querySelectorAll('.vbtn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#btnReplay') && $('#btnReplay').addEventListener('click', playProof);
 $('#btnDuel') && $('#btnDuel').addEventListener('click', runDuel);
-{ const gf = $('#graphFrame'); if (gf) gf.src = '/graph.html?n=2'; }   // load the persistent globe once
+{ const gf = $('#graphFrame'); if (gf) gf.src = '/graph.html?n=3'; }   // load the persistent globe once
+loadGraphStats();                                                     // populate the metric strip above it
 paintTeach();
 // Land on the signature 🏆 Proof moment and auto-play it once — a cold visitor sees 0→5/5 first
 // (jurors decide in the first 30s); Chat is one click away. playProof respects reduced-motion.

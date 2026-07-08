@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Regress-Guard — memory that forgets what's wrong</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=18">
+  <link rel="stylesheet" href="styles.css?v=21">
 </head>
 <body>
   <div class="app">
@@ -67,7 +67,6 @@
           <button class="vbtn" data-view="duel" role="tab" aria-selected="false">⚔️ Duel</button>
           <button class="vbtn vbtn-proof on" data-view="proof" role="tab" aria-selected="true">🏆 Proof</button>
         </div>
-        <div class="ab" id="ab" title="A representative captured run — the hidden test is deterministic; temp-0 code-gen varies slightly. Re-run the A/B harness to reproduce."><span class="ab-label">proof</span><span class="pill">loading…</span></div>
       </header>
 
       <!-- CHAT VIEW -->
@@ -76,14 +75,7 @@
           <div class="intro" id="intro">
             <p class="intro-hi">Ask me to write or fix code.</p>
             <p class="intro-say">My confidence is earned from real tests, not opinion. Teach me on the left, or hit <b>▶ Run</b> to watch a red test turn <em class="green">green</em>.</p>
-            <div class="proof" id="proofHero" hidden>
-              <span class="plabel">the proof · temp 0 · hidden test</span>
-              <span class="pstat">
-                <span class="pgroup"><em class="red" id="pA">–</em><span class="pg-l">without memory</span></span>
-                <span class="parrow">→</span>
-                <span class="pgroup"><em class="green" id="pB">–</em><span class="pg-l">with memory</span></span>
-              </span>
-            </div>
+            <div class="proof-hint">the full proof lives in the <b>🏆 Proof</b> tab</div>
           </div>
         </section>
         <div class="recall-line" id="recall" hidden></div>
@@ -158,6 +150,7 @@
         <div class="globe-title">🌐 the living memory</div>
         <div class="globe-sub">recalled lessons light up as I use them</div>
       </header>
+      <div class="graph-metrics" id="graphMetrics" aria-label="memory graph totals"></div>
       <div class="analytics" id="metrics" title="The memory measures, tunes and crystallizes itself.">
         <button id="btnMeasure" title="Measure how often the memory finds the right lesson — Qwen writes fresh questions to test it">Measure</button>
         <button id="btnTune" title="Auto-tune the search weights — kept only if it beats the baseline">Self-tune</button>
@@ -171,6 +164,6 @@
       <iframe class="graph-frame" id="graphFrame" title="knowledge graph" src="about:blank"></iframe>
     </aside>
   </div>
-  <script src="app.js?v=19" type="module"></script>
+  <script src="app.js?v=20" type="module"></script>
 </body>
 </html>
