@@ -452,3 +452,21 @@ button:focus-visible, .vbtn:focus-visible, input:focus-visible, a:focus-visible,
   color: var(--ink-faint); }
 .proof-hint b { color: var(--ink-dim); font-weight: 600; }
 .proof-hint .g { color: var(--green); } .proof-hint .r { color: var(--red); }
+
+/* refined Teach primary — a deep memory-violet, not neon lavender (calmer left rail) */
+#teachSend { background: linear-gradient(180deg, #7a67c8, #6553b0); color: #fff; }
+
+/* graph legend — a compact strip BELOW the globe, so it never covers nodes (was overlapping) */
+.graph-legend { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s3);
+  padding-top: var(--s2); font-family: var(--mono); font-size: 9.5px; color: var(--ink-faint);
+  text-transform: uppercase; letter-spacing: .05em; }
+.graph-legend .gl-grp { opacity: .55; }
+.graph-legend .gl { display: inline-flex; align-items: center; gap: 5px; }
+.graph-legend .gl i.d { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.graph-legend .gl i.l { width: 14px; height: 2px; border-radius: 1px; flex: none; }
+
+/* confidence honestly signals PRIOR (untested) vs EARNED. the 0.75 on most cards is the Beta(3,1)
+   human prior — it only moves on real pytest outcomes, and we never fake it. Untested = dashed/faint. */
+.conf.is-prior { color: var(--ink-faint); }
+.conf.is-prior .bar { border-style: dashed; border-color: #2b3548; }
+.conf.is-prior .bar > i { opacity: .2; }

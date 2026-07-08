@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Regress-Guard — memory that forgets what's wrong</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=21">
+  <link rel="stylesheet" href="styles.css?v=22">
 </head>
 <body>
   <div class="app">
@@ -162,8 +162,19 @@
       </div>
       <div class="graph-loading">rendering the memory graph…</div>
       <iframe class="graph-frame" id="graphFrame" title="knowledge graph" src="about:blank"></iframe>
+      <div class="graph-legend" aria-label="graph legend">
+        <span class="gl-grp">nodes</span>
+        <span class="gl"><i class="d" style="background:#34d399"></i>trusted</span>
+        <span class="gl"><i class="d" style="background:#f87171"></i>low conf</span>
+        <span class="gl"><i class="d" style="background:#c0392b"></i>anti-pattern</span>
+        <span class="gl"><i class="d" style="background:#5a6577"></i>forgotten</span>
+        <span class="gl-grp">edges</span>
+        <span class="gl"><i class="l" style="background:#3a6ea5"></i>related</span>
+        <span class="gl"><i class="l" style="background:#f87171"></i>supersedes</span>
+        <span class="gl"><i class="l" style="background:#B9A6E8"></i>synthesizes</span>
+      </div>
     </aside>
   </div>
-  <script src="app.js?v=20" type="module"></script>
+  <script src="app.js?v=21" type="module"></script>
 </body>
 </html>

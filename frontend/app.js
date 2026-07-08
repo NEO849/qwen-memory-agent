@@ -67,7 +67,7 @@ function faceHTML(l) {
       <div class="lesson">${escapeHtml(l.lesson)}</div>
       <div class="foot">
         <span class="chip">${escapeHtml(l.scope || 'general')}</span>
-        <span class="conf">${conf.toFixed(2)}<span class="bar"><i style="width:${Math.round(conf*100)}%;background:${hueFor(conf)}"></i></span></span>
+        <span class="conf${(l.real_pass + l.real_fail) > 0 ? ' earned' : ' is-prior'}">${conf.toFixed(2)}<span class="bar"><i style="width:${Math.round(conf*100)}%;background:${hueFor(conf)}"></i></span></span>
       </div>
     </div>
     <div class="face back">
@@ -485,7 +485,7 @@ function setView(v) {
 document.querySelectorAll('.vbtn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#btnReplay') && $('#btnReplay').addEventListener('click', playProof);
 $('#btnDuel') && $('#btnDuel').addEventListener('click', runDuel);
-{ const gf = $('#graphFrame'); if (gf) gf.src = '/graph.html?n=3'; }   // load the persistent globe once
+{ const gf = $('#graphFrame'); if (gf) gf.src = '/graph.html?n=4'; }   // load the persistent globe once
 loadGraphStats();                                                     // populate the metric strip above it
 paintTeach();
 // Land on the signature 🏆 Proof moment and auto-play it once — a cold visitor sees 0→5/5 first

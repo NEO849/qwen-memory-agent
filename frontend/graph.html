@@ -63,7 +63,11 @@
 
   <script>
     // embedded in the app's Graph tab? hide the redundant back-link (the tab toggle is the nav)
-    if (window.self !== window.top) { const b = document.getElementById('back'); if (b) b.style.display = 'none'; }
+    if (window.self !== window.top) {
+      const b = document.getElementById('back'); if (b) b.style.display = 'none';
+      // the parent renders a compact legend BELOW the globe, so the in-canvas one would just cover nodes
+      const lg = document.getElementById('legend'); if (lg) lg.style.display = 'none';
+    }
   </script>
   <script src="/vendor/3d-force-graph.min.js"></script>
   <script>
