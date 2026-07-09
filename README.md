@@ -134,10 +134,10 @@ misses, breaking none** (McNemar +5/−0) — a naive memory lets an *unproven/w
 the earned one out of the retrieved set; the gate withholds it. Every card's confidence is
 auditable at **`/receipts/{id}`** — the append-only test outcomes that earned it.
 
-Two more numbers, both reproducible **offline with no API key** ([`docs/benchmark.md`](docs/benchmark.md)):
+One more headline number, reproducible **offline with no API key** ([`docs/benchmark.md`](docs/benchmark.md)):
 **value-density packing injects the critical lesson in ~37 % fewer tokens at identical recall**, and
-tombstoning a wrong lesson cuts harmful-injection **100 % → 0 %** (`harness/context_window_bench.py`);
-vectorized cosine is **3.1–3.3× faster** at N=1k/10k with **bit-identical ranking** (`harness/latency_bench.py`).
+tombstoning a wrong lesson cuts harmful-injection **100 % → 0 %** (`harness/context_window_bench.py`).
+*(A vectorized-cosine constant-factor speedup is documented in the benchmark too — engineering hygiene, not headlined as innovation.)*
 
 > **What we do NOT claim.** N is small (McNemar p≈0.0625 — directional, not yet p<0.05); we say
 > so. `qwen3-rerank` is built but **off** — it shows no lift at our memory size, and we report
@@ -209,7 +209,7 @@ Five distinct Qwen roles across **three Qwen Cloud APIs** (`qwen-plus` · `text-
 
 In chat, we don't decide when to consult the memory — **Qwen does**. It's handed a `recall_memory` tool and *autonomously* calls it for coding/engineering questions (formulating its own query, e.g. *"password storage best practices"*), while skipping it for casual ones (*"What is the capital of France?"* → no tool call). We run the real recall, **sanitize** the lessons (the poisoned-memory defense stays intact) and feed them back as the tool result before Qwen answers — shown in the UI as *"🔧 Qwen called recall('…') → answered using N lessons"*. It fails open to the direct pre-injection path if tool-calling is unavailable.
 
-**Depth beyond a single model** *(flag-gated, off by default — byte-identical to the baseline when off, so the A/B proof and 107 tests are unaffected)*:
+**Depth beyond a single model** *(active in the live deployment; each stays flag-gated so the reproducible baseline and 107 tests are byte-identical when off)*:
 
 - **Right model for the job** (`RG_MODEL_ROUTING`) — the high-stakes obsolescence/contradiction **judges route to `qwen-max`**, the cheap eval paraphrase to `qwen-turbo`, DISTILL/default stay `qwen-plus`. `/telemetry` shows the model serving each role.
 - **Strict structured output** (`RG_STRUCTURED_OUTPUT`) — DISTILL enforces a `json_schema` (four keys + `severity` enum) model-side, with a graceful fallback to `json_object` if a provider rejects it — schema-enforced, never brittle.

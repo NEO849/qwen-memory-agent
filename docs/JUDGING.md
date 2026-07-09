@@ -52,11 +52,12 @@ non-trivial logic? Tech stack sophistication via advanced patterns and thoughtfu
 - **Scalability — honest and bounded:** single-process today; the O(N²) association step and its
   ANN replacement are documented with a plan (`ROADMAP.md`), and `qwen3-rerank` is built but
   **kept off** until a memory is large enough to need it (measured null lift — `docs/benchmark.md`).
-  Concrete steps taken, flag-gated + measured: a **numpy-vectorized cosine** (`RG_VECTORIZED`,
-  **3.1–3.3× faster at N=1k/10k, bit-identical ranking** — `harness/latency_bench.py`), a
-  **bounded async judge fan-out** (`RG_ASYNC_REVISE`, semaphore-capped so rate-limit/breaker hold),
-  and **batched gold-set embeddings** (`RG_BATCH_EMBED`). Framed honestly: constant-factor +
-  fewer round-trips, not an asymptotic fix.
+  Forward-looking, flag-gated + measured (and honestly: today's live deck is small, so these matter
+  at scale, not on the demo): a **bounded async judge fan-out** (`RG_ASYNC_REVISE`, semaphore-capped
+  so the rate-limit/breaker hold) and **batched gold-set embeddings** (`RG_BATCH_EMBED`) cut paid
+  round-trips; a numpy-vectorized cosine (`RG_VECTORIZED`, `harness/latency_bench.py`) is a
+  constant-factor speedup with bit-identical ranking — engineering hygiene, **not** claimed as
+  algorithmic innovation or an asymptotic fix.
 - **Context-window efficiency (measured):** value-density packing under a hard token budget
   (`RG_RECALL_BUDGET`) injects the critical lesson in **~37 % fewer tokens at identical recall**
   (`harness/context_window_bench.py`) — the literal realization of the track's "limited context
@@ -69,9 +70,12 @@ non-trivial logic? Tech stack sophistication via advanced patterns and thoughtfu
 *"Real-world relevance solving an authentic technical/business pain? Scalability potential for
 productization or open-source community adoption?"*
 
-- **Authentic pain, quantified:** AI agents ship faster and regress more — nearly **half of AI
-  coding spend goes to fixing bugs** the agent re-introduces. Every judge who uses a coding agent
-  has felt this.
+- **Authentic pain, cited:** AI agents ship faster and regress more. GitClear's analysis of 200M+
+  changed lines found **code churn — lines reverted or rewritten within ~two weeks — roughly doubled
+  as AI coding took off** (≈3.3 % pre-AI → 5.7 % 2024 → 7.1 % 2025), a direct signal of
+  re-introduced/defective changes ([GitClear 2025](https://www.gitclear.com/ai_assistant_code_quality_2025_research)).
+  Regressing an already-fixed bug across sessions is exactly this failure mode — and every judge who
+  uses a coding agent has felt it.
 - **Productized today:** MIT, public repo, live cloud deployment; a `regress-guard` CLI with a
   one-command `doctor` readiness check; **zero-install** adoption (point any MCP client at the
   hosted URL — no key, no DB). Verify in under two minutes: open the live demo, hit `/health`
