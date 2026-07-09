@@ -236,6 +236,28 @@ def recall(context: str, *, k: int = 5, threshold: float = 0.0, track: bool = Tr
     return result
 
 
+def related(lesson_id: int, *, k: int = 3, path: str | None = None) -> list[dict]:
+    """Read-only: the lessons wired to `lesson_id` in the associative graph, strongest link first.
+    Backs the second chat tool (get_related_lessons) so Qwen can traverse memory multi-step."""
+    weight: dict[int, float] = {}
+    try:
+        for lk in ledger.list_links(path=path):
+            other = lk["to_id"] if lk["from_id"] == lesson_id else (
+                lk["from_id"] if lk["to_id"] == lesson_id else None)
+            if other is not None:
+                weight[other] = max(weight.get(other, 0.0), lk.get("weight", 1.0))
+    except Exception:
+        return []
+    out = []
+    for nid, _w in sorted(weight.items(), key=lambda kv: -kv[1]):
+        l = ledger.get_lesson(nid, path=path)
+        if l and l.get("status") != "obsolete":
+            out.append(_public_lesson(l))
+        if len(out) >= k:
+            break
+    return out
+
+
 def record_outcome(lesson_id: int, result: str, *, run_id: str | None = None,
                    injected: bool = True, path: str | None = None) -> dict:
     """Feed a real test outcome back into the lesson's confidence (Qwen-independent)."""

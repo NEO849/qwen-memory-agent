@@ -341,47 +341,85 @@ _RECALL_TOOL = [{
             "required": ["query"]},
     },
 }]
+# Second tool (opt-in via TOOL_LOOP_ENABLED): lets Qwen traverse the associative memory graph in a
+# follow-up step — recall broadly, then pull the lessons wired to a specific hit. Turns single-shot
+# function-calling into a bounded multi-step agentic loop over our memory.
+_RELATED_TOOL = [{
+    "type": "function",
+    "function": {
+        "name": "get_related_lessons",
+        "description": "After recall_memory returns lessons (each shown with its id), fetch the "
+                       "lessons associatively linked to one of them to go deeper before answering.",
+        "parameters": {"type": "object", "properties": {
+            "lesson_id": {"type": "integer", "description": "id of a lesson from a prior recall_memory result"}},
+            "required": ["lesson_id"]},
+    },
+}]
 
 
 def _chat_prepare(message: str, k: int):
     """Shared recall/function-calling prep for /chat and /chat/stream. Returns
     (messages_for_final_answer | None, direct_reply | None, meta, used_tool, tool_query).
-    When Qwen answered directly (no tool), `direct_reply` carries it and `messages` is None;
-    otherwise `messages` is ready for the final (streamable) answer completion."""
-    def _do_recall(q: str):
+
+    Runs a BOUNDED tool loop: Qwen may call recall_memory (and, when TOOL_LOOP_ENABLED, the
+    graph-traversal tool get_related_lessons) across up to N rounds, then answers. With the flag
+    OFF it is exactly one round with the single recall tool — today's behaviour, byte-for-byte."""
+    meta = {"recalled": [], "sanitized_total": 0, "inhibited": []}
+    tool_query = None
+
+    def _do_recall(q: str) -> str:
+        nonlocal meta
         lessons = memory.recall(q, k=k, path=config.LEDGER_PATH)["lessons"]
         meta = {"recalled": [l["id"] for l in lessons],
                 "sanitized_total": sum(memory.directive_count(l["lesson"]) for l in lessons),
                 "inhibited": [l["id"] for l in memory.inhibitions(lessons)]}
-        return (memory.render_injection(lessons) or "(no relevant lessons found in memory)"), meta
+        return memory.render_injection(lessons) or "(no relevant lessons found in memory)"
 
-    meta = {"recalled": [], "sanitized_total": 0, "inhibited": []}
+    def _run_tool(name: str, args_json: str) -> str:
+        nonlocal tool_query
+        try:
+            args = json.loads(args_json or "{}") or {}
+        except Exception:
+            args = {}
+        if name == "recall_memory":
+            tool_query = args.get("query") or message
+            block = _do_recall(tool_query)
+            if config.RG_TOOL_LOOP and meta["recalled"]:   # expose ids so get_related can chain
+                return f"Recalled lesson ids {meta['recalled']}:\n{block}"
+            return block
+        if name == "get_related_lessons":
+            try:
+                lid = int(args.get("lesson_id"))
+            except Exception:
+                return "(invalid lesson_id)"
+            rel = memory.related(lid, k=3, path=config.LEDGER_PATH)
+            return memory.render_injection(rel) or "(no related lessons for that id)"
+        return "(unknown tool)"
+
+    used_tool = False
+    tools = list(_RECALL_TOOL) + (list(_RELATED_TOOL) if config.RG_TOOL_LOOP else [])
+    rounds = config.RG_TOOL_LOOP_MAX if config.RG_TOOL_LOOP else 1
     try:
         messages = [{"role": "system", "content": _CHAT_PERSONA},
                     {"role": "user", "content": message}]
-        msg = qwen_client.chat_with_tools(messages, _RECALL_TOOL, temperature=0.3)
-        calls = getattr(msg, "tool_calls", None)
-        if not calls:
-            return None, (msg.content or ""), meta, False, None
-        tool_query = None
-        messages.append({"role": "assistant", "content": msg.content or "",
-                         "tool_calls": [{"id": c.id, "type": "function",
-                                         "function": {"name": c.function.name,
-                                                      "arguments": c.function.arguments}} for c in calls]})
-        for c in calls:
-            if c.function.name == "recall_memory":
-                try:
-                    tool_query = (json.loads(c.function.arguments or "{}") or {}).get("query") or message
-                except Exception:
-                    tool_query = message
-                block, meta = _do_recall(tool_query)
-            else:
-                block = "(unknown tool)"
-            messages.append({"role": "tool", "tool_call_id": c.id, "content": block})
-        return messages, None, meta, True, tool_query
+        for _ in range(rounds):
+            msg = qwen_client.chat_with_tools(messages, tools, temperature=0.3)
+            calls = getattr(msg, "tool_calls", None)
+            if not calls:
+                return None, (msg.content or ""), meta, used_tool, tool_query
+            used_tool = True
+            messages.append({"role": "assistant", "content": msg.content or "",
+                             "tool_calls": [{"id": c.id, "type": "function",
+                                             "function": {"name": c.function.name,
+                                                          "arguments": c.function.arguments}} for c in calls]})
+            for c in calls:
+                messages.append({"role": "tool", "tool_call_id": c.id,
+                                 "content": _run_tool(c.function.name, c.function.arguments)})
+        # rounds exhausted -> caller generates the final answer with no further tools
+        return messages, None, meta, used_tool, tool_query
     except Exception:
         # fail-open: the tool-free path — pre-inject recall on the raw message
-        block, meta = _do_recall(message)
+        block = _do_recall(message)
         sysmsg = _CHAT_PERSONA + ("\n\n" + block if meta["recalled"] else "")
         return ([{"role": "system", "content": sysmsg}, {"role": "user", "content": message}],
                 None, meta, False, None)
