@@ -21,6 +21,7 @@ import json
 import os
 import time
 from collections import defaultdict, deque
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 
@@ -45,6 +46,8 @@ PAID_PREFIXES = ("/chat", "/ingest", "/notes", "/revise", "/evaluate", "/tune",
 _hits: dict[str, deque] = defaultdict(deque)       # ip -> request timestamps (all)
 _paid_hits: dict[str, deque] = defaultdict(deque)  # ip -> request timestamps (paid only)
 _duel_hits: dict[str, deque] = defaultdict(deque)  # ip -> /duel timestamps (very expensive: k*2 Qwen)
+_SWEEP_EVERY = 300.0                                # seconds between idle-bucket sweeps
+_last_sweep = 0.0                                   # monotonic-ish wall clock of last sweep
 
 
 def _rate_ok(bucket: dict, ip: str, limit: int, window: float, now: float) -> bool:
@@ -56,7 +59,76 @@ def _rate_ok(bucket: dict, ip: str, limit: int, window: float, now: float) -> bo
     dq.append(now)
     return True
 
-app = FastAPI(title="regress-guard", version="1.0.0")
+
+def _sweep_buckets(now: float) -> None:
+    """Drop idle IPs whose window has fully elapsed. Without this, a one-shot visitor's
+    empty deque lingers forever (unbounded memory on a long-lived process). Throttled to
+    once per _SWEEP_EVERY so it costs nothing on the hot path."""
+    global _last_sweep
+    if now - _last_sweep < _SWEEP_EVERY:
+        return
+    _last_sweep = now
+    for bucket, window in ((_hits, 60.0), (_paid_hits, 60.0), (_duel_hits, 60.0)):
+        for ip in list(bucket.keys()):
+            dq = bucket[ip]
+            while dq and now - dq[0] > window:
+                dq.popleft()
+            if not dq:
+                del bucket[ip]
+
+
+class _MaxBodySizeMiddleware:
+    """Pure-ASGI byte cap: reject request bodies over ``max_body`` even when Content-Length
+    is absent or lies (chunked transfer) — the header check in ``_guard`` can be bypassed.
+    Buffers up to the limit then replays the collected chunks downstream, so body delivery to
+    the endpoint is byte-identical. Our API has no large/streaming uploads, so buffering ≤ cap
+    is safe; a client exceeding the cap is refused before we hold its whole body in memory."""
+
+    def __init__(self, app, max_body: int):
+        self.app = app
+        self.max_body = max_body
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        buffered: list[dict] = []
+        total = 0
+        while True:
+            message = await receive()
+            buffered.append(message)
+            if message["type"] == "http.request":
+                total += len(message.get("body", b""))
+                if total > self.max_body:
+                    await send({"type": "http.response.start", "status": 413,
+                                "headers": [(b"content-type", b"application/json")]})
+                    await send({"type": "http.response.body",
+                                "body": b'{"detail":"payload too large"}'})
+                    return
+                if not message.get("more_body", False):
+                    break
+            elif message["type"] == "http.disconnect":
+                break
+        idx = 0
+
+        async def replay():
+            nonlocal idx
+            if idx < len(buffered):
+                m = buffered[idx]
+                idx += 1
+                return m
+            return await receive()
+
+        await self.app(scope, replay, send)
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    ledger.init_db(config.LEDGER_PATH)          # replaces deprecated @app.on_event("startup")
+    yield
+
+
+app = FastAPI(title="regress-guard", version="1.0.0", lifespan=_lifespan)
+app.add_middleware(_MaxBodySizeMiddleware, max_body=MAX_BODY)
 
 
 @app.middleware("http")
@@ -68,6 +140,7 @@ async def _guard(request: Request, call_next):
     path, method = request.url.path, request.method
     ip = request.client.host if request.client else "?"
     now = time.time()
+    _sweep_buckets(now)                                                # drop idle IPs (bounded memory)
     # 2) per-IP rate limit — keeps the demo clickable but caps flooding / cost abuse
     if not _rate_ok(_hits, ip, 150, 60.0, now):                       # 150 req/min overall
         return JSONResponse({"detail": "rate limited — slow down a moment"}, status_code=429)
@@ -89,11 +162,6 @@ async def _guard(request: Request, call_next):
 @app.exception_handler(KeyError)
 async def _key_error(_request: Request, exc: KeyError) -> JSONResponse:
     return JSONResponse({"detail": "not found"}, status_code=404)
-
-
-@app.on_event("startup")
-def _startup() -> None:
-    ledger.init_db(config.LEDGER_PATH)
 
 
 # ------------------------------------------------------------------ models ----
