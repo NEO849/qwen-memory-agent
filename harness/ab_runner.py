@@ -125,7 +125,8 @@ def _agent_write_code(lesson_block: str) -> str:
     if lesson_block:
         messages.append({"role": "system", "content": lesson_block})
     messages.append({"role": "user", "content": TASK})
-    reply = qwen_client.chat(messages, temperature=0)
+    from backend import config
+    reply = qwen_client.chat(messages, model=config.model_for("code"), temperature=0, role="code")
     return _extract_function(reply)
 
 
@@ -257,7 +258,7 @@ def main() -> int:
 
     result = {
         "task": "get_orders tenant isolation",
-        "model": config.QWEN_MODEL,
+        "model": config.model_for("code"),
         "temperature": 0,
         "framing": framing,
         "must_not_say": must_not_say,

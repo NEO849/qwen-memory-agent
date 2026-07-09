@@ -188,3 +188,27 @@ def test_extractor_wires_schema_and_reasoning(monkeypatch):
     assert captured["schema"] == extractor.LESSON_SCHEMA
     assert captured["capture_reasoning"] is True
     assert captured["role"] == "distill"
+
+
+# --- Phase 1A: Qwen3-Coder as the demo agent (RG_CODER_MODEL) ----------------
+
+def test_model_for_code_role(monkeypatch):
+    monkeypatch.setattr(config, "RG_CODER_MODEL", "")
+    monkeypatch.setattr(config, "RG_MODEL_ROUTING", False)
+    assert config.model_for("code") == config.QWEN_MODEL          # empty → baseline (floor unchanged)
+    monkeypatch.setattr(config, "RG_CODER_MODEL", "qwen3-coder-plus")
+    assert config.model_for("code") == "qwen3-coder-plus"         # set → coder…
+    monkeypatch.setattr(config, "RG_MODEL_ROUTING", True)
+    assert config.model_for("code") == "qwen3-coder-plus"         # …independent of routing flag
+
+
+def test_ab_runner_uses_coder_model(monkeypatch):
+    import backend.qwen_client as qc_mod
+    from harness import ab_runner
+    monkeypatch.setattr(config, "RG_CODER_MODEL", "qwen3-coder-plus")
+    captured = {}
+    monkeypatch.setattr(qc_mod, "chat",
+                        lambda msgs, **kw: captured.update(kw) or "def get_orders():\n    return []")
+    ab_runner._agent_write_code("")
+    assert captured["model"] == "qwen3-coder-plus"
+    assert captured["role"] == "code"

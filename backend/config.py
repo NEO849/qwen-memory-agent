@@ -70,6 +70,11 @@ RG_MODEL_DEFAULT = os.environ.get("RG_MODEL_DEFAULT", QWEN_MODEL)
 RG_MODEL_DISTILL = os.environ.get("RG_MODEL_DISTILL", "qwen-plus")
 RG_MODEL_JUDGE = os.environ.get("RG_MODEL_JUDGE", "qwen-max")      # obsolescence/contradiction judges
 RG_MODEL_PARAPHRASE = os.environ.get("RG_MODEL_PARAPHRASE", "qwen-turbo")  # cheap eval paraphrases
+# Dedicated coding model for the AGENT the memory guards (A/B + agent-loop code writer). Empty =
+# use QWEN_MODEL (byte-identical, A/B floor unchanged). Set "qwen3-coder-plus" → the memory keeps
+# Alibaba's flagship agentic coder itself regression-safe. Independent of RG_MODEL_ROUTING so it can
+# be flipped on its own AFTER the floor re-check (floor must stay 0/5).
+RG_CODER_MODEL = os.environ.get("RG_CODER_MODEL", "")
 
 
 # --- Welle 2: kontextfenster-bewusste Recall-Packung (default OFF, byte-identisch bei OFF) -----
@@ -87,9 +92,11 @@ RG_BATCH_EMBED = os.environ.get("RG_BATCH_EMBED", "0") == "1"    # Goldset-Embed
 
 
 def model_for(kind: str) -> str:
-    """Route a Qwen call to the right model for the job. Routing OFF (default) → QWEN_MODEL for
-    every kind (byte-identical to baseline). ON → per-role: heavy judges get qwen-max, cheap
-    paraphrase gets qwen-turbo, distill + everything else stay on qwen-plus."""
+    """Route a Qwen call to the right model for the job. The `code` role uses RG_CODER_MODEL when
+    set (independent of routing). Otherwise routing OFF (default) → QWEN_MODEL for every kind
+    (byte-identical to baseline); ON → heavy judges qwen-max, cheap paraphrase qwen-turbo, rest qwen-plus."""
+    if kind == "code" and RG_CODER_MODEL:
+        return RG_CODER_MODEL
     if not RG_MODEL_ROUTING:
         return QWEN_MODEL
     return {"distill": RG_MODEL_DISTILL, "judge": RG_MODEL_JUDGE,
