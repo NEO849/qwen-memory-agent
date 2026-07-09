@@ -1,0 +1,24 @@
+{
+  "numpy_available": true,
+  "sizes": [
+    {
+      "n": 1000,
+      "dim": 1024,
+      "scalar_ms": 196.47,
+      "vectorized_ms": 62.69,
+      "speedup": 3.1,
+      "ranking_identical": true,
+      "max_abs_score_diff": 7.632783294297951e-17
+    },
+    {
+      "n": 10000,
+      "dim": 1024,
+      "scalar_ms": 1757.82,
+      "vectorized_ms": 539.55,
+      "speedup": 3.3,
+      "ranking_identical": true,
+      "max_abs_score_diff": 9.71445146547012e-17
+    }
+  ],
+  "honesty": "Constant-factor speedup of the pairwise-cosine hot loop; identical ranking. Does NOT change O(N) asymptotics \u2014 it unlocks a future ANN index."
+}

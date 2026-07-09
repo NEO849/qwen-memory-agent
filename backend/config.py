@@ -79,6 +79,12 @@ RG_MODEL_PARAPHRASE = os.environ.get("RG_MODEL_PARAPHRASE", "qwen-turbo")  # che
 RG_RECALL_BUDGET = os.environ.get("RG_RECALL_BUDGET", "0") == "1"
 RG_RECALL_TOKEN_BUDGET = int(os.environ.get("RG_RECALL_TOKEN_BUDGET", "1500"))
 
+# --- Welle 3: Performance-Tiefe (default OFF, byte-identisch bei OFF) --------------------------
+RG_VECTORIZED = os.environ.get("RG_VECTORIZED", "0") == "1"      # numpy-matmul cosine statt Python-Loop
+RG_ASYNC_REVISE = os.environ.get("RG_ASYNC_REVISE", "0") == "1"  # paralleler bezahlter Judge-Fan-out
+RG_ASYNC_CONCURRENCY = int(os.environ.get("RG_ASYNC_CONCURRENCY", "4"))  # Semaphore-Deckel (Rate-Limit-safe)
+RG_BATCH_EMBED = os.environ.get("RG_BATCH_EMBED", "0") == "1"    # Goldset-Embeddings gebündelt statt einzeln
+
 
 def model_for(kind: str) -> str:
     """Route a Qwen call to the right model for the job. Routing OFF (default) → QWEN_MODEL for

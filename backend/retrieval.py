@@ -17,6 +17,8 @@ import re
 from collections import Counter, defaultdict
 from typing import Any
 
+from . import config
+
 _TOKEN_RE = re.compile(r"[a-z0-9_]{2,}")
 
 
@@ -67,16 +69,55 @@ def _cosine(a: list[float], b: list[float]) -> float:
     return dot / (na * nb) if (na and nb) else 0.0
 
 
+# --- Welle 3: optional vectorized cosine (RG_VECTORIZED) --------------------------------------
+# numpy is imported DEFENSIVELY and only used when the flag is on — its absence (or the flag off)
+# falls straight back to the scalar path, so the baseline needs no new dependency and stays
+# byte-identical. This reduces the CONSTANT factor of the pairwise-cosine hot loops (and unlocks a
+# future ANN index); it does NOT change the asymptotics.
+_np = None
+_np_tried = False
+
+
+def _numpy():
+    global _np, _np_tried
+    if not _np_tried:
+        _np_tried = True
+        try:
+            import numpy as _n
+            _np = _n
+        except Exception:
+            _np = None
+    return _np
+
+
+def cosine_scores(query: list[float] | None, embeddings: list[list[float]]) -> list[float]:
+    """Cosine of `query` against each vector in `embeddings`, SAME order. Vectorized numpy matmul
+    when RG_VECTORIZED (and numpy present); otherwise the scalar `_cosine` path. On real embeddings
+    the ranking is identical — the only differences are sub-1e-12 float noise that never crosses a
+    threshold or reorders distinct scores."""
+    if not query or not embeddings:
+        return [0.0] * len(embeddings)
+    if config.RG_VECTORIZED:
+        np = _numpy()
+        if np is not None:
+            q = np.asarray(query, dtype=np.float64)
+            m = np.asarray(embeddings, dtype=np.float64)
+            denom = np.linalg.norm(m, axis=1) * np.linalg.norm(q)
+            dots = m @ q
+            with np.errstate(divide="ignore", invalid="ignore"):
+                scores = np.where(denom > 0, dots / denom, 0.0)
+            return scores.tolist()
+    return [_cosine(query, e) for e in embeddings]
+
+
 def vector_rank(query_embedding: list[float] | None,
                 docs: list[dict]) -> list[tuple[Any, float]]:
     """Rank docs that carry an 'embedding' by cosine to the query embedding."""
     if not query_embedding:
         return []
-    out = []
-    for d in docs:
-        emb = d.get("embedding")
-        if emb:
-            out.append((d["id"], _cosine(query_embedding, emb)))
+    embedded = [d for d in docs if d.get("embedding")]
+    scores = cosine_scores(query_embedding, [d["embedding"] for d in embedded])
+    out = [(d["id"], s) for d, s in zip(embedded, scores)]
     out.sort(key=lambda x: x[1], reverse=True)
     return out
 

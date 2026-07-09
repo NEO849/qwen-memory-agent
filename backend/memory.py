@@ -47,11 +47,11 @@ def _find_duplicate(scope: str, emb: list[float] | None, *, path: str | None = N
     Needs an embedding to compare — returns None if the candidate couldn't be embedded."""
     if emb is None:
         return None
-    for l in ledger.list_lessons(status="active", with_embedding=True, path=path):
-        if (l.get("scope") or "") != (scope or ""):
-            continue
-        e = l.get("embedding")
-        if e and retrieval._cosine(emb, e) >= config.RG_DEDUP_THRESHOLD:
+    cands = [l for l in ledger.list_lessons(status="active", with_embedding=True, path=path)
+             if (l.get("scope") or "") == (scope or "") and l.get("embedding")]
+    scores = retrieval.cosine_scores(emb, [l["embedding"] for l in cands])
+    for l, s in zip(cands, scores):
+        if s >= config.RG_DEDUP_THRESHOLD:
             return l["id"]
     return None
 

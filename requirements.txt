@@ -6,6 +6,7 @@ python-dotenv>=1.0
 pydantic>=2.6
 mcp>=1.0              # MCP tool: regress_guard.recall / .record
 httpx>=0.27           # test client for the FastAPI layer
+numpy>=1.26           # optional: vectorized cosine (RG_VECTORIZED); imported defensively, fallback if absent
 
 # dev / test
 pytest>=8.0

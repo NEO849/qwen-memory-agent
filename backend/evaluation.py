@@ -57,13 +57,23 @@ def _build_gold(path: str | None, sample: int) -> tuple[list, list]:
     rng = random.Random(7)
     chosen = lessons if len(lessons) <= sample else rng.sample(lessons, sample)
     items = []
-    for l in chosen:
-        q = _paraphrase(l)
+    if config.RG_BATCH_EMBED:
+        # one batched embed call for the whole gold set instead of N single calls (same vectors)
+        queries = [_paraphrase(l) for l in chosen]
         try:
-            qemb = qwen_client.embed([q])[0]
+            embs = qwen_client.embed(queries)
         except Exception:
-            qemb = None
-        items.append({"target": l["id"], "query": q, "qemb": qemb})
+            embs = [None] * len(queries)
+        for l, q, e in zip(chosen, queries, embs):
+            items.append({"target": l["id"], "query": q, "qemb": e})
+    else:
+        for l in chosen:
+            q = _paraphrase(l)
+            try:
+                qemb = qwen_client.embed([q])[0]
+            except Exception:
+                qemb = None
+            items.append({"target": l["id"], "query": q, "qemb": qemb})
     _gold_cache["key"] = _marker(path)
     _gold_cache["gold"] = (docs, items)
     return docs, items

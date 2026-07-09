@@ -79,13 +79,10 @@ def check_contradiction(new_lesson: dict, *, path: str | None = None) -> dict:
     new_emb = new_lesson.get("embedding")
     active = ledger.list_lessons(status="active", with_embedding=True, path=path)
     # rank candidates by semantic similarity (skip the new lesson itself, and un-embedded rows)
-    scored = []
-    for l in active:
-        if l["id"] == new_lesson.get("id") or not l.get("embedding") or not new_emb:
-            continue
-        sim = retrieval._cosine(new_emb, l["embedding"])
-        if sim >= _SIM_THRESHOLD:
-            scored.append((sim, l))
+    cand = [l for l in active
+            if l["id"] != new_lesson.get("id") and l.get("embedding") and new_emb]
+    sims = retrieval.cosine_scores(new_emb, [l["embedding"] for l in cand])
+    scored = [(s, l) for l, s in zip(cand, sims) if s >= _SIM_THRESHOLD]
     scored.sort(key=lambda t: t[0], reverse=True)
 
     new_id = new_lesson.get("id")
@@ -132,13 +129,45 @@ def check_contradiction(new_lesson: dict, *, path: str | None = None) -> dict:
 
 _REVISE_CAP = 25   # bound the paid fan-out (one Qwen call per lesson) so a big deck can't blow up
 
+
+def _judge_all_async(lessons: list[dict], change: str) -> list[dict]:
+    """Run the per-lesson judge calls concurrently (RG_ASYNC_REVISE) under a bounded semaphore so
+    the existing per-IP paid rate-limit + circuit-breaker are never tripped. Same verdicts, same
+    order as the sequential path — only the wall-clock shrinks. Robust whether or not an event
+    loop is already running (FastAPI runs post_revise in a threadpool → none)."""
+    import asyncio
+    import threading
+
+    async def _run():
+        sem = asyncio.Semaphore(max(1, config.RG_ASYNC_CONCURRENCY))
+
+        async def one(l):
+            async with sem:
+                return await asyncio.to_thread(judge_obsolete, l, change, config.model_for("judge"))
+
+        return await asyncio.gather(*[one(l) for l in lessons])
+
+    try:
+        return asyncio.run(_run())
+    except RuntimeError:                      # already inside a running loop → isolate in a thread
+        box: dict = {}
+        t = threading.Thread(target=lambda: box.update(v=asyncio.run(_run())))
+        t.start(); t.join()
+        return box["v"]
+
+
 def revise(change: str, *, path: str | None = None) -> list[dict]:
     """Judge active lessons against a described change; tombstone the obsolete ones. Capped at
-    _REVISE_CAP lessons so the paid fan-out stays bounded. Returns one verdict per lesson judged."""
+    _REVISE_CAP lessons so the paid fan-out stays bounded. Returns one verdict per lesson judged.
+    RG_ASYNC_REVISE parallelizes the judge calls (bounded); OFF → the sequential baseline."""
+    lessons = ledger.list_lessons(status="active", path=path)[:_REVISE_CAP]
+    if config.RG_ASYNC_REVISE and lessons:
+        verdicts = _judge_all_async(lessons, change)
+    else:
+        verdicts = [judge_obsolete(l, change, model=config.model_for("judge")) for l in lessons]
     results = []
-    for lesson in ledger.list_lessons(status="active", path=path)[:_REVISE_CAP]:
-        verdict = judge_obsolete(lesson, change, model=config.model_for("judge"))
-        if verdict["obsolete"]:
+    for lesson, verdict in zip(lessons, verdicts):
+        if verdict["obsolete"]:               # tombstone writes stay sequential/ordered (ledger safety)
             ledger.tombstone(lesson["id"], path=path)
         results.append({"lesson_id": lesson["id"], "lesson": lesson["lesson"],
                         "obsolete": verdict["obsolete"], "reason": verdict["reason"],
