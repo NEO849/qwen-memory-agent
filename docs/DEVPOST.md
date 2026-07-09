@@ -16,6 +16,11 @@ A memory that stops AI coding agents from re-introducing bugs they already fixed
 ---
 **Regress-Guard is a memory that stops AI coding agents from re-introducing bugs they already fixed — and its confidence is earned from real test outcomes, not the model's opinion.**
 
+> **Watch this in 60 seconds** — three things nothing else in this track does:
+> - **The proof:** same AI, same task, temperature 0 — **0/5 without memory → 5/5 with Regress-Guard**, five hidden `pytest` running live.
+> - **Qwen recalls its own memory:** the model *decides on its own* to call a `recall_memory` tool — and it **forgets what's wrong** (a lesson that fails real tests is tombstoned, not injected forever).
+> - **Earned, not asserted:** every confidence number traces to append-only test outcomes at `/receipts/{id}` — nobody hand-writes them.
+
 ## Inspiration
 AI coding agents are stateless across sessions: you fix a bug today, and tomorrow a fresh session happily reintroduces it. Existing "memory" features remember *facts you tell them* — they can't tell whether a remembered rule actually **works**. We wanted a memory whose trust is earned by real evidence, and that forgets advice a refactor made wrong.
 
@@ -28,7 +33,9 @@ $$ \text{confidence} = \mathbb{E}\big[\text{Beta}(\alpha,\beta)\big] = \frac{\al
 
 When a refactor makes a lesson obsolete, **Qwen judges it and tombstones it** — that is **timely forgetting of outdated information**: the memory forgets what's wrong instead of injecting stale advice forever.
 
-*How it maps to the track (MemoryAgent):* a persistent memory that autonomously accumulates experience for increasingly accurate decisions across multi-turn, cross-session interactions — with efficient storage/retrieval, timely forgetting of outdated information (tombstone/supersede), and recall of critical memories within limited context windows (top-k + anti-pattern injection).
+We make **"limited context windows"** literal, not rhetorical: an optional **value-density packer** (`confidence × relevance ÷ token_cost` under a hard token budget) injects the critical lesson in **~37 % fewer tokens at identical recall**, and tombstoning a wrong lesson cuts harmful injection **100 % → 0 %** — both reproducible offline with no API key (`python -m harness.context_window_bench`, [`docs/benchmark.md`](../docs/benchmark.md)). *(Honest scope: a domain-specific subset, not a full LoCoMo / LongMemEval run — those remain the field-standard benchmarks this aligns with.)*
+
+*How it maps to the track (MemoryAgent):* a persistent memory that autonomously accumulates experience for increasingly accurate decisions across multi-turn, cross-session interactions — with efficient storage/retrieval, timely forgetting of outdated information (tombstone/supersede), and recall of critical memories within limited context windows (value-density token-budget packing + anti-pattern injection).
 
 You watch and steer it live from one **living-memory** surface — three columns in one frame. **LEFT:** the editable memory (a card deck — **pin / demote / forget / revise**, **Teach** a rule, add a **⛔ don't**, and **Run / Pause / Stop** the agent, each lesson with a Beta-curve confidence meter). **MIDDLE:** a normal AI chat with a **[💬 Chat · 🏆 Proof · ⚔️ Duel]** toggle. **RIGHT:** the **persistent 3D knowledge globe, always visible**. **Live-recall highlight:** when chat or the agent recalls lessons, exactly those nodes pulse live on the globe (white flash + particles over their real edges) while the answer streams — so you see the memory *and* its use at once. Only the **real recalled lesson IDs** pulse (the same IDs as the "answered using N lessons: #.." strip). Teach a rule while the agent runs and it re-recalls and obeys it on the next attempt; on mobile the layout degrades to a stack.
 
@@ -107,7 +114,7 @@ More bug patterns beyond the current three, editor/CI integrations, and shared p
 ---
 
 ## Built with (tags)
-Qwen, qwen-plus, text-embedding-v4, Qwen Cloud, Alibaba Cloud, ECS, Python, FastAPI, SQLite, Server-Sent Events, MCP, JavaScript
+Qwen, qwen-plus, qwen-max, qwen-turbo, text-embedding-v4, Qwen Cloud, Alibaba Cloud, ECS, Python, FastAPI, SQLite, NumPy, Server-Sent Events, MCP, JavaScript
 
 ## Try it out links
 - https://github.com/NEO849/qwen-memory-agent   (⚠️ set PUBLIC before final submit)

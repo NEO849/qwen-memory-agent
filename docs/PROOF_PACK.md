@@ -6,7 +6,7 @@ venv (`.venv/bin/...`). Qwen-backed items need the `.env` key; the rest are offl
 
 ---
 
-## 1. Test suite — 54 / 54 green (offline, deterministic)
+## 1. Test suite — 107 / 107 green (offline, deterministic)
 ```
 .venv/bin/pytest -q
 ```
