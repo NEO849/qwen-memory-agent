@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "regress-guard"
+version = "0.1.0"
+description = "Outcome-grounded, self-correcting memory for AI coding agents — confidence earned from real test outcomes, not the model's opinion."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Regress-Guard" }]
+keywords = ["mcp", "ai-agents", "memory", "coding-agent", "qwen", "llm", "regression"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = [
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.29",
+  "openai>=1.30",
+  "python-dotenv>=1.0",
+  "pydantic>=2.6",
+  "mcp>=1.0",
+  "httpx>=0.27",
+]
+
+[project.urls]
+Homepage = "http://regressguard.duckdns.org"
+Repository = "https://github.com/NEO849/qwen-memory-agent"
+Changelog = "https://github.com/NEO849/qwen-memory-agent/blob/master/CHANGELOG.md"
+
+[project.scripts]
+regress-guard = "cli:main"
+
+[tool.setuptools]
+py-modules = ["cli"]
+packages = ["backend", "mcp_tool"]

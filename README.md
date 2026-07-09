@@ -43,6 +43,27 @@
 
 > **Powered by Qwen Cloud — five roles across three APIs:** DISTILL · REVISE · SELF-CHECK · function-calling (`qwen-plus`) + RECALL (`text-embedding-v4`), deployed on **Alibaba Cloud**. Deploy proof (code): [`backend/qwen_client.py`](backend/qwen_client.py). [Full role table ↓](#powered-by-qwen-cloud-on-alibaba-cloud)
 
+## Install
+
+**Try it with zero install** — open the live demo: **[regressguard.duckdns.org](http://regressguard.duckdns.org)**, or hit `GET /health` and `GET /receipts/{id}` to audit it yourself.
+
+**Use it in your own agent** — one command to verify, then wire it into any MCP client:
+
+```bash
+git clone https://github.com/NEO849/qwen-memory-agent && cd qwen-memory-agent
+pip install -e . && regress-guard doctor      # ✅ deps · hosted cloud reachable · MCP tool
+```
+
+```jsonc
+// .mcp.json — talks to our hosted Alibaba Cloud backend, so no API key or database of your own
+{ "mcpServers": { "regress-guard": {
+    "command": "regress-guard", "args": ["mcp"],
+    "env": { "REGRESS_GUARD_URL": "http://regressguard.duckdns.org" } } } }
+```
+
+Works with **any MCP-speaking agent** — Claude Code, Cursor, Qwen Code. Two tools: `recall`
+(lessons to follow before writing code) and `record` (learn from a fixed test).
+
 ## The problem
 
 AI coding agents are **stateless across sessions**: you fix a bug today, and a fresh session tomorrow
