@@ -158,6 +158,23 @@ def _associative_neighbours(seed_ids: list[int], by_id: dict, seen: set,
     return out
 
 
+def _rerank_reorder(context: str, fused: list[tuple], id_to_text: dict) -> list[tuple]:
+    """Reorder fused (BM25+vector RRF) candidates with the qwen3-rerank cross-encoder. Any
+    failure or a down reranker keeps the original RRF order — recall never hard-fails on rerank."""
+    try:
+        texts = [id_to_text.get(doc_id, "") for doc_id, _, _ in fused]
+        ranked = qwen_client.rerank(context, texts, top_n=len(texts))
+        if not ranked:
+            return fused
+        new = []
+        for local_idx, rscore in ranked:
+            doc_id, score, ex = fused[local_idx]
+            new.append((doc_id, score, {**(ex or {}), "rerank": round(rscore, 4)}))
+        return new
+    except Exception:
+        return fused
+
+
 def recall(context: str, *, k: int = 5, threshold: float = 0.0, track: bool = True,
            spread: bool | None = None, path: str | None = None) -> dict:
     """Retrieve the lessons to inject for a given coding context.
@@ -178,6 +195,8 @@ def recall(context: str, *, k: int = 5, threshold: float = 0.0, track: bool = Tr
     docs = [{"id": l["id"], "text": _lesson_text(l), "embedding": l.get("embedding")}
             for l in snapshot]
     fused = retrieval.fuse(context, docs, query_embedding=q_emb, weights=load_weights(), k=max(k * 2, k))
+    if config.RG_RERANK and len(fused) > 1:   # qwen3-rerank cross-encoder final stage (opt-in)
+        fused = _rerank_reorder(context, fused, {d["id"]: d["text"] for d in docs})
     by_id = {l["id"]: l for l in snapshot}
 
     ordered: list[dict] = []

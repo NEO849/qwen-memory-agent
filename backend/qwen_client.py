@@ -21,6 +21,7 @@ import random
 import threading
 import time
 
+import httpx
 from openai import (
     APIConnectionError,
     APITimeoutError,
@@ -251,6 +252,72 @@ def embed(texts: list[str], model: str | None = None, *, role: str = "recall") -
     telemetry.record(role, "embed", (time.perf_counter() - t0) * 1000, usage=getattr(resp, "usage", None))
     items = sorted(resp.data, key=lambda d: d.index)  # Reihenfolge defensiv erzwingen
     return [item.embedding for item in items]
+
+
+# --- qwen3-rerank (Qwen role: cross-encoder rerank) ------------------------------------------
+# Native DashScope text-rerank endpoint (NOT the OpenAI-compat interface). We call it over httpx
+# so no new SDK dependency is added. Body is FLAT (query/documents at top level) — verified.
+def _rerank_url() -> str:
+    return config.QWEN_BASE_URL.split("/compatible-mode")[0] + \
+        "/api/v1/services/rerank/text-rerank/text-rerank"
+
+
+def _resilient_http(build, *, desc: str) -> dict:
+    """httpx variant of _resilient: retry on timeout/transport/429/5xx, breaker, else raise.
+    A 4xx (bad request) is NOT retried — it surfaces immediately."""
+    _breaker.before()
+    attempt = 0
+    while True:
+        try:
+            resp = build()
+            if resp.status_code == 429 or resp.status_code >= 500:
+                raise httpx.HTTPStatusError("retryable", request=resp.request, response=resp)
+            if resp.status_code >= 400:
+                _breaker.ok()
+                raise RuntimeError(f"{desc} {resp.status_code}: {resp.text[:200]}")
+            _breaker.ok()
+            return resp.json()
+        except (httpx.TimeoutException, httpx.TransportError, httpx.HTTPStatusError) as e:
+            attempt += 1
+            _breaker.fail()
+            if attempt > _RETRIES:
+                raise QwenUnavailable(f"{desc}: {type(e).__name__} nach {attempt} Versuchen") from e
+            delay = min(_BACKOFF_CAP, _BACKOFF_BASE * (2 ** (attempt - 1)))
+            delay += random.uniform(0, delay * 0.25)
+            log.info("Qwen %s transient (%s) — retry %d/%d in %.2fs",
+                     desc, type(e).__name__, attempt, _RETRIES, delay)
+            time.sleep(delay)
+
+
+def rerank(query: str, documents: list[str], *, top_n: int | None = None,
+           model: str | None = None, role: str = "rerank") -> list[tuple[int, float]]:
+    """Cross-encoder rerank of `documents` against `query` via qwen3-rerank. Returns
+    [(original_index, relevance_score), ...] sorted by relevance (best first). Empty input or a
+    down service -> [] so the caller keeps its prior (RRF) order (graceful degradation)."""
+    if not documents:
+        return []
+    mdl = model or config.RG_RERANK_MODEL
+    key = _cache_key("rerank", mdl, {"q": query, "docs": documents, "top_n": top_n})
+    hit = _cache_get(key)
+    if hit is not None:
+        telemetry.record(role, "rerank", 0.0, cached=True)
+        return [tuple(x) for x in hit]
+    body = {"model": mdl, "query": query, "documents": documents,
+            "parameters": {"top_n": top_n or len(documents), "return_documents": False}}
+    headers = {"Authorization": f"Bearer {config.DASHSCOPE_API_KEY}", "Content-Type": "application/json"}
+    t0 = time.perf_counter()
+    try:
+        out = _resilient_http(
+            lambda: httpx.post(_rerank_url(), headers=headers, json=body, timeout=20.0),
+            desc="rerank")
+    except (QwenUnavailable, RuntimeError) as e:
+        telemetry.record(role, "rerank", (time.perf_counter() - t0) * 1000, ok=False)
+        log.warning("rerank unavailable (%s) — falling back to RRF order", type(e).__name__)
+        return []
+    telemetry.record(role, "rerank", (time.perf_counter() - t0) * 1000)
+    ranked = [(int(r["index"]), float(r["relevance_score"])) for r in out.get("results", [])]
+    _cache_put(key, ranked)
+    return ranked
 
 
 if __name__ == "__main__":
