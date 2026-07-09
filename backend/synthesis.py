@@ -40,7 +40,7 @@ def propose_synthesis(*, path: str | None = None, min_group: int = 3, model: str
         try:
             raw = qwen_client.chat_json(
                 [{"role": "system", "content": _SYS}, {"role": "user", "content": user}],
-                model=model, temperature=0.2)
+                model=model, temperature=0.2, role="synthesize")
         except Exception:
             continue
         rule = str(raw.get("lesson", "")).strip()

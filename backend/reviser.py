@@ -30,7 +30,7 @@ def judge_obsolete(lesson: dict, change: str, model: str | None = None) -> dict:
     )
     raw = qwen_client.chat_json(
         [{"role": "system", "content": _SYSTEM}, {"role": "user", "content": user}],
-        model=model, temperature=0,
+        model=model, temperature=0, role="revise",
     )
     return {"obsolete": bool(raw.get("obsolete")), "reason": str(raw.get("reason", "")).strip()}
 
@@ -60,7 +60,7 @@ def _judge_contradiction(new_lesson: dict, existing: dict, model: str | None = N
     )
     raw = qwen_client.chat_json(
         [{"role": "system", "content": _CONTRA_SYS}, {"role": "user", "content": user}],
-        model=model, temperature=0,
+        model=model, temperature=0, role="self-check",
     )
     loser = str(raw.get("loser", "none")).strip().lower()
     if loser not in ("existing", "new", "none"):

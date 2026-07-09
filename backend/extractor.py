@@ -59,6 +59,7 @@ def extract_lesson(test_output: str, diff: str, model: str | None = None) -> dic
         [{"role": "system", "content": _SYSTEM}, {"role": "user", "content": user}],
         model=model,
         temperature=0,
+        role="distill",
     )
     return {
         "trigger": str(raw.get("trigger", "")).strip(),

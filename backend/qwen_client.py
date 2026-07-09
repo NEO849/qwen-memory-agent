@@ -29,7 +29,7 @@ from openai import (
     RateLimitError,
 )
 
-from . import config
+from . import config, telemetry
 
 log = logging.getLogger("regressguard.qwen")
 
@@ -153,37 +153,50 @@ def _cache_put(key: str, value) -> None:
         json.dump(value, f)
 
 
-# --- Öffentliche API (Signaturen unverändert) ------------------------------------------------
-def chat(messages: list[dict], model: str | None = None, **kwargs) -> str:
+# --- Öffentliche API (Rückgabewerte unverändert; `role` nur für Telemetrie, nie an die API) ---
+def chat(messages: list[dict], model: str | None = None, *, role: str = "chat", **kwargs) -> str:
     """Eine Chat-Completion an Qwen. `messages` = OpenAI-Format [{role, content}, ...]."""
     mdl = model or config.QWEN_MODEL
     key = _cache_key("chat", mdl, {"msgs": messages, "kw": kwargs})
     hit = _cache_get(key)
     if hit is not None:
+        telemetry.record(role, "chat", 0.0, cached=True)
         return hit
-    def _do():
-        resp = _client().chat.completions.create(model=mdl, messages=messages, **kwargs)
-        return resp.choices[0].message.content or ""
-    out = _resilient(_do, desc="chat")
+    t0 = time.perf_counter()
+    try:
+        resp = _resilient(
+            lambda: _client().chat.completions.create(model=mdl, messages=messages, **kwargs),
+            desc="chat")
+    except QwenUnavailable:
+        telemetry.record(role, "chat", (time.perf_counter() - t0) * 1000, ok=False)
+        raise
+    telemetry.record(role, "chat", (time.perf_counter() - t0) * 1000, usage=getattr(resp, "usage", None))
+    out = resp.choices[0].message.content or ""
     _cache_put(key, out)
     return out
 
 
 def chat_with_tools(messages: list[dict], tools: list[dict], model: str | None = None,
-                    tool_choice: str = "auto", **kwargs):
+                    tool_choice: str = "auto", *, role: str = "chat", **kwargs):
     """One chat completion with Qwen function/tool-calling (OpenAI-compatible). Returns the raw
     assistant message — inspect `.tool_calls` to see if the model chose to call a tool, and
     `.content` for a direct answer. The caller runs the tool and feeds the result back for a
     follow-up completion. This is how the agent autonomously decides to consult its memory."""
     mdl = model or config.QWEN_MODEL
-    def _do():
-        resp = _client().chat.completions.create(
-            model=mdl, messages=messages, tools=tools, tool_choice=tool_choice, **kwargs)
-        return resp.choices[0].message
-    return _resilient(_do, desc="chat_with_tools")
+    t0 = time.perf_counter()
+    try:
+        resp = _resilient(
+            lambda: _client().chat.completions.create(
+                model=mdl, messages=messages, tools=tools, tool_choice=tool_choice, **kwargs),
+            desc="chat_with_tools")
+    except QwenUnavailable:
+        telemetry.record(role, "tools", (time.perf_counter() - t0) * 1000, ok=False)
+        raise
+    telemetry.record(role, "tools", (time.perf_counter() - t0) * 1000, usage=getattr(resp, "usage", None))
+    return resp.choices[0].message
 
 
-def chat_json(messages: list[dict], model: str | None = None, **kwargs) -> dict:
+def chat_json(messages: list[dict], model: str | None = None, *, role: str = "chat", **kwargs) -> dict:
     """Chat-Completion, die garantiert JSON zurückgibt (Qwen role 1: lesson distillation).
 
     Nutzt response_format=json_object. Robust: fällt der Provider auf Text zurück, wird
@@ -193,12 +206,19 @@ def chat_json(messages: list[dict], model: str | None = None, **kwargs) -> dict:
     key = _cache_key("chat_json", mdl, {"msgs": messages, "kw": kwargs})
     hit = _cache_get(key)
     if hit is not None:
+        telemetry.record(role, "chat_json", 0.0, cached=True)
         return hit
-    def _do():
-        resp = _client().chat.completions.create(
-            model=mdl, messages=messages, response_format={"type": "json_object"}, **kwargs)
-        return resp.choices[0].message.content or "{}"
-    raw = _resilient(_do, desc="chat_json")
+    t0 = time.perf_counter()
+    try:
+        resp = _resilient(
+            lambda: _client().chat.completions.create(
+                model=mdl, messages=messages, response_format={"type": "json_object"}, **kwargs),
+            desc="chat_json")
+    except QwenUnavailable:
+        telemetry.record(role, "chat_json", (time.perf_counter() - t0) * 1000, ok=False)
+        raise
+    telemetry.record(role, "chat_json", (time.perf_counter() - t0) * 1000, usage=getattr(resp, "usage", None))
+    raw = resp.choices[0].message.content or "{}"
     try:
         out = json.loads(raw)
     except json.JSONDecodeError:
@@ -211,7 +231,7 @@ def chat_json(messages: list[dict], model: str | None = None, **kwargs) -> dict:
     return out
 
 
-def embed(texts: list[str], model: str | None = None) -> list[list[float]]:
+def embed(texts: list[str], model: str | None = None, *, role: str = "recall") -> list[list[float]]:
     """Embedde Texte über Qwen (role 2: retrieval). Gibt eine Liste 1024-dim Vektoren zurück,
     Reihenfolge wie die Eingabe. Leere Eingabe → []."""
     if not texts:
@@ -220,14 +240,17 @@ def embed(texts: list[str], model: str | None = None) -> list[list[float]]:
     key = _cache_key("embed", mdl, texts)
     hit = _cache_get(key)
     if hit is not None:
+        telemetry.record(role, "embed", 0.0, cached=True)
         return hit
-    def _do():
-        resp = _client().embeddings.create(model=mdl, input=texts)
-        items = sorted(resp.data, key=lambda d: d.index)  # Reihenfolge defensiv erzwingen
-        return [item.embedding for item in items]
-    out = _resilient(_do, desc="embed")
-    _cache_put(key, out)
-    return out
+    t0 = time.perf_counter()
+    try:
+        resp = _resilient(lambda: _client().embeddings.create(model=mdl, input=texts), desc="embed")
+    except QwenUnavailable:
+        telemetry.record(role, "embed", (time.perf_counter() - t0) * 1000, ok=False)
+        raise
+    telemetry.record(role, "embed", (time.perf_counter() - t0) * 1000, usage=getattr(resp, "usage", None))
+    items = sorted(resp.data, key=lambda d: d.index)  # Reihenfolge defensiv erzwingen
+    return [item.embedding for item in items]
 
 
 if __name__ == "__main__":

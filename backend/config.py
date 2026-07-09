@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+VERSION = "0.1.0"   # bumped with each release; surfaced at /health for maturity/deploy proof
+
 DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", "")
 QWEN_BASE_URL = os.environ.get(
     "QWEN_BASE_URL", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
