@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Regress-Guard — memory that forgets what's wrong</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=22">
+  <link rel="stylesheet" href="styles.css?v=24">
 </head>
 <body>
   <div class="app">
@@ -99,12 +99,12 @@
           <div class="duel-pane" id="duelPlain">
             <div class="duel-pane-head"><span class="arm-dot red"></span>plain AI · no memory <b class="duel-score" id="duelPlainScore">0/5</b></div>
             <div class="arm-tests" id="duelPlainTests"></div>
-            <pre class="arm-code" id="duelPlainCode"></pre>
+            <div class="code-card"><div class="code-head"><span class="cd"></span><span class="cd"></span><span class="cd"></span><span class="fn-name">get_orders.py</span></div><pre class="arm-code" id="duelPlainCode"></pre></div>
           </div>
           <div class="duel-pane" id="duelMem">
             <div class="duel-pane-head"><span class="arm-dot green"></span>AI + Regress-Guard <b class="duel-score" id="duelMemScore">0/5</b></div>
             <div class="arm-tests" id="duelMemTests"></div>
-            <pre class="arm-code" id="duelMemCode"></pre>
+            <div class="code-card"><div class="code-head"><span class="cd"></span><span class="cd"></span><span class="cd"></span><span class="fn-name">get_orders.py</span></div><pre class="arm-code" id="duelMemCode"></pre></div>
           </div>
         </div>
         <div class="duel-punch" id="duelPunch">Same task, same model, temperature 0. The only difference is the lesson Regress-Guard recalls.</div>
@@ -123,13 +123,13 @@
         <div class="proof-arena">
           <div class="arm arm-a" id="armA">
             <div class="arm-label"><span class="arm-dot red"></span>without memory</div>
-            <pre class="arm-code" id="codeA"></pre>
+            <div class="code-card"><div class="code-head"><span class="cd"></span><span class="cd"></span><span class="cd"></span><span class="fn-name">get_orders.py</span></div><pre class="arm-code" id="codeA"></pre></div>
             <div class="arm-tests" id="testsA"></div>
             <div class="arm-score"><b id="scoreA">–</b><span>green</span></div>
           </div>
           <div class="arm arm-b" id="armB">
             <div class="arm-label"><span class="arm-dot green"></span>with Regress-Guard memory</div>
-            <pre class="arm-code" id="codeB"></pre>
+            <div class="code-card"><div class="code-head"><span class="cd"></span><span class="cd"></span><span class="cd"></span><span class="fn-name">get_orders.py</span></div><pre class="arm-code" id="codeB"></pre></div>
             <div class="arm-tests" id="testsB"></div>
             <div class="arm-score"><b id="scoreB">–</b><span>green</span></div>
           </div>
@@ -175,6 +175,6 @@
       </div>
     </aside>
   </div>
-  <script src="app.js?v=22" type="module"></script>
+  <script src="app.js?v=24" type="module"></script>
 </body>
 </html>

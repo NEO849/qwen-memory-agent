@@ -494,10 +494,42 @@ paintTeach();
 setTimeout(() => { try { if ($('#viewProof')) setView('proof'); } catch (_) {} }, 0);
 
 // ---------- the signature "proof" moment: same AI twice, only difference is memory ----------
+// Reflow the one long list-comprehension into clean, black-style multi-line Python so it fits the
+// column without ugly wrapping — reads like a real formatter, not a random line-break.
+function formatProofCode(code) {
+  return String(code || '').split('\n').flatMap(ln => {
+    const m = ln.match(/^(\s*)return \[(.+?) for (.+?) in (.+?) if (.+)\]\s*$/);
+    if (!m) return [ln];
+    const [, ind, item, v, iter, cond] = m, pad = ind + '    ';
+    const rows = [ind + 'return [', pad + item, pad + 'for ' + v + ' in', pad + '    ' + iter];
+    const cm = cond.match(/^(.+?)\s*==\s*(.+)$/);
+    if (cm) { rows.push(pad + 'if ' + cm[1], pad + '   == ' + cm[2]); } else { rows.push(pad + 'if ' + cond); }
+    rows.push(ind + ']');
+    return rows;
+  }).join('\n');
+}
+
+// A tiny, safe Python highlighter (left-to-right tokenizer, no nested-span bugs). Full editor-grade
+// colouring PLUS the decisive difference pulsing — this is the first + most-watched moment.
 function proofHighlight(code) {
-  return escapeHtml(String(code || ''))
-    .replace(/(user\['tenant_id'\]|order\['tenant_id'\]|tenant_id)/g, '<span class="tok-win">$1</span>')
-    .replace(/(user\['id'\]|user_id)/g, '<span class="tok-lose">$1</span>');
+  const s = formatProofCode(code);
+  const KW = /^(def|return|for|in|if|elif|else|not|and|or|is|None|True|False|import|from|as|with|lambda|while|try|except|finally|raise|pass|yield|class|await|async)\b/;
+  const esc = t => escapeHtml(t);
+  let out = '', i = 0, m;
+  while (i < s.length) {
+    const r = s.slice(i);
+    if (m = r.match(/^\s+/)) { out += esc(m[0]); i += m[0].length; continue; }
+    // the whole story is this one difference — make it pulse
+    if (m = r.match(/^(order\['tenant_id'\]|user\['tenant_id'\])/)) { out += `<span class="tok-win">${esc(m[0])}</span>`; i += m[0].length; continue; }
+    if (m = r.match(/^user\['id'\]/)) { out += `<span class="tok-lose">${esc(m[0])}</span>`; i += m[0].length; continue; }
+    if (m = r.match(/^#[^\n]*/)) { out += `<span class="cm">${esc(m[0])}</span>`; i += m[0].length; continue; }
+    if (m = r.match(/^('[^']*'|"[^"]*")/)) { out += `<span class="str">${esc(m[0])}</span>`; i += m[0].length; continue; }
+    if (m = r.match(/^\d+\.?\d*/)) { out += `<span class="num">${esc(m[0])}</span>`; i += m[0].length; continue; }
+    if (m = r.match(KW)) { out += `<span class="kw">${esc(m[0])}</span>`; i += m[0].length; continue; }
+    if (m = r.match(/^[A-Za-z_]\w*/)) { const n = m[0]; out += `<span class="${/^\s*\(/.test(s.slice(i + n.length)) ? 'fn' : 'id'}">${esc(n)}</span>`; i += n.length; continue; }
+    out += `<span class="pn">${esc(s[i])}</span>`; i += 1;
+  }
+  return out;
 }
 const _sleep = ms => new Promise(r => setTimeout(r, ms));
 let _proofRunning = false;

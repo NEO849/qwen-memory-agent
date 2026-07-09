@@ -5,6 +5,14 @@
   font-family: "Space Grotesk"; font-style: normal; font-weight: 700;
   font-display: swap; src: url("vendor/space-grotesk-700.woff2") format("woff2");
 }
+@font-face {
+  font-family: "JetBrains Mono"; font-style: normal; font-weight: 400;
+  font-display: swap; src: url("vendor/jetbrains-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono"; font-style: normal; font-weight: 700;
+  font-display: swap; src: url("vendor/jetbrains-mono-700.woff2") format("woff2");
+}
 :root {
   /* ---- surfaces ---- */
   --bg: #090b11; --panel: #10141d; --panel-2: #161d29; --inset: #0a0e16; --line: #212a3b;
@@ -22,6 +30,7 @@
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
   --sans: "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   --display: "Space Grotesk", var(--sans);   /* the ONE characterful voice — used sparingly */
+  --code: "JetBrains Mono", var(--mono);      /* premium code font for the proof/duel code cards */
   --ctl-h: 32px;                              /* one control height */
 
   --life-new: #8FE3B0;        --life-new-wash: rgba(143,227,176,.07);   --life-new-border: #2E4A3A;
@@ -470,3 +479,37 @@ button:focus-visible, .vbtn:focus-visible, input:focus-visible, a:focus-visible,
 .conf.is-prior { color: var(--ink-faint); }
 .conf.is-prior .bar { border-style: dashed; border-color: #2b3548; }
 .conf.is-prior .bar > i { opacity: .2; }
+
+/* ============================================================================
+   PREMIUM CODE PRESENTATION — proof + duel code cards (first + most-watched moment)
+   editor-grade: window chrome + JetBrains Mono + One-Dark-ish syntax; the decisive
+   difference pulses green (correct) vs red (the bug).
+   ============================================================================ */
+/* grid items must allow shrinking, or the no-wrap <pre> forces the column wider (overflows the globe) */
+.arm, .duel-pane, .code-card { min-width: 0; }
+.code-card { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.code-head { flex: none; display: flex; align-items: center; gap: 7px; padding: 8px 13px;
+  background: #0c1119; border: 1px solid var(--line); border-bottom: none;
+  border-radius: var(--r-md) var(--r-md) 0 0; }
+.code-head .cd { width: 9px; height: 9px; border-radius: 50%; background: #2b3548; flex: none; }
+.code-head .fn-name { margin-left: 8px; font-family: var(--code); font-size: 11px;
+  color: var(--ink-faint); letter-spacing: .02em; }
+
+.arm-code { font-family: var(--code); font-size: 13px; line-height: 1.7;
+  background: var(--inset); border: 1px solid var(--line); border-top: none;
+  border-radius: 0 0 var(--r-md) var(--r-md); padding: 14px 16px; margin: 0;
+  color: #c9d4e3; -webkit-font-smoothing: antialiased; overflow-x: auto; white-space: pre; min-height: 0; }
+
+.arm-code .kw  { color: #c792ea; }        /* keywords  — violet (ties to memory-violet) */
+.arm-code .fn  { color: #82aaff; }        /* functions — blue */
+.arm-code .str { color: #ecc48d; }        /* strings   — amber */
+.arm-code .num { color: #f78c6c; }        /* numbers   — orange */
+.arm-code .id  { color: #cdd6e4; }        /* identifiers */
+.arm-code .pn  { color: #7f8ca3; }        /* punctuation */
+.arm-code .cm  { color: #5a6577; font-style: italic; }
+
+/* the decisive difference — the money moment (keeps the reveal pulse from .tok-win/.tok-lose) */
+.arm-code .tok-win  { color: var(--green); font-weight: 700; background: rgba(52,211,153,.14); border-radius: var(--r-xs); padding: 0 4px; }
+.arm-code .tok-lose { color: var(--red);   font-weight: 700; background: rgba(248,113,113,.14); border-radius: var(--r-xs); padding: 0 4px; }
+
+@media (max-width: 900px) { .arm-code { white-space: pre-wrap; } }
