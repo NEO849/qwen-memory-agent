@@ -175,6 +175,44 @@ def _rerank_reorder(context: str, fused: list[tuple], id_to_text: dict) -> list[
         return fused
 
 
+def _token_cost(item: dict) -> int:
+    """Cheap token estimate (~4 chars/token) for the text a lesson injects. No new dependency."""
+    return max(1, len(_lesson_text(item)) // 4)
+
+
+def _pack_budget(ordered: list[dict], token_budget: int) -> tuple[list[dict], dict]:
+    """Greedy value-density packing under a HARD token budget — the honest realization of
+    'recalling critical memories within a limited context window'. Pinned human overrides are
+    included first (still counted); the rest compete by density = confidence × relevance ÷
+    token_cost. Fail-open: if nothing fits, keep the single highest-density lesson so recall never
+    returns empty while candidates exist. Returns (selected, stats)."""
+    pinned = [it for it in ordered if it.get("pinned")]
+    rest = [it for it in ordered if not it.get("pinned")]
+    used = 0
+    selected: list[dict] = []
+    for it in pinned:
+        c = _token_cost(it); it["_tokens"] = c
+        selected.append(it); used += c
+    scored = []
+    for it in rest:
+        c = _token_cost(it)
+        density = (float(it.get("confidence", 0.0)) * float(it.get("_score", 0.0) or 0.0)) / c
+        scored.append((density, c, it))
+    scored.sort(key=lambda t: t[0], reverse=True)
+    for density, c, it in scored:
+        if used + c <= token_budget:
+            it["_tokens"] = c; it["_density"] = round(density, 6)
+            selected.append(it); used += c
+    if not selected and scored:                      # fail-open: never empty with candidates present
+        density, c, it = scored[0]
+        it["_tokens"] = c; it["_density"] = round(density, 6)
+        selected.append(it); used += c
+    total = len(ordered)
+    return selected, {"token_budget": token_budget, "tokens_used": used,
+                      "packed": len(selected), "considered": total,
+                      "dropped": total - len(selected)}
+
+
 def recall(context: str, *, k: int = 5, threshold: float = 0.0, track: bool = True,
            spread: bool | None = None, path: str | None = None) -> dict:
     """Retrieve the lessons to inject for a given coding context.
@@ -194,7 +232,8 @@ def recall(context: str, *, k: int = 5, threshold: float = 0.0, track: bool = Tr
     q_emb = _embed_one(context)
     docs = [{"id": l["id"], "text": _lesson_text(l), "embedding": l.get("embedding")}
             for l in snapshot]
-    fused = retrieval.fuse(context, docs, query_embedding=q_emb, weights=load_weights(), k=max(k * 2, k))
+    cand_k = len(docs) if config.RG_RECALL_BUDGET else max(k * 2, k)   # budget mode ranks the whole deck
+    fused = retrieval.fuse(context, docs, query_embedding=q_emb, weights=load_weights(), k=cand_k)
     if config.RG_RERANK and len(fused) > 1:   # qwen3-rerank cross-encoder final stage (opt-in)
         fused = _rerank_reorder(context, fused, {d["id"]: d["text"] for d in docs})
     by_id = {l["id"]: l for l in snapshot}
@@ -212,10 +251,13 @@ def recall(context: str, *, k: int = 5, threshold: float = 0.0, track: bool = Tr
                 half_life_days=config.RG_DECAY_HALFLIFE_DAYS):
             item = _public_lesson(l); item["_score"] = round(score, 6); item["_explain"] = ex
             ordered.append(item); seen.add(l["id"])
-        if len(ordered) >= k:
+        if not config.RG_RECALL_BUDGET and len(ordered) >= k:
             break
 
-    primary = ordered[:k]
+    if config.RG_RECALL_BUDGET:
+        primary, budget_stats = _pack_budget(ordered, config.RG_RECALL_TOKEN_BUDGET)
+    else:
+        primary, budget_stats = ordered[:k], None
     # spreading activation (opt-in): add strongest associative neighbours beyond the k primary hits
     spread_on = config.RG_SPREAD if spread is None else spread
     assoc = (_associative_neighbours([l["id"] for l in primary], by_id, seen,
@@ -223,6 +265,8 @@ def recall(context: str, *, k: int = 5, threshold: float = 0.0, track: bool = Tr
              if (spread_on and primary) else [])
     lessons_out = primary + assoc
     result = {"lessons": lessons_out, "snapshot": snap_marker}
+    if budget_stats is not None:
+        result["budget"] = budget_stats
     if track:   # usage salience + Hebbian wiring; never touches updated_at/confidence, fail-open
         try:
             ledger.bump_recall([l["id"] for l in lessons_out], path=path)

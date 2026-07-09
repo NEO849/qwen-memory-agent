@@ -72,6 +72,14 @@ RG_MODEL_JUDGE = os.environ.get("RG_MODEL_JUDGE", "qwen-max")      # obsolescenc
 RG_MODEL_PARAPHRASE = os.environ.get("RG_MODEL_PARAPHRASE", "qwen-turbo")  # cheap eval paraphrases
 
 
+# --- Welle 2: kontextfenster-bewusste Recall-Packung (default OFF, byte-identisch bei OFF) -----
+# Statt top-k nach ANZAHL: greedy nach Wert-Dichte (confidence × relevance ÷ token-cost) unter ein
+# HARTES Token-Budget packen — die ehrliche Realisierung von „recalling critical memories within a
+# limited context window". OFF → exaktes heutiges top-k-Verhalten.
+RG_RECALL_BUDGET = os.environ.get("RG_RECALL_BUDGET", "0") == "1"
+RG_RECALL_TOKEN_BUDGET = int(os.environ.get("RG_RECALL_TOKEN_BUDGET", "1500"))
+
+
 def model_for(kind: str) -> str:
     """Route a Qwen call to the right model for the job. Routing OFF (default) → QWEN_MODEL for
     every kind (byte-identical to baseline). ON → per-role: heavy judges get qwen-max, cheap

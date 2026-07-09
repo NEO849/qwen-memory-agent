@@ -1,0 +1,30 @@
+{
+  "subset": {
+    "classes": 4,
+    "probes": 4,
+    "deck_size": 8,
+    "retriever": "BM25 (offline, deterministic)"
+  },
+  "context_window": {
+    "naive_topk": {
+      "k": 5,
+      "avg_tokens": 153.8,
+      "recall": 1.0,
+      "avg_lessons": 4.75
+    },
+    "budget_packed": {
+      "token_budget": 100,
+      "avg_tokens": 96.5,
+      "recall": 1.0,
+      "avg_lessons": 3.0
+    },
+    "token_saving_fraction": 0.373,
+    "recall_retained": true
+  },
+  "forgetting": {
+    "harmful_injection_without": 1.0,
+    "harmful_injection_with": 0.0,
+    "reduction": 1.0
+  },
+  "honesty": "Domain-specific subset (coding-lesson deck), BM25-only for free reproducibility. NOT a LoCoMo/LongMemEval full run \u2014 those remain the field-standard agent-memory benchmarks this design aligns with. Subset delta only, no generalized SOTA claim."
+}
