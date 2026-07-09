@@ -47,6 +47,13 @@ RG_STREAMING = os.environ.get("STREAMING_ENABLED", "0") == "1"   # Token-Streami
 RG_TOOL_LOOP = os.environ.get("TOOL_LOOP_ENABLED", "0") == "1"   # bounded Multi-Step-Tool-Loop im Chat
 RG_TOOL_LOOP_MAX = int(os.environ.get("TOOL_LOOP_MAX", "3"))        # harte Obergrenze der Tool-Runden
 
+# Konfidenz-Gate fuer Injektion (die eigentliche Regress-Guard-Innovation): eine Lesson wird nur
+# injiziert, wenn ihr VERDIENTES Beta-Mittel >= diesem Wert ist (should_inject threshold). Frisch
+# distilliert = Beta(1,1) = 0.50 (unbewiesen), menschlich = Beta(3,1) = 0.75. Ein Gate knapp ueber
+# 0.5 trennt "noch nicht verdient" von "durch echte Tests verdient". Default 0.0 = kein Gate
+# (heutiges Verhalten / naives Add-only) — der Live-Server + die Benchmark setzen es explizit.
+RG_MIN_CONFIDENCE = float(os.environ.get("RG_MIN_CONFIDENCE", "0.0"))
+
 
 def assert_configured() -> None:
     """Früh und klar scheitern, wenn der Key fehlt — statt kryptischer 401 später."""
