@@ -37,6 +37,16 @@ RG_HEBBIAN_TOPN = int(os.environ.get("RG_HEBBIAN_TOPN", "3"))       # top-N co-r
 RG_SPREAD = os.environ.get("RG_SPREAD", "0") == "1"          # spreading-activation recall (opt-in)
 RG_SPREAD_K = int(os.environ.get("RG_SPREAD_K", "2"))               # extra associative neighbours
 
+# --- Final-Sprint Qwen-Tiefe: neue Stufen hinter Flags, Default OFF (staging-first, ein-Befehl-Kill).
+# Jede Stufe MUSS bei Flag-OFF exakt auf das heutige Verhalten degradieren (Baseline = v-baseline-2026-07-09).
+RG_RERANK = os.environ.get("RERANK_ENABLED", "0") == "1"     # qwen3-rerank als Cross-Encoder-Endstufe von RECALL
+RG_RERANK_MODEL = os.environ.get("RERANK_MODEL", "qwen3-rerank")
+RG_RERANK_TOPN = int(os.environ.get("RERANK_TOPN", "5"))            # rerank-Kandidaten -> top_n zurueck
+RG_RERANK_BUDGET_MS = int(os.environ.get("RERANK_BUDGET_MS", "400"))  # p95-Latenzbudget-Gate (Doku/Guard)
+RG_STREAMING = os.environ.get("STREAMING_ENABLED", "0") == "1"   # Token-Streaming (SSE) fuer Chat/REVISE
+RG_TOOL_LOOP = os.environ.get("TOOL_LOOP_ENABLED", "0") == "1"   # bounded Multi-Step-Tool-Loop im Chat
+RG_TOOL_LOOP_MAX = int(os.environ.get("TOOL_LOOP_MAX", "3"))        # harte Obergrenze der Tool-Runden
+
 
 def assert_configured() -> None:
     """Früh und klar scheitern, wenn der Key fehlt — statt kryptischer 401 später."""
