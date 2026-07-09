@@ -26,3 +26,8 @@ redteam/*.log
 .DS_Store
 .idea/
 .vscode/
+
+# Benchmark
+.bench_cache/
+bench_*.json
+bench_result.json
