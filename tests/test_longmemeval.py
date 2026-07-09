@@ -49,4 +49,7 @@ def test_run_memory_arm_beats_floor(monkeypatch):
     assert r["no_memory"]["correct"] == 0          # floor: no context → can't know
     assert r["regress_guard"]["correct"] == 2      # memory surfaces the fact → correct
     assert r["lift_vs_no_memory"] == 1.0
-    assert "NOT a validation of the outcome-grounded confidence gate" in r["honesty"]
+    # honesty must disclose that this does NOT test the outcome-grounded confidence gate,
+    # and must flag the recency ablation as a null rather than dress it up
+    assert "does NOT test our core contribution" in r["honesty"]
+    assert "HONEST NULL" in r["honesty"]

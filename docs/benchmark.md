@@ -127,6 +127,32 @@ threshold or reorders distinct scores; asserted in `tests/test_vectorized.py`). 
 this shrinks the **constant factor** and unlocks a future ANN index — it does **not** change the
 O(N) asymptotics, and we don't claim it does.
 
+## The forgetting mechanism, measured — poison-demotion curve
+
+LongMemEval (below) tests *retrieval*. This tests the thing that is actually ours: **confidence
+earned from real tests, and a wrong lesson forgotten**. Fully reproducible offline, **no LLM
+involved** — `python -m harness.poison_curve`.
+
+A plausible-but-wrong money lesson (*add each line as float dollars*) starts at the human prior
+**0.75** and, driven by **real `pytest` runs** of the `money_rounding` pattern, loses confidence on
+every genuine failure — dropping **below the injection gate (0.62) after the first real failure**
+(→0.60, no longer injected) and, after **0/6 real passes**, **tombstoned** (forgotten). The correct
+lesson (*integer cents*), same machinery, climbs **0.75 → 0.90**.
+
+| trial | poisoned lesson (float $) | correct lesson (int ¢) |
+|---|---|---|
+| 0 (prior) | 0.75 | 0.75 |
+| 1 (real test) | **0.60** ⛔ below gate | 0.80 |
+| 3 | 0.43 | 0.86 |
+| 6 | **0.30 → 🪦 tombstoned** | 0.90 |
+
+Confidence is the Beta(α,β) posterior mean; every step runs through the **same `record_outcome`
+path and identical `wp==0` tombstone rule the live system uses** (`harness/ground_demo.py`). An
+anchor asserts ceiling=GREEN / floor=RED before the curve is trusted. Honest scope: this is a
+**mechanism demo** (one deterministic pattern, real `pytest` repeated per trial — not a population
+benchmark or independent sampling); a single real failure only *de-injects* a lesson, tombstoning is
+the terminal case after sustained refutation.
+
 ## External anchor — LongMemEval `knowledge-update` (does our memory help on a STANDARD benchmark?)
 
 Every self-built number above answers "does the *mechanism* help?" — but a memory-track judge also
@@ -138,19 +164,23 @@ fallback). Reproduce: `python -m harness.longmemeval_eval --n 40`.
 
 | arm | correct | accuracy (Wilson 95%) |
 |---|---|---|
-| no memory (floor) | 2 / 39 | **5.1 %** [1.4, 16.9] |
-| **Regress-Guard memory** | 33 / 39 | **84.6 %** [70.3, 92.8] |
+| no memory (floor) | 2 / 40 | **5.0 %** [1.4, 16.5] |
+| naive memory (recency timestamps stripped) | 33 / 40 | **82.5 %** [68.0, 91.3] |
+| **Regress-Guard memory** | 33 / 40 | **82.5 %** [68.0, 91.3] |
 
-**Our memory lifts knowledge-update QA from 5 % to 85 % on an external benchmark** — a +79-point
-lift, the first number here that isn't self-defined. It validates our **retrieval leg** end-to-end.
+**Our memory lifts knowledge-update QA from 5 % to ~82 % on an external benchmark** — a +77.5-point
+lift, the first number here that isn't self-defined. It validates our **retrieval + injection leg**
+end-to-end (not the outcome-grounded confidence gate — LongMemEval has no executable outcomes).
 
 **Honest scope & an honest null (two of them):**
 - **Oracle split** (evidence sessions only) — easier than the full haystack, so this is **not**
   leaderboard-comparable to published full-haystack scores. We report the memory-vs-no-memory lift.
-- **Recency ablation = 0.0.** A third arm injected the *same retrieved facts with timestamps
-  stripped*; it scored **identically (84.6 %)**. So on this subset our explicit recency signal added
-  **no measurable value** — the QA model resolves "most recent" on its own. We report that null
-  rather than dress it up, exactly as we did for `qwen3-rerank`.
+- **Recency ablation = +0.0.** A third arm injected the *same retrieved facts with timestamps
+  stripped*; it scored **identically (82.5 %)**. So on this subset our explicit recency signal added
+  **no measurable value** — the QA model resolves "most recent" on its own (and N=40 is underpowered
+  to detect a small effect). We report that null rather than dress it up, exactly as we did for
+  `qwen3-rerank`.
 - LongMemEval has **no executable outcomes**, so it cannot test our actual contribution — the
   *outcome-grounded confidence gate*. No public benchmark scores outcome-grounded forgetting yet;
-  that gap is our moat, measured by the self-built benchmarks above. (1 malformed record skipped → N=39.)
+  that gap is our moat, measured by the self-built benchmarks above (see the poison-demotion curve).
+  (N=40, no records skipped; deterministic seed=7, verified by cached per-question ledgers.)

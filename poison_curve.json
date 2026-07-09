@@ -1,0 +1,139 @@
+{
+  "demo": "poison-demotion-curve \u2014 mechanism demo (ONE deterministic pattern, the same real pytest repeated each trial; a Beta-accounting curve, NOT a population benchmark and NOT independent samples)",
+  "gate": 0.62,
+  "anchor": {
+    "ceiling_passes": true,
+    "floor_passes": false
+  },
+  "correct": {
+    "lesson_id": 1,
+    "passes": 6,
+    "trials": 6,
+    "gate_cross_trial": null,
+    "tombstoned": false,
+    "final_confidence": 0.9,
+    "curve": [
+      {
+        "trial": 0,
+        "confidence": 0.75,
+        "alpha": 3.0,
+        "beta": 1.0,
+        "event": "human prior Beta(3,1)"
+      },
+      {
+        "trial": 1,
+        "real_test": "pass",
+        "confidence": 0.8,
+        "alpha": 4.0,
+        "beta": 1.0,
+        "event": null
+      },
+      {
+        "trial": 2,
+        "real_test": "pass",
+        "confidence": 0.8333,
+        "alpha": 5.0,
+        "beta": 1.0,
+        "event": null
+      },
+      {
+        "trial": 3,
+        "real_test": "pass",
+        "confidence": 0.8571,
+        "alpha": 6.0,
+        "beta": 1.0,
+        "event": null
+      },
+      {
+        "trial": 4,
+        "real_test": "pass",
+        "confidence": 0.875,
+        "alpha": 7.0,
+        "beta": 1.0,
+        "event": null
+      },
+      {
+        "trial": 5,
+        "real_test": "pass",
+        "confidence": 0.8889,
+        "alpha": 8.0,
+        "beta": 1.0,
+        "event": null
+      },
+      {
+        "trial": 6,
+        "real_test": "pass",
+        "confidence": 0.9,
+        "alpha": 9.0,
+        "beta": 1.0,
+        "event": null
+      }
+    ]
+  },
+  "poisoned": {
+    "lesson_id": 2,
+    "passes": 0,
+    "trials": 6,
+    "gate_cross_trial": 1,
+    "tombstoned": true,
+    "final_confidence": 0.3,
+    "curve": [
+      {
+        "trial": 0,
+        "confidence": 0.75,
+        "alpha": 3.0,
+        "beta": 1.0,
+        "event": "human prior Beta(3,1)"
+      },
+      {
+        "trial": 1,
+        "real_test": "fail",
+        "confidence": 0.6,
+        "alpha": 3.0,
+        "beta": 2.0,
+        "event": "crossed below inject-gate 0.62 \u2192 no longer injected"
+      },
+      {
+        "trial": 2,
+        "real_test": "fail",
+        "confidence": 0.5,
+        "alpha": 3.0,
+        "beta": 3.0,
+        "event": null
+      },
+      {
+        "trial": 3,
+        "real_test": "fail",
+        "confidence": 0.4286,
+        "alpha": 3.0,
+        "beta": 4.0,
+        "event": null
+      },
+      {
+        "trial": 4,
+        "real_test": "fail",
+        "confidence": 0.375,
+        "alpha": 3.0,
+        "beta": 5.0,
+        "event": null
+      },
+      {
+        "trial": 5,
+        "real_test": "fail",
+        "confidence": 0.3333,
+        "alpha": 3.0,
+        "beta": 6.0,
+        "event": null
+      },
+      {
+        "trial": 6,
+        "real_test": "fail",
+        "confidence": 0.3,
+        "alpha": 3.0,
+        "beta": 7.0,
+        "event": "tombstoned (forgotten \u2014 0/6 real passes)"
+      }
+    ]
+  },
+  "honesty": "Every confidence step is driven by a REAL pytest run of the money_rounding pattern (ceiling=integer cents=GREEN, floor=float dollars=RED). Same record_outcome path + same wp==0 tombstone rule as the live system. Offline, no Qwen/LLM, isolated ledger, no prod write, deterministic + reproducible. NOTE: a single real failure only DE-INJECTS a lesson (drops it below the gate); tombstoning (permanent forget) is the terminal case after sustained refutation (0 passes). The trials repeat ONE deterministic test \u2014 this is a mechanism demo, not independent sampling."
+}

@@ -135,9 +135,9 @@ the earned one out of the retrieved set; the gate withholds it. Every card's con
 auditable at **`/receipts/{id}`** — the append-only test outcomes that earned it.
 
 And on an **external, recognised benchmark** — not a self-built one — our memory lifts
-**LongMemEval `knowledge-update` QA from 5 % (no memory) to 85 %** (33/39, Wilson95 [70, 93];
+**LongMemEval `knowledge-update` QA from 5 % (no memory) to ~82 %** (33/40, Wilson95 [68, 91];
 `harness/longmemeval_eval.py`). Honest scope: oracle split (not leaderboard-comparable), and a
-recency-ablation arm showed **no** lift — reported as a null, not dressed up ([`docs/benchmark.md`](docs/benchmark.md)).
+recency-ablation arm showed **no** lift (+0.0 pts) — reported as a null, not dressed up ([`docs/benchmark.md`](docs/benchmark.md)).
 
 One more headline number, reproducible **offline with no API key**:
 **value-density packing injects the critical lesson in ~37 % fewer tokens at identical recall**, and

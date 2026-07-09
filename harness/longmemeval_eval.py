@@ -164,12 +164,16 @@ def run(*, n: int = 40, k: int = 10, seed: int = 7) -> dict:
         "regress_guard": _arm(arms["regress_guard"]),
         "lift_vs_no_memory": round((arms["regress_guard"] - arms["no_memory"]) / total, 3),
         "lift_vs_naive_recency": round((arms["regress_guard"] - arms["naive_memory"]) / total, 3),
-        "honesty": ("External validation of the RETRIEVAL + recency-aware injection leg on a "
-                    "conversational-fact benchmark, ORACLE split (evidence sessions only — easier "
-                    "than the full haystack, so NOT leaderboard-comparable). The naive arm isolates "
-                    "our contribution: SAME retrieved facts, timestamps stripped. NOT a validation "
-                    "of the outcome-grounded confidence gate (LongMemEval has no executable "
-                    "outcomes). Subset numbers only, with N + Wilson CI — no SOTA claim vs Mem0/Zep."),
+        "honesty": ("External evidence that the RETRIEVAL + injection pipeline works end-to-end on "
+                    "a recognised benchmark: memory lifts knowledge-update QA from a 5% no-memory "
+                    "floor to ~82% (a large +77.5-pt lift). ORACLE split (evidence sessions only — "
+                    "easier than the full haystack, so NOT leaderboard-comparable to Mem0/Zep). The "
+                    "naive arm strips the recency timestamps as an ablation; on this subset it moved "
+                    "the result by +0.0 pts (N=40 underpowered to detect a small effect) — reported "
+                    "as an HONEST NULL, not as validation of recency-aware injection. LongMemEval "
+                    "has no executable outcomes, so it does NOT test our core contribution "
+                    "(outcome-grounded confidence) — that is shown separately by the poison-demotion "
+                    "curve. N + Wilson CI only, no SOTA claim."),
     }
 
 
