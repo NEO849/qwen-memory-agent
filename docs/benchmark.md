@@ -64,3 +64,21 @@ the adversarial poisoned-memory case is demonstrated separately by the red-team 
   table is reproducible from a clean clone.
 - The baseline B is a *reasonable* memory (it retrieves relevant fixes) — not a strawman. The
   only thing it lacks is the confidence gate, which is precisely Regress-Guard's contribution.
+
+## Ablation: does a qwen3-rerank stage help? (an honest negative)
+
+We built a third retrieval stage — the `qwen3-rerank` cross-encoder after BM25+vector RRF
+(`backend/qwen_client.py:rerank`, wired into `memory.recall` behind `RERANK_ENABLED`) — and
+measured whether it improves *findability of the correct lesson* over the 5 classes
+(`.venv/bin/python -m harness.rerank_eval`, n=10 seen+unseen contexts):
+
+| retrieval | Recall@1 | Recall@3 | MRR |
+|---|---|---|---|
+| RRF only | 0.90 | 1.00 | 0.95 |
+| + qwen3-rerank | 0.90 | 1.00 | 0.95 |
+
+**No measured lift.** At our current memory size RRF already ranks the right lesson ~0.95 MRR,
+so a cross-encoder has nothing to fix — and it adds ~880 ms per recall (well over our 400 ms
+budget for the single-worker SSE path). So **rerank ships built, tested and graceful, but OFF
+by default**: it earns its place only once a memory grows large/ambiguous enough that ranking
+gets hard. We'd rather report the honest null than feature a stage that doesn't help at our scale.
