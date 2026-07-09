@@ -518,3 +518,14 @@ button:focus-visible, .vbtn:focus-visible, input:focus-visible, a:focus-visible,
 .caret{display:inline-block;width:.5ch;height:1em;vertical-align:-.15em;margin-left:1px;
   background:var(--memory-violet,#B9A6E8);border-radius:1px;animation:rg-blink 1s steps(1) infinite}
 @keyframes rg-blink{50%{opacity:0}}
+
+/* receipts strip — the centered card's confidence, traced to the real pytest outcomes */
+.card-receipts{margin-top:var(--s2,8px);padding:6px 9px;border:1px solid #212a3b;border-radius:var(--r-sm,8px);
+  font-size:11px;line-height:1.5;color:#8b98a5;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.card-receipts .rc-mk{color:#5a6577;text-transform:uppercase;letter-spacing:.04em;font-size:10px;font-weight:700}
+.card-receipts .rc-cnt b.p{color:#34d399} .card-receipts .rc-cnt b.f{color:#f87171}
+.card-receipts .rc-none{color:#7f8ca3;font-style:italic}
+.card-receipts .rc-dots{display:inline-flex;gap:2px;margin-left:auto}
+.rc-dot{width:7px;height:7px;border-radius:2px;display:inline-block}
+.rc-dot.p{background:#34d399}
+.rc-dot.f{background:#f87171}

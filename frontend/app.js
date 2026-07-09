@@ -180,6 +180,7 @@ function frame() {
     const n = state.lessons.length;                        // normalize into [0,n) — seamless (positioning wraps)
     const norm = n ? ((Math.round(state.targetF) % n) + n) % n : 0;
     state.activeF = state.targetF = norm; positionAllCards(); state.raf = null;
+    updateReceipts();                                      // show the centered card's earned-from-tests provenance
   } else state.raf = requestAnimationFrame(frame);
 }
 function kick() { if (state.raf == null) state.raf = requestAnimationFrame(frame); }
@@ -485,6 +486,33 @@ $('#teachDont').addEventListener('click', () => teachSubmit('anti'));
 
 // card actions act DIRECTLY on the selected (centered) card — no command text in any field
 function activeCardId() { return state.lessons.length ? state.lessons[activeIndex()].id : null; }
+
+// Receipts: the centered card's confidence, traced to the REAL pytest outcomes that earned it.
+// "Nobody hand-wrote these numbers" — made visible as you browse the deck.
+async function updateReceipts() {
+  const el = $('#cardReceipts'); if (!el) return;
+  const id = activeCardId();
+  if (id == null) { el.hidden = true; return; }
+  if (id === state.lastReceiptId) return;                  // only refetch when the centered card changes
+  state.lastReceiptId = id;
+  try {
+    const r = await api('/receipts/' + id);
+    const g = r.grounded || { pass: 0, fail: 0, total: 0 };
+    const beta = `Beta(${r.beta.alpha},${r.beta.beta})`;
+    if (!g.total) {
+      el.hidden = false;
+      el.innerHTML = `<span class="rc-mk">receipts</span><span class="rc-none">prior only — not yet earned · ${beta}</span>`;
+      return;
+    }
+    const dots = (r.receipts || []).slice(-14)
+      .map(o => `<i class="rc-dot ${o.result === 'pass' ? 'p' : 'f'}" title="${o.result}${o.ts ? ' · ' + o.ts : ''}"></i>`).join('');
+    el.hidden = false;
+    el.innerHTML =
+      `<span class="rc-mk">earned from ${g.total} real test${g.total > 1 ? 's' : ''}</span>`
+      + `<span class="rc-cnt"><b class="p">${g.pass}✓</b> <b class="f">${g.fail}✗</b> → ${beta} · conf ${(+r.confidence).toFixed(2)}</span>`
+      + `<span class="rc-dots">${dots}</span>`;
+  } catch { el.hidden = true; }
+}
 document.querySelectorAll('#cardActs [data-card]').forEach(b => b.addEventListener('click', async () => {
   const id = activeCardId();
   if (id == null) { logLine('scroll to a card first', 'warn'); return; }
