@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/qwen_hackathon/harness/longmemeval_eval.py", line 176, in <module>
+    result = run(n=args.n, k=args.k)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/qwen_hackathon/harness/longmemeval_eval.py", line 127, in run
+    a_ok = _judge(question, gold, _answer(question, qdate, None))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/qwen_hackathon/harness/longmemeval_eval.py", line 101, in _judge
+    if _exact(gold, resp):
+       ^^^^^^^^^^^^^^^^^^
+  File "/root/qwen_hackathon/harness/longmemeval_eval.py", line 92, in _exact
+    g = _NORM.sub(" ", gold.lower()).strip()
+                       ^^^^^^^^^^
+AttributeError: 'int' object has no attribute 'lower'

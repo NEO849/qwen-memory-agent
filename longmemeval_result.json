@@ -1,0 +1,33 @@
+{
+  "benchmark": "LongMemEval (oracle) \u2014 knowledge-update subset",
+  "n": 39,
+  "skipped": 1,
+  "recall_k": 10,
+  "no_memory": {
+    "correct": 2,
+    "acc": 0.051,
+    "wilson95": [
+      0.014,
+      0.169
+    ]
+  },
+  "naive_memory": {
+    "correct": 33,
+    "acc": 0.846,
+    "wilson95": [
+      0.703,
+      0.928
+    ]
+  },
+  "regress_guard": {
+    "correct": 33,
+    "acc": 0.846,
+    "wilson95": [
+      0.703,
+      0.928
+    ]
+  },
+  "lift_vs_no_memory": 0.795,
+  "lift_vs_naive_recency": 0.0,
+  "honesty": "External validation of the RETRIEVAL + recency-aware injection leg on a conversational-fact benchmark, ORACLE split (evidence sessions only \u2014 easier than the full haystack, so NOT leaderboard-comparable). The naive arm isolates our contribution: SAME retrieved facts, timestamps stripped. NOT a validation of the outcome-grounded confidence gate (LongMemEval has no executable outcomes). Subset numbers only, with N + Wilson CI \u2014 no SOTA claim vs Mem0/Zep."
+}

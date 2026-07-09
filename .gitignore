@@ -31,3 +31,4 @@ redteam/*.log
 .bench_cache/
 bench_*.json
 bench_result.json
+.longmemeval_cache/
