@@ -24,13 +24,14 @@ _correlation: contextvars.ContextVar[str] = contextvars.ContextVar("rg_corr", de
 _lock = threading.Lock()
 _roles: dict[str, dict] = {}
 _recent: deque = deque(maxlen=50)
+_reasoning: deque = deque(maxlen=20)   # bounded ring of captured model reasoning traces
 
 
 def _role_bucket(role: str) -> dict:
     b = _roles.get(role)
     if b is None:
         b = {"calls": 0, "errors": 0, "cached": 0, "ms": deque(maxlen=200),
-             "prompt_tokens": 0, "completion_tokens": 0}
+             "prompt_tokens": 0, "completion_tokens": 0, "model": None}
         _roles[role] = b
     return b
 
@@ -50,8 +51,10 @@ def correlation() -> str:
 
 
 def record(role: str, kind: str, ms: float, *, usage=None, ok: bool = True,
-           cached: bool = False) -> None:
-    """Record one Qwen call. `usage` is the OpenAI-compatible usage object (or None)."""
+           cached: bool = False, model: str | None = None) -> None:
+    """Record one Qwen call. `usage` is the OpenAI-compatible usage object (or None).
+    `model` (when given) is stored per role so /telemetry shows which model served each role —
+    the visible proof of multi-model routing."""
     pt = getattr(usage, "prompt_tokens", 0) or 0
     ct = getattr(usage, "completion_tokens", 0) or 0
     with _lock:
@@ -63,6 +66,8 @@ def record(role: str, kind: str, ms: float, *, usage=None, ok: bool = True,
             b["errors"] += 1
         if ms:
             b["ms"].append(ms)
+        if model:
+            b["model"] = model
         b["prompt_tokens"] += pt
         b["completion_tokens"] += ct
         _recent.appendleft({"role": role, "kind": kind, "ms": round(ms, 1), "ok": ok,
@@ -94,6 +99,7 @@ def snapshot() -> dict:
                 "p50_ms": _pct(ms, 0.50), "p95_ms": _pct(ms, 0.95),
                 "avg_ms": round(sum(ms) / len(ms), 1) if ms else 0.0,
                 "prompt_tokens": b["prompt_tokens"], "completion_tokens": b["completion_tokens"],
+                "model": b.get("model"),
             }
             tot_calls += b["calls"]; tot_err += b["errors"]
             tot_pt += b["prompt_tokens"]; tot_ct += b["completion_tokens"]
@@ -106,10 +112,26 @@ def snapshot() -> dict:
         }
 
 
+def record_reasoning(role: str, text: str) -> None:
+    """Stash a model reasoning/thinking trace (bounded ring), correlation-tagged. Purely
+    observability — surfaced at /reasoning; never influences a lesson's earned confidence."""
+    if not text:
+        return
+    with _lock:
+        _reasoning.appendleft({"role": role, "corr": _correlation.get() or "-",
+                               "reasoning": text[:4000], "ts": round(time.time(), 1)})
+
+
+def reasoning_snapshot() -> list:
+    with _lock:
+        return list(_reasoning)
+
+
 def reset() -> None:
     with _lock:
         _roles.clear()
         _recent.clear()
+        _reasoning.clear()
 
 
 @contextlib.contextmanager

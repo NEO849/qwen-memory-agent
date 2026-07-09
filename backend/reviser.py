@@ -10,7 +10,7 @@ add-only memories (and the big chat assistants' memory) do not do.
 """
 from __future__ import annotations
 
-from . import ledger, qwen_client, retrieval
+from . import config, ledger, qwen_client, retrieval
 
 _SYSTEM = (
     "You maintain a memory of coding lessons. The codebase just changed. Decide whether an "
@@ -30,7 +30,7 @@ def judge_obsolete(lesson: dict, change: str, model: str | None = None) -> dict:
     )
     raw = qwen_client.chat_json(
         [{"role": "system", "content": _SYSTEM}, {"role": "user", "content": user}],
-        model=model, temperature=0, role="revise",
+        model=model, temperature=0, role="revise", capture_reasoning=True,
     )
     return {"obsolete": bool(raw.get("obsolete")), "reason": str(raw.get("reason", "")).strip()}
 
@@ -60,7 +60,7 @@ def _judge_contradiction(new_lesson: dict, existing: dict, model: str | None = N
     )
     raw = qwen_client.chat_json(
         [{"role": "system", "content": _CONTRA_SYS}, {"role": "user", "content": user}],
-        model=model, temperature=0, role="self-check",
+        model=model, temperature=0, role="self-check", capture_reasoning=True,
     )
     loser = str(raw.get("loser", "none")).strip().lower()
     if loser not in ("existing", "new", "none"):
@@ -103,7 +103,7 @@ def check_contradiction(new_lesson: dict, *, path: str | None = None) -> dict:
         # A-MEM: the semantic neighbourhood we already computed IS a relationship — persist it
         # as a 'related' edge (this is the graph the knowledge globe renders) instead of discarding.
         _link(new_id, existing["id"], "related", round(sim, 3))
-        verdict = _judge_contradiction(new_lesson, existing)
+        verdict = _judge_contradiction(new_lesson, existing, model=config.model_for("judge"))
         if not verdict["contradicts"] or verdict["loser"] == "none":
             try:
                 if new_id is not None:
@@ -137,7 +137,7 @@ def revise(change: str, *, path: str | None = None) -> list[dict]:
     _REVISE_CAP lessons so the paid fan-out stays bounded. Returns one verdict per lesson judged."""
     results = []
     for lesson in ledger.list_lessons(status="active", path=path)[:_REVISE_CAP]:
-        verdict = judge_obsolete(lesson, change)
+        verdict = judge_obsolete(lesson, change, model=config.model_for("judge"))
         if verdict["obsolete"]:
             ledger.tombstone(lesson["id"], path=path)
         results.append({"lesson_id": lesson["id"], "lesson": lesson["lesson"],

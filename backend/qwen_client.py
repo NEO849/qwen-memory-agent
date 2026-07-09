@@ -161,7 +161,7 @@ def chat(messages: list[dict], model: str | None = None, *, role: str = "chat", 
     key = _cache_key("chat", mdl, {"msgs": messages, "kw": kwargs})
     hit = _cache_get(key)
     if hit is not None:
-        telemetry.record(role, "chat", 0.0, cached=True)
+        telemetry.record(role, "chat", 0.0, cached=True, model=mdl)
         return hit
     t0 = time.perf_counter()
     try:
@@ -169,9 +169,9 @@ def chat(messages: list[dict], model: str | None = None, *, role: str = "chat", 
             lambda: _client().chat.completions.create(model=mdl, messages=messages, **kwargs),
             desc="chat")
     except QwenUnavailable:
-        telemetry.record(role, "chat", (time.perf_counter() - t0) * 1000, ok=False)
+        telemetry.record(role, "chat", (time.perf_counter() - t0) * 1000, ok=False, model=mdl)
         raise
-    telemetry.record(role, "chat", (time.perf_counter() - t0) * 1000, usage=getattr(resp, "usage", None))
+    telemetry.record(role, "chat", (time.perf_counter() - t0) * 1000, usage=getattr(resp, "usage", None), model=mdl)
     out = resp.choices[0].message.content or ""
     _cache_put(key, out)
     return out
@@ -193,7 +193,7 @@ def chat_stream(messages: list[dict], model: str | None = None, *, role: str = "
             stream_options={"include_usage": True}, **kwargs)
     except _RETRYABLE as e:
         _breaker.fail()
-        telemetry.record(role, "chat_stream", (time.perf_counter() - t0) * 1000, ok=False)
+        telemetry.record(role, "chat_stream", (time.perf_counter() - t0) * 1000, ok=False, model=mdl)
         raise QwenUnavailable(f"chat_stream: {type(e).__name__}") from e
     try:
         for chunk in stream:
@@ -207,7 +207,7 @@ def chat_stream(messages: list[dict], model: str | None = None, *, role: str = "
         _breaker.ok()
     finally:
         telemetry.record(role, "chat_stream", (time.perf_counter() - t0) * 1000,
-                         usage=usage["u"], ok=produced)
+                         usage=usage["u"], ok=produced, model=mdl)
 
 
 def chat_with_tools(messages: list[dict], tools: list[dict], model: str | None = None,
@@ -224,43 +224,119 @@ def chat_with_tools(messages: list[dict], tools: list[dict], model: str | None =
                 model=mdl, messages=messages, tools=tools, tool_choice=tool_choice, **kwargs),
             desc="chat_with_tools")
     except QwenUnavailable:
-        telemetry.record(role, "tools", (time.perf_counter() - t0) * 1000, ok=False)
+        telemetry.record(role, "tools", (time.perf_counter() - t0) * 1000, ok=False, model=mdl)
         raise
-    telemetry.record(role, "tools", (time.perf_counter() - t0) * 1000, usage=getattr(resp, "usage", None))
+    telemetry.record(role, "tools", (time.perf_counter() - t0) * 1000, usage=getattr(resp, "usage", None), model=mdl)
     return resp.choices[0].message
 
 
-def chat_json(messages: list[dict], model: str | None = None, *, role: str = "chat", **kwargs) -> dict:
+def _parse_json(raw: str) -> dict:
+    """Parse a model JSON reply; if it wrapped the object in prose, recover the first balanced
+    braces instead of hard-failing (baseline robustness, unchanged)."""
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        start, end = raw.find("{"), raw.rfind("}")
+        if start != -1 and end > start:
+            return json.loads(raw[start:end + 1])
+        raise
+
+
+def _stream_json_thinking(mdl: str, messages: list[dict], use_schema: bool, schema, kwargs) -> tuple[str, str, object]:
+    """Stream a thinking-capable JSON completion. DashScope emits `reasoning_content` only while
+    streaming, so we accumulate reasoning + content deltas. Returns (content, reasoning, usage).
+    A transient failure → QwenUnavailable; a non-transient rejection (model can't do thinking/
+    json_schema) propagates so the caller degrades to the plain path."""
+    rf = ({"type": "json_schema", "json_schema": {"name": "lesson", "schema": schema, "strict": True}}
+          if use_schema else {"type": "json_object"})
+    _breaker.before()
+    try:
+        stream = _client().chat.completions.create(
+            model=mdl, messages=messages, response_format=rf, stream=True,
+            stream_options={"include_usage": True}, extra_body={"enable_thinking": True}, **kwargs)
+    except _RETRYABLE as e:
+        _breaker.fail()
+        raise QwenUnavailable(f"chat_json(thinking): {type(e).__name__}") from e
+    reasoning, content, usage = [], [], None
+    for chunk in stream:
+        if getattr(chunk, "usage", None):
+            usage = chunk.usage
+        if chunk.choices:
+            d = chunk.choices[0].delta
+            r = getattr(d, "reasoning_content", None)
+            if r:
+                reasoning.append(r)
+            if getattr(d, "content", None):
+                content.append(d.content)
+    _breaker.ok()
+    return "".join(content), "".join(reasoning), usage
+
+
+def chat_json(messages: list[dict], model: str | None = None, *, role: str = "chat",
+              schema: dict | None = None, capture_reasoning: bool = False, **kwargs) -> dict:
     """Chat-Completion, die garantiert JSON zurückgibt (Qwen role 1: lesson distillation).
 
-    Nutzt response_format=json_object. Robust: fällt der Provider auf Text zurück, wird
-    das erste balancierte JSON-Objekt aus der Antwort geparst statt hart zu werfen.
+    Baseline: response_format=json_object + balanced-brace-Fallback. Welle-1 (flag-gegatet):
+    * `schema` + config.RG_STRUCTURED_OUTPUT → strenges json_schema; lehnt der Provider ab,
+      Fallback auf json_object (der DISTILL-Pfad bricht NIE).
+    * `capture_reasoning` + config.RG_REASONING → thinking-Stream, `reasoning_content` in den
+      Telemetrie-Ring; scheitert das, Fallback auf den normalen Call. Rührt die Confidence nie an.
     """
     mdl = model or config.QWEN_MODEL
-    key = _cache_key("chat_json", mdl, {"msgs": messages, "kw": kwargs})
+    use_schema = schema is not None and config.RG_STRUCTURED_OUTPUT
+    use_reasoning = capture_reasoning and config.RG_REASONING
+    payload = {"msgs": messages, "kw": kwargs}   # OFF → key identisch zur Baseline
+    if use_schema:
+        payload["schema"] = schema
+    if use_reasoning:
+        payload["think"] = True
+    key = _cache_key("chat_json", mdl, payload)
     hit = _cache_get(key)
     if hit is not None:
-        telemetry.record(role, "chat_json", 0.0, cached=True)
+        telemetry.record(role, "chat_json", 0.0, cached=True, model=mdl)
         return hit
     t0 = time.perf_counter()
-    try:
+
+    def _complete() -> tuple[str, object]:
+        """(content, usage), degrading reasoning-stream → strict-schema → json_object, each
+        falling to the next on a non-transient rejection (transient → QwenUnavailable up)."""
+        if use_reasoning:
+            try:
+                content, reasoning, usage = _stream_json_thinking(mdl, messages, use_schema, schema, kwargs)
+                if reasoning:
+                    telemetry.record_reasoning(role, reasoning)
+                return content, usage
+            except QwenUnavailable:
+                raise
+            except Exception as e:
+                log.warning("reasoning stream failed (%s) — plain json fallback", type(e).__name__)
+        if use_schema:
+            try:
+                resp = _resilient(
+                    lambda: _client().chat.completions.create(
+                        model=mdl, messages=messages,
+                        response_format={"type": "json_schema",
+                                         "json_schema": {"name": "lesson", "schema": schema, "strict": True}},
+                        **kwargs),
+                    desc="chat_json")
+                return resp.choices[0].message.content, getattr(resp, "usage", None)
+            except QwenUnavailable:
+                raise
+            except Exception as e:
+                log.warning("json_schema rejected (%s) — json_object fallback", type(e).__name__)
         resp = _resilient(
             lambda: _client().chat.completions.create(
                 model=mdl, messages=messages, response_format={"type": "json_object"}, **kwargs),
             desc="chat_json")
-    except QwenUnavailable:
-        telemetry.record(role, "chat_json", (time.perf_counter() - t0) * 1000, ok=False)
-        raise
-    telemetry.record(role, "chat_json", (time.perf_counter() - t0) * 1000, usage=getattr(resp, "usage", None))
-    raw = resp.choices[0].message.content or "{}"
+        return resp.choices[0].message.content, getattr(resp, "usage", None)
+
     try:
-        out = json.loads(raw)
-    except json.JSONDecodeError:
-        start, end = raw.find("{"), raw.rfind("}")
-        if start != -1 and end > start:
-            out = json.loads(raw[start:end + 1])
-        else:
-            raise
+        content, usage = _complete()
+    except QwenUnavailable:
+        telemetry.record(role, "chat_json", (time.perf_counter() - t0) * 1000, ok=False, model=mdl)
+        raise
+    telemetry.record(role, "chat_json", (time.perf_counter() - t0) * 1000, usage=usage, model=mdl)
+    out = _parse_json(content or "{}")
     _cache_put(key, out)
     return out
 
@@ -274,15 +350,15 @@ def embed(texts: list[str], model: str | None = None, *, role: str = "recall") -
     key = _cache_key("embed", mdl, texts)
     hit = _cache_get(key)
     if hit is not None:
-        telemetry.record(role, "embed", 0.0, cached=True)
+        telemetry.record(role, "embed", 0.0, cached=True, model=mdl)
         return hit
     t0 = time.perf_counter()
     try:
         resp = _resilient(lambda: _client().embeddings.create(model=mdl, input=texts), desc="embed")
     except QwenUnavailable:
-        telemetry.record(role, "embed", (time.perf_counter() - t0) * 1000, ok=False)
+        telemetry.record(role, "embed", (time.perf_counter() - t0) * 1000, ok=False, model=mdl)
         raise
-    telemetry.record(role, "embed", (time.perf_counter() - t0) * 1000, usage=getattr(resp, "usage", None))
+    telemetry.record(role, "embed", (time.perf_counter() - t0) * 1000, usage=getattr(resp, "usage", None), model=mdl)
     items = sorted(resp.data, key=lambda d: d.index)  # Reihenfolge defensiv erzwingen
     return [item.embedding for item in items]
 

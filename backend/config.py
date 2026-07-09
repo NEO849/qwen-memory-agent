@@ -56,6 +56,31 @@ RG_TOOL_LOOP_MAX = int(os.environ.get("TOOL_LOOP_MAX", "3"))        # harte Ober
 # (heutiges Verhalten / naives Add-only) — der Live-Server + die Benchmark setzen es explizit.
 RG_MIN_CONFIDENCE = float(os.environ.get("RG_MIN_CONFIDENCE", "0.0"))
 
+# --- Welle 1: Qwen-Tiefe (default OFF, byte-identisch bei OFF) --------------------------------
+# (a) Strenges Structured-Output (json_schema) für DISTILL statt nur json_object; Fallback bleibt.
+RG_STRUCTURED_OUTPUT = os.environ.get("RG_STRUCTURED_OUTPUT", "0") == "1"
+# (b) Reasoning/Thinking-Capture: Qwen3-Thinking auf DISTILL/REVISE, reasoning_content → Ring → /reasoning.
+#     Nur additiv/observability; berührt NIE die Confidence (bleibt test-verdient). Braucht ein
+#     thinking-fähiges Modell + Streaming (DashScope) — deshalb staging-verify vor Deploy.
+RG_REASONING = os.environ.get("RG_REASONING_ENABLED", "0") == "1"
+# (c) Multi-Model-Routing: das richtige Modell je Rolle statt global QWEN_MODEL. OFF → jede Rolle
+#     bekommt QWEN_MODEL (byte-identisch). ON → schwere Judges qwen-max, billige Paraphrase qwen-turbo.
+RG_MODEL_ROUTING = os.environ.get("RG_MODEL_ROUTING", "0") == "1"
+RG_MODEL_DEFAULT = os.environ.get("RG_MODEL_DEFAULT", QWEN_MODEL)
+RG_MODEL_DISTILL = os.environ.get("RG_MODEL_DISTILL", "qwen-plus")
+RG_MODEL_JUDGE = os.environ.get("RG_MODEL_JUDGE", "qwen-max")      # obsolescence/contradiction judges
+RG_MODEL_PARAPHRASE = os.environ.get("RG_MODEL_PARAPHRASE", "qwen-turbo")  # cheap eval paraphrases
+
+
+def model_for(kind: str) -> str:
+    """Route a Qwen call to the right model for the job. Routing OFF (default) → QWEN_MODEL for
+    every kind (byte-identical to baseline). ON → per-role: heavy judges get qwen-max, cheap
+    paraphrase gets qwen-turbo, distill + everything else stay on qwen-plus."""
+    if not RG_MODEL_ROUTING:
+        return QWEN_MODEL
+    return {"distill": RG_MODEL_DISTILL, "judge": RG_MODEL_JUDGE,
+            "paraphrase": RG_MODEL_PARAPHRASE}.get(kind, RG_MODEL_DEFAULT)
+
 
 def assert_configured() -> None:
     """Früh und klar scheitern, wenn der Key fehlt — statt kryptischer 401 später."""

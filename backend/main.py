@@ -221,8 +221,17 @@ def health() -> dict:
 @app.get("/telemetry")
 def get_telemetry() -> dict:
     """Per-Qwen-role observability: call counts, p50/p95 latency and token cost for DISTILL /
-    RECALL / REVISE / SELF-CHECK / SYNTHESIZE / CHAT, plus recent correlated calls. No LLM call."""
+    RECALL / REVISE / SELF-CHECK / SYNTHESIZE / CHAT, plus the model routed to each role and
+    recent correlated calls. No LLM call."""
     return telemetry.snapshot()
+
+
+@app.get("/reasoning")
+def get_reasoning() -> dict:
+    """Captured model reasoning/thinking traces (Qwen3 thinking on DISTILL/REVISE), bounded and
+    correlation-tagged. Shows WHY the model distilled or retired a lesson. Observability only —
+    it never moves a lesson's Beta confidence, which stays earned from real pytest outcomes."""
+    return {"enabled": config.RG_REASONING, "traces": telemetry.reasoning_snapshot()}
 
 
 @app.get("/receipts/{lesson_id}")

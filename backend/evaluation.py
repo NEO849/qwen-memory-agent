@@ -42,7 +42,7 @@ def _paraphrase(lesson: dict) -> str:
     try:
         return qwen_client.chat(
             [{"role": "system", "content": _PARA_SYS}, {"role": "user", "content": user}],
-            temperature=0.4, role="self-check").strip().strip('"')
+            model=config.model_for("paraphrase"), temperature=0.4, role="self-check").strip().strip('"')
     except Exception:
         return lesson.get("trigger") or lesson["lesson"]
 

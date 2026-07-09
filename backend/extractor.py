@@ -13,9 +13,23 @@ Output schema (validated, never trusted raw):
 """
 from __future__ import annotations
 
-from . import qwen_client
+from . import config, qwen_client
 
 SEVERITIES = ("low", "med", "high")
+
+# Strict JSON Schema for the distilled lesson — enforced model-side when RG_STRUCTURED_OUTPUT is
+# on (graceful fallback to json_object otherwise). Mirrors the four validated keys + severity enum.
+LESSON_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "trigger": {"type": "string"},
+        "lesson": {"type": "string"},
+        "scope": {"type": "string"},
+        "severity": {"type": "string", "enum": ["low", "med", "high"]},
+    },
+    "required": ["trigger", "lesson", "scope", "severity"],
+    "additionalProperties": False,
+}
 
 _SYSTEM = (
     "You are a senior code-review memory. A test went red and a human fixed it. "
@@ -57,7 +71,9 @@ def extract_lesson(test_output: str, diff: str, model: str | None = None) -> dic
     )
     raw = qwen_client.chat_json(
         [{"role": "system", "content": _SYSTEM}, {"role": "user", "content": user}],
-        model=model,
+        model=model or config.model_for("distill"),
+        schema=LESSON_SCHEMA,
+        capture_reasoning=True,
         temperature=0,
         role="distill",
     )
