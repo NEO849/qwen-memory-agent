@@ -62,6 +62,11 @@ non-trivial logic? Tech stack sophistication via advanced patterns and thoughtfu
   (`RG_RECALL_BUDGET`) injects the critical lesson in **~37 % fewer tokens at identical recall**
   (`harness/context_window_bench.py`) — the literal realization of the track's "limited context
   windows", reproducible offline.
+- **External benchmark, not self-defined:** on **LongMemEval** (`knowledge-update`, ICLR 2025) our
+  memory lifts QA **5 % → 85 %** vs no-memory (33/39, Wilson95 [70, 93]; `harness/longmemeval_eval.py`).
+  Honestly scoped: oracle split (not leaderboard-comparable) and a recency-ablation arm showed a
+  **null** lift — reported as such. LongMemEval can't test our outcome-grounded gate (no executable
+  outcomes), which is exactly the benchmark gap the field itself documents as unfilled.
 - **Advanced patterns / non-trivial logic:** contradiction detection on teach, ExpeL-style
   crystallization, Hebbian associative wiring kept *out* of the confidence signal, and a
   self-tuning retrieval fuser adopted only after beating a **held-out** baseline.

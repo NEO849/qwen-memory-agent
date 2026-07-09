@@ -134,7 +134,12 @@ misses, breaking none** (McNemar +5/−0) — a naive memory lets an *unproven/w
 the earned one out of the retrieved set; the gate withholds it. Every card's confidence is
 auditable at **`/receipts/{id}`** — the append-only test outcomes that earned it.
 
-One more headline number, reproducible **offline with no API key** ([`docs/benchmark.md`](docs/benchmark.md)):
+And on an **external, recognised benchmark** — not a self-built one — our memory lifts
+**LongMemEval `knowledge-update` QA from 5 % (no memory) to 85 %** (33/39, Wilson95 [70, 93];
+`harness/longmemeval_eval.py`). Honest scope: oracle split (not leaderboard-comparable), and a
+recency-ablation arm showed **no** lift — reported as a null, not dressed up ([`docs/benchmark.md`](docs/benchmark.md)).
+
+One more headline number, reproducible **offline with no API key**:
 **value-density packing injects the critical lesson in ~37 % fewer tokens at identical recall**, and
 tombstoning a wrong lesson cuts harmful-injection **100 % → 0 %** (`harness/context_window_bench.py`).
 *(A vectorized-cosine constant-factor speedup is documented in the benchmark too — engineering hygiene, not headlined as innovation.)*
@@ -145,6 +150,30 @@ tombstoning a wrong lesson cuts harmful-injection **100 % → 0 %** (`harness/co
 > Full rubric mapping + limits: [`docs/JUDGING.md`](docs/JUDGING.md).
 
 ---
+
+## How it compares — where we're different, honestly
+
+Agent-memory in 2026 is a crowded field (Mem0, Zep/Graphiti, Letta/MemGPT). Almost all of them
+ground *what to trust* in **recency** ("most recent wins") or an **LLM's own judgement** — and the
+field openly distrusts the latter. Regress-Guard grounds it in **verifiable execution outcomes**
+(real `pytest` pass/fail → a Beta posterior). That is the one row where only we are green — and we're
+honest about the rows where the incumbents beat us.
+
+| | **Regress-Guard** | Mem0 | Zep/Graphiti | Letta/MemGPT |
+|---|---|---|---|---|
+| Trust grounded in | **execution outcome (real tests)** | recency / salience | recency + graph | recency / self-edit |
+| Forgets what's *wrong* (not just old) | **yes — demote/tombstone on a real fail** | TTL / eviction | invalidate by recency | self-edit |
+| Token-budget-aware recall | yes (value-density) | yes | yes | via context mgmt |
+| Temporal invalidation | supersede / tombstone | partial | **bitemporal graph** | partial |
+| Standard-benchmark breadth | LongMemEval subset (honest) | **LoCoMo + LongMemEval (full)** | **LongMemEval (full)** | DMR |
+| Scale | single-process (honest cap) | managed | **graph, scalable** | managed |
+| Agent integration | MCP (drop-in, any agent) | SDK / API | SDK | framework |
+
+The incumbents win on **benchmark breadth** and **scale** — we say so. But none of them earns a
+memory's confidence from *ground-truth execution*, and the field's own leaders admit **no public
+benchmark yet scores outcome-grounded forgetting, memory writes, or token-budgeted recall**
+([Mem0, *State of AI Agent Memory 2026*](https://mem0.ai/blog/ai-memory-benchmarks-in-2026)) — the
+exact gap our thesis fills.
 
 ## Verify it in 60 seconds
 
