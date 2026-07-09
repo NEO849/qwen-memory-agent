@@ -177,6 +177,39 @@ def chat(messages: list[dict], model: str | None = None, *, role: str = "chat", 
     return out
 
 
+def chat_stream(messages: list[dict], model: str | None = None, *, role: str = "chat", **kwargs):
+    """Stream a chat completion token-by-token (Qwen streaming). Yields content deltas (str).
+    Single attempt (a partial stream can't be safely retried); if the connection fails BEFORE any
+    token, raises QwenUnavailable so the caller can fall back to a non-streamed answer. Telemetry
+    (latency + token usage from the final chunk) is recorded when the stream ends."""
+    mdl = model or config.QWEN_MODEL
+    t0 = time.perf_counter()
+    usage = {"u": None}
+    produced = False
+    _breaker.before()
+    try:
+        stream = _client().chat.completions.create(
+            model=mdl, messages=messages, stream=True,
+            stream_options={"include_usage": True}, **kwargs)
+    except _RETRYABLE as e:
+        _breaker.fail()
+        telemetry.record(role, "chat_stream", (time.perf_counter() - t0) * 1000, ok=False)
+        raise QwenUnavailable(f"chat_stream: {type(e).__name__}") from e
+    try:
+        for chunk in stream:
+            if getattr(chunk, "usage", None):
+                usage["u"] = chunk.usage
+            if chunk.choices:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    produced = True
+                    yield delta
+        _breaker.ok()
+    finally:
+        telemetry.record(role, "chat_stream", (time.perf_counter() - t0) * 1000,
+                         usage=usage["u"], ok=produced)
+
+
 def chat_with_tools(messages: list[dict], tools: list[dict], model: str | None = None,
                     tool_choice: str = "auto", *, role: str = "chat", **kwargs):
     """One chat completion with Qwen function/tool-calling (OpenAI-compatible). Returns the raw

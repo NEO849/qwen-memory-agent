@@ -513,3 +513,8 @@ button:focus-visible, .vbtn:focus-visible, input:focus-visible, a:focus-visible,
 .arm-code .tok-lose { color: var(--red);   font-weight: 700; background: rgba(248,113,113,.14); border-radius: var(--r-xs); padding: 0 4px; }
 
 @media (max-width: 900px) { .arm-code { white-space: pre-wrap; } }
+
+/* streaming caret — the answer types itself while the globe lights up */
+.caret{display:inline-block;width:.5ch;height:1em;vertical-align:-.15em;margin-left:1px;
+  background:var(--memory-violet,#B9A6E8);border-radius:1px;animation:rg-blink 1s steps(1) infinite}
+@keyframes rg-blink{50%{opacity:0}}

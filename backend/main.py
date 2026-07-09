@@ -343,60 +343,99 @@ _RECALL_TOOL = [{
 }]
 
 
-@app.post("/chat")
-def chat(body: ChatIn) -> dict:
-    """Main Q&A with Qwen FUNCTION-CALLING: the model itself decides — via the `recall_memory`
-    tool — whether to consult its long-term memory. We run the real recall, sanitize the lessons
-    (poisoned-memory defense) and feed them back as the tool result, then Qwen answers. Fails open
-    to a direct pre-injected recall if tool-calling is unavailable. Returns the reply + the recalled
-    lesson ids (deck / globe highlight) + whether the tool was used."""
-    def _do_recall(q: str) -> tuple[str, dict]:
-        lessons = memory.recall(q, k=body.k, path=config.LEDGER_PATH)["lessons"]
+def _chat_prepare(message: str, k: int):
+    """Shared recall/function-calling prep for /chat and /chat/stream. Returns
+    (messages_for_final_answer | None, direct_reply | None, meta, used_tool, tool_query).
+    When Qwen answered directly (no tool), `direct_reply` carries it and `messages` is None;
+    otherwise `messages` is ready for the final (streamable) answer completion."""
+    def _do_recall(q: str):
+        lessons = memory.recall(q, k=k, path=config.LEDGER_PATH)["lessons"]
         meta = {"recalled": [l["id"] for l in lessons],
                 "sanitized_total": sum(memory.directive_count(l["lesson"]) for l in lessons),
                 "inhibited": [l["id"] for l in memory.inhibitions(lessons)]}
         return (memory.render_injection(lessons) or "(no relevant lessons found in memory)"), meta
 
     meta = {"recalled": [], "sanitized_total": 0, "inhibited": []}
-    used_tool = False
-    tool_query = None
     try:
         messages = [{"role": "system", "content": _CHAT_PERSONA},
-                    {"role": "user", "content": body.message}]
+                    {"role": "user", "content": message}]
         msg = qwen_client.chat_with_tools(messages, _RECALL_TOOL, temperature=0.3)
         calls = getattr(msg, "tool_calls", None)
-        if calls:
-            used_tool = True
-            messages.append({"role": "assistant", "content": msg.content or "",
-                             "tool_calls": [{"id": c.id, "type": "function",
-                                             "function": {"name": c.function.name,
-                                                          "arguments": c.function.arguments}} for c in calls]})
-            for c in calls:
-                if c.function.name == "recall_memory":
-                    try:
-                        tool_query = (json.loads(c.function.arguments or "{}") or {}).get("query") or body.message
-                    except Exception:
-                        tool_query = body.message
-                    block, meta = _do_recall(tool_query)
-                else:
-                    block = "(unknown tool)"
-                messages.append({"role": "tool", "tool_call_id": c.id, "content": block})
-            reply = qwen_client.chat(messages, temperature=0.3)
-        else:
-            reply = msg.content or ""
+        if not calls:
+            return None, (msg.content or ""), meta, False, None
+        tool_query = None
+        messages.append({"role": "assistant", "content": msg.content or "",
+                         "tool_calls": [{"id": c.id, "type": "function",
+                                         "function": {"name": c.function.name,
+                                                      "arguments": c.function.arguments}} for c in calls]})
+        for c in calls:
+            if c.function.name == "recall_memory":
+                try:
+                    tool_query = (json.loads(c.function.arguments or "{}") or {}).get("query") or message
+                except Exception:
+                    tool_query = message
+                block, meta = _do_recall(tool_query)
+            else:
+                block = "(unknown tool)"
+            messages.append({"role": "tool", "tool_call_id": c.id, "content": block})
+        return messages, None, meta, True, tool_query
     except Exception:
-        # fail-open: the original tool-free path — pre-inject recall on the raw message
-        block, meta = _do_recall(body.message)
+        # fail-open: the tool-free path — pre-inject recall on the raw message
+        block, meta = _do_recall(message)
         sysmsg = _CHAT_PERSONA + ("\n\n" + block if meta["recalled"] else "")
+        return ([{"role": "system", "content": sysmsg}, {"role": "user", "content": message}],
+                None, meta, False, None)
+
+
+@app.post("/chat")
+def chat(body: ChatIn) -> dict:
+    """Main Q&A with Qwen FUNCTION-CALLING: the model itself decides — via the `recall_memory`
+    tool — whether to consult its long-term memory. We run the real recall, sanitize the lessons
+    (poisoned-memory defense) and feed them back as the tool result, then Qwen answers. Fails open
+    to a direct pre-injected recall if tool-calling is unavailable."""
+    messages, direct, meta, used_tool, tool_query = _chat_prepare(body.message, body.k)
+    if direct is not None:
+        reply = direct
+    else:
         try:
-            reply = qwen_client.chat([{"role": "system", "content": sysmsg},
-                                      {"role": "user", "content": body.message}], temperature=0.3)
+            reply = qwen_client.chat(messages, temperature=0.3)
         except Exception:
             reply = "I couldn't reach the model just now — please try again in a moment."
-
     return {"reply": reply, "recalled": meta["recalled"], "injected": bool(meta["recalled"]),
             "sanitized_total": meta["sanitized_total"], "inhibited": meta["inhibited"],
             "used_tool": used_tool, "tool_query": tool_query}
+
+
+@app.post("/chat/stream")
+def chat_stream(body: ChatIn):
+    """Streaming twin of /chat (Qwen token streaming) — same recall/function-calling prep, the
+    final answer is streamed token-by-token over SSE. Gated by STREAMING_ENABLED so the flag-OFF
+    build behaves exactly like today (the frontend falls back to /chat on 404)."""
+    if not config.RG_STREAMING:
+        raise HTTPException(status_code=404, detail="streaming not enabled")
+    messages, direct, meta, used_tool, tool_query = _chat_prepare(body.message, body.k)
+
+    def sse():
+        head = {"recalled": meta["recalled"], "injected": bool(meta["recalled"]),
+                "sanitized_total": meta["sanitized_total"], "inhibited": meta["inhibited"],
+                "used_tool": used_tool, "tool_query": tool_query}
+        yield f"event: meta\ndata: {json.dumps(head)}\n\n"
+        if direct is not None:
+            yield f"data: {json.dumps({'delta': direct})}\n\n"
+        else:
+            try:
+                for delta in qwen_client.chat_stream(messages, temperature=0.3, role="chat"):
+                    yield f"data: {json.dumps({'delta': delta})}\n\n"
+            except Exception:
+                try:  # graceful: fall back to a single non-streamed answer
+                    reply = qwen_client.chat(messages, temperature=0.3)
+                except Exception:
+                    reply = "I couldn't reach the model just now — please try again in a moment."
+                yield f"data: {json.dumps({'delta': reply})}\n\n"
+        yield "event: done\ndata: {}\n\n"
+
+    return StreamingResponse(sse(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 # --------------------------------------------------------------- agent loop ---

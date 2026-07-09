@@ -296,9 +296,42 @@ function bubble(who, text) { const intro = $('#intro'); if (intro) intro.remove(
 async function ask(q) {
   $('#askSend').disabled = true; bubble('user', q);
   const t = bubble('agent', '…');
-  try { const r = await api('/chat', json({ message: q })); t.innerHTML = `<div class="who">agent</div>${escapeHtml(r.reply)}`; showRecalled(r.recalled, r.sanitized_total, r.inhibited, r.used_tool, r.tool_query); }
-  catch { t.innerHTML = `<div class="who">agent</div>(error contacting agent)`; }
+  try {
+    const streamed = await askStream(q, t);       // Qwen token streaming (if enabled)
+    if (!streamed) await askOnce(q, t);            // fall back to /chat (flag off / no stream)
+  } catch { try { await askOnce(q, t); } catch { t.innerHTML = `<div class="who">agent</div>(error contacting agent)`; } }
   $('#askSend').disabled = false;
+}
+async function askOnce(q, t) {
+  const r = await api('/chat', json({ message: q }));
+  t.innerHTML = `<div class="who">agent</div>${escapeHtml(r.reply)}`;
+  showRecalled(r.recalled, r.sanitized_total, r.inhibited, r.used_tool, r.tool_query);
+}
+// Stream the answer token-by-token over SSE. The `meta` event lands first, so the globe/deck
+// light up with the recalled lessons WHILE the answer is still typing — memory + use, live.
+async function askStream(q, t) {
+  let res;
+  try { res = await fetch('/chat/stream', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: q }) }); }
+  catch { return false; }
+  if (!res.ok || !res.body) return false;          // 404 when STREAMING_ENABLED is off -> fallback
+  const reader = res.body.getReader(); const dec = new TextDecoder();
+  let buf = '', text = '';
+  const paint = (caret) => { t.innerHTML = `<div class="who">agent</div>${escapeHtml(text)}${caret ? '<span class="caret"></span>' : ''}`; $('#thread').scrollTop = $('#thread').scrollHeight; };
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const parts = buf.split('\n\n'); buf = parts.pop();
+    for (const ev of parts) {
+      const dataLine = ev.split('\n').find(l => l.startsWith('data:'));
+      if (!dataLine) continue;
+      let data; try { data = JSON.parse(dataLine.slice(5).trim()); } catch { continue; }
+      if (ev.startsWith('event: meta')) showRecalled(data.recalled, data.sanitized_total, data.inhibited, data.used_tool, data.tool_query);
+      else if (data.delta) { text += data.delta; paint(true); }
+    }
+  }
+  paint(false);
+  return true;
 }
 function showRecalled(ids, sanitizedTotal = 0, inhibited = [], usedTool = false, toolQuery = '') {
   const strip = $('#recall');
