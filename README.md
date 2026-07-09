@@ -31,7 +31,8 @@
   <a href="#architecture">Architecture</a> &nbsp;·&nbsp;
   <a href="#quickstart">Quickstart</a> &nbsp;·&nbsp;
   <a href="#use-as-an-mcp-tool">MCP&nbsp;tool</a> &nbsp;·&nbsp;
-  <a href="docs/DEMO_SCRIPT_v3.md">Demo&nbsp;script</a>
+  <a href="docs/benchmark.md">Benchmark</a> &nbsp;·&nbsp;
+  <a href="docs/JUDGING.md">Rubric&nbsp;map</a>
   </b>
 </p>
 
@@ -109,6 +110,34 @@ the knowledge *must* come from memory. Three honest measurements, not one number
 python -m harness.ab_runner --k 5 --distill-samples 10 --verbose   # floor / ceiling / distillation
 python -m harness.generalization --k 3 --distill-samples 6         # all 3 bug classes
 ```
+
+---
+
+## Does the memory actually *help*? — a 3-arm honest benchmark
+
+The floor→ceiling proof shows memory *can* help, but a skeptic reads it as tautological. So we
+isolate our real innovation — **gating injection on confidence earned from real tests** — against
+the obvious baseline, on bug variants the memory never stored verbatim. Same retrieval, same
+model, same pinned seeds; the arms differ in **one scalar** (the confidence threshold).
+Reproduce: **`./bench.sh`** (details + honesty notes: [`docs/benchmark.md`](docs/benchmark.md)).
+
+```text
+fix-pass@1 (95% Wilson CI) — N=50 (5 classes × {seen,unseen} × 5 seeds), qwen-plus
+                         SEEN                 UNSEEN
+  A · no memory          0.60 [0.41,0.77]     0.60 [0.41,0.77]
+  B · naive add-only     0.88 [0.70,0.96]     0.60 [0.41,0.77]
+  C · Regress-Guard      1.00 [0.87,1.00]     0.80 [0.61,0.91]   ← earned-gating wins
+```
+
+**Regress-Guard strictly beats both.** On unseen variants it fixes **5 cases naive add-only
+misses, breaking none** (McNemar +5/−0) — a naive memory lets an *unproven/wrong* lesson crowd
+the earned one out of the retrieved set; the gate withholds it. Every card's confidence is
+auditable at **`/receipts/{id}`** — the append-only test outcomes that earned it.
+
+> **What we do NOT claim.** N is small (McNemar p≈0.0625 — directional, not yet p<0.05); we say
+> so. `qwen3-rerank` is built but **off** — it shows no lift at our memory size, and we report
+> that null rather than feature it. The 5/5 is the injection *ceiling*, not a guaranteed default.
+> Full rubric mapping + limits: [`docs/JUDGING.md`](docs/JUDGING.md).
 
 ---
 
