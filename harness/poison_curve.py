@@ -106,7 +106,7 @@ MULTICLASS = ["email_normalize", "money_rounding", "mutable_default", "paginatio
 
 
 def run_multiclass(*, trials: int = 6, path: str) -> dict:
-    """Robustness: the SAME demotion+tombstone mechanism across 5 distinct bug classes, not just
+    """Robustness: the SAME demotion+tombstone mechanism across 8 distinct bug classes, not just
     money. Each class injects its plausible-but-wrong fix (floor_solution) and lets real pytest
     refute it. Deterministic, offline, isolated ledger."""
     ledger.init_db(path)
