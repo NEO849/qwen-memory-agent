@@ -4,7 +4,7 @@ from harness import poison_curve as pc
 
 def test_demotes_below_gate_and_tombstones(tmp_path, monkeypatch):
     # ceiling code contains "total_cents" → pass; floor code does not → fail. No real pytest.
-    monkeypatch.setattr(pc, "_real_pass", lambda code: "total_cents" in code)
+    monkeypatch.setattr(pc, "_real_pass", lambda code, pdir=None: "total_cents" in code)
     r = pc.run(trials=6, path=str(tmp_path / "l.sqlite"))
 
     assert r["anchor"] == {"ceiling_passes": True, "floor_passes": False}

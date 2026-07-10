@@ -1,0 +1,41 @@
+{
+  "demo": "multi-class poison-demotion \u2014 same forgetting mechanism across 5 bug classes",
+  "gate": 0.62,
+  "trials": 6,
+  "classes": 5,
+  "crossed_gate_after_1_fail": 5,
+  "tombstoned": 5,
+  "results": [
+    {
+      "class": "email_normalize",
+      "gate_cross_trial": 1,
+      "tombstoned": true,
+      "final_confidence": 0.3
+    },
+    {
+      "class": "money_rounding",
+      "gate_cross_trial": 1,
+      "tombstoned": true,
+      "final_confidence": 0.3
+    },
+    {
+      "class": "mutable_default",
+      "gate_cross_trial": 1,
+      "tombstoned": true,
+      "final_confidence": 0.3
+    },
+    {
+      "class": "pagination_leak",
+      "gate_cross_trial": 1,
+      "tombstoned": true,
+      "final_confidence": 0.3
+    },
+    {
+      "class": "sql_param",
+      "gate_cross_trial": 1,
+      "tombstoned": true,
+      "final_confidence": 0.3
+    }
+  ],
+  "honesty": "Each class's plausible-but-wrong fix (floor_solution) is refuted by real pytest (deterministic \u2014 floor FAILS / ceiling PASSES its hidden test, verified in-repo). Shows demotion+tombstone is not money_rounding-specific. Offline, no Qwen, isolated ledger."
+}

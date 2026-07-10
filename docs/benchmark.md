@@ -153,6 +153,12 @@ anchor asserts ceiling=GREEN / floor=RED before the curve is trusted. Honest sco
 benchmark or independent sampling); a single real failure only *de-injects* a lesson, tombstoning is
 the terminal case after sustained refutation.
 
+**Not money-specific.** The same demotion+tombstone fires across **all 5 bug classes**
+(`python -m harness.poison_curve --multiclass`, `poison_multiclass.json`): each class's
+plausible-but-wrong fix drops below the gate after its **first** real failure and is tombstoned
+after 0/6 — email-normalisation, mutable-default, pagination-leak and SQL-parametrisation, not just
+rounding. The forgetting is a property of the mechanism, not of one example.
+
 ## Does the confidence number MEAN anything? — a small non-circular transfer test
 
 A confidence is only worth trusting if it holds up out-of-sample. We ground a lesson's confidence on
