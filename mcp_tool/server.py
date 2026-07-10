@@ -15,6 +15,12 @@ Backing store — zero local setup by default:
   * Set REGRESS_GUARD_LOCAL=1 to use a local ledger + your own Qwen key instead — then it's your own
     memory and both tools are fully open.
 
+Security: recalled lessons are treated as UNTRUSTED data — injection/role/override directives are
+neutralized and the block is wrapped in <<<UNTRUSTED_MEMORY>>> markers before it reaches your agent
+(see _safety.py), so a poisoned memory can't hijack the consuming agent. Writes to the shared cloud
+are token-gated; the backend is http-only, so use REGRESS_GUARD_LOCAL or your own HTTPS instance for
+sensitive data. Every tool call fails open — a backend error never crashes the calling agent.
+
 Run (stdio):  python -m mcp_tool.server      · Wire it in via .mcp.json (repo root).
 """
 from __future__ import annotations
@@ -26,6 +32,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from mcp.server.fastmcp import FastMCP  # noqa: E402
+from mcp_tool._safety import render_lessons  # noqa: E402  — sanitizes untrusted recalled memory
 
 RG_URL = os.environ.get("REGRESS_GUARD_URL", "http://47.84.227.215").rstrip("/")
 RG_TOKEN = os.environ.get("REGRESS_GUARD_TOKEN", "")
@@ -38,20 +45,10 @@ def _headers() -> dict:
     return {"x-demo-token": RG_TOKEN} if RG_TOKEN else {}
 
 
-def _render(lessons: list[dict]) -> str:
-    """A compact block the agent can paste into its own context. Anti-patterns render as
-    active inhibitions; everything else as guidance."""
-    if not lessons:
-        return "(no lessons recalled — nothing to avoid here yet)"
-    lines = ["Recalled coding conventions from Regress-Guard — follow these:"]
-    for l in lessons:
-        rule = str(l.get("lesson", "")).strip()
-        scope = l.get("scope") or "general"
-        if l.get("kind") == "anti_pattern":
-            lines.append(f"  ⛔ DO NOT (known past regression, {l.get('severity', 'high')}): {rule} (scope: {scope})")
-        else:
-            lines.append(f"  - [{l.get('severity', 'med')}] {rule} (scope: {scope})")
-    return "\n".join(lines)
+# Recalled lessons are UNTRUSTED — other agents/humans write them. `_render` neutralizes injection
+# directives and wraps the lessons in untrusted-data markers before they ever reach the consuming
+# agent (defense-in-depth at the injection point, independent of the backend). See _safety.py.
+_render = render_lessons
 
 
 @app.tool()
@@ -61,14 +58,18 @@ def recall(context: str, k: int = 5) -> dict:
     lessons to follow (each with lesson, scope, severity, confidence) plus a ready-to-paste block."""
     if USE_HTTP:
         import httpx
-        r = httpx.get(f"{RG_URL}/recall", params={"q": context, "k": k}, headers=_headers(), timeout=30.0)
-        r.raise_for_status()
-        lessons = r.json().get("lessons", [])
+        try:
+            r = httpx.get(f"{RG_URL}/recall", params={"q": context, "k": k}, headers=_headers(), timeout=30.0)
+            r.raise_for_status()
+            lessons = r.json().get("lessons", [])
+        except httpx.HTTPError as e:                       # fail open — never crash the caller's agent
+            return {"lessons": [], "inject": "(memory backend unreachable — proceeding without recall)",
+                    "error": str(e), "source": RG_URL}
         return {"lessons": lessons, "inject": _render(lessons), "source": RG_URL}
     from backend import config, ledger, memory
     ledger.init_db(config.LEDGER_PATH)
     out = memory.recall(context, k=k, path=config.LEDGER_PATH)
-    return {"lessons": out["lessons"], "inject": memory.render_injection(out["lessons"]), "source": "local"}
+    return {"lessons": out["lessons"], "inject": _render(out["lessons"]), "source": "local"}
 
 
 @app.tool()
@@ -77,10 +78,19 @@ def record(test_output: str, diff: str) -> dict:
     `diff` = the fix you applied. The lesson is distilled and stored so it is recalled next time."""
     if USE_HTTP:
         import httpx
-        r = httpx.post(f"{RG_URL}/ingest", json={"test_output": test_output[:20000], "diff": diff[:20000]},
-                       headers=_headers(), timeout=45.0)
-        r.raise_for_status()
-        return r.json()
+        try:
+            r = httpx.post(f"{RG_URL}/ingest", json={"test_output": test_output[:20000], "diff": diff[:20000]},
+                           headers=_headers(), timeout=45.0)
+            r.raise_for_status()
+            return r.json()
+        except httpx.HTTPStatusError as e:                 # friendly, not a raw crash
+            if e.response.status_code in (401, 403):
+                return {"recorded": False, "error": "writing to the SHARED cloud memory needs an operator "
+                        "token — set REGRESS_GUARD_TOKEN in this MCP server's env, or set "
+                        "REGRESS_GUARD_LOCAL=1 to record to your own ledger (recall stays open)."}
+            return {"recorded": False, "error": f"memory backend returned HTTP {e.response.status_code}"}
+        except httpx.HTTPError as e:
+            return {"recorded": False, "error": f"cannot reach memory backend: {e}"}
     from backend import config, ledger, memory
     ledger.init_db(config.LEDGER_PATH)
     return memory.ingest(test_output, diff, path=config.LEDGER_PATH)

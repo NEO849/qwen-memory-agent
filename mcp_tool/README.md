@@ -40,6 +40,16 @@ your own ledger (where both tools are open).
 - **Fully local:** set `REGRESS_GUARD_LOCAL=1` to use your own ledger (`data/ledger.sqlite`) + your own `DASHSCOPE_API_KEY` instead of the cloud.
 - **Private deployment:** point `REGRESS_GUARD_URL` at your own instance and set `REGRESS_GUARD_TOKEN` if you enabled the gate.
 
+## Security (why this is safe to point at a shared memory)
+- **Untrusted by default.** Recalled lessons come from a store other agents/humans write to, so the
+  tool **neutralizes** injection/role/override directives and wraps them in `<<<UNTRUSTED_MEMORY>>>`
+  markers (`_safety.py`, unit-tested) **before** they reach your agent — a poisoned memory can't hijack
+  Claude Code / Cursor. Same deterministic defense the backend uses for chat, applied at the tool.
+- **Writes are gated.** On the shared cloud, `record` needs `REGRESS_GUARD_TOKEN`; `recall` is open.
+- **Fails open.** A 403 / unreachable backend returns a friendly message — it never crashes your agent.
+- **Transport note:** the public backend is http-only; for sensitive lessons self-host over HTTPS
+  (`REGRESS_GUARD_LOCAL=1` or your own TLS instance) so the token/lessons aren't sent in cleartext.
+
 ## Verified working
 ```
 recall("implementing get_orders …")  → #1 "Never call all_orders() and filter in Python — scope by tenant_id …"

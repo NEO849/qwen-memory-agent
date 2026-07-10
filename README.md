@@ -13,7 +13,7 @@
 
 <p align="center">
   <a href="http://regressguard.duckdns.org"><img src="https://img.shields.io/badge/live_demo-online-059669?style=for-the-badge&labelColor=0b0f14" alt="Live demo"></a>
-  <img src="https://img.shields.io/badge/tests-120%2F120_green-059669?style=for-the-badge&labelColor=0b0f14" alt="120/120 tests">
+  <img src="https://img.shields.io/badge/tests-125%2F125_green-059669?style=for-the-badge&labelColor=0b0f14" alt="125/125 tests">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-059669?style=for-the-badge&labelColor=0b0f14" alt="MIT license"></a>
 </p>
 
@@ -237,7 +237,7 @@ One clinical surface — a **living-memory** layout: the **editable memory on th
 
 ## Powered by Qwen Cloud on Alibaba Cloud
 
-Five distinct Qwen roles across **four Qwen models** (`qwen-max` · `qwen-plus` · `qwen-turbo` · `text-embedding-v4`) and three Qwen Cloud APIs. The **live deployment routes each role to the model that measured best for it** (`RG_MODEL_ROUTING` on, `QWEN_MODEL=qwen-max`); the flag-off reproducible baseline — the 120 tests and the A/B — collapses every role to a single `qwen-plus`, byte-identical. **Alibaba Cloud deploy proof (code):** the DashScope / Qwen Cloud client [`backend/qwen_client.py`](backend/qwen_client.py) · deployment notes [`deploy/README.md`](deploy/README.md).
+Five distinct Qwen roles across **four Qwen models** (`qwen-max` · `qwen-plus` · `qwen-turbo` · `text-embedding-v4`) and three Qwen Cloud APIs. The **live deployment routes each role to the model that measured best for it** (`RG_MODEL_ROUTING` on, `QWEN_MODEL=qwen-max`); the flag-off reproducible baseline — the 125 tests and the A/B — collapses every role to a single `qwen-plus`, byte-identical. **Alibaba Cloud deploy proof (code):** the DashScope / Qwen Cloud client [`backend/qwen_client.py`](backend/qwen_client.py) · deployment notes [`deploy/README.md`](deploy/README.md).
 
 | # | Role | Model | Where |
 |---|------|-------|-------|
@@ -300,7 +300,7 @@ uvicorn backend.main:app --workers 1   # then open http://localhost:8000
 ```
 
 > **`--workers 1` is required** — the live-update fan-out (SSE) is in-process.
-> Tests: `pytest` (offline, 120/120) · `pytest -m live` (hits Qwen).
+> Tests: `pytest` (offline, 125/125) · `pytest -m live` (hits Qwen).
 > Reproduce the two efficiency numbers offline (no API key): `python -m harness.context_window_bench` · `python -m harness.latency_bench`.
 
 ---
