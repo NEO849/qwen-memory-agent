@@ -57,14 +57,17 @@ pip install -e . && regress-guard doctor      # ✅ deps · hosted cloud reachab
 ```
 
 ```jsonc
-// .mcp.json — talks to our hosted Alibaba Cloud backend, so no API key or database of your own
+// .mcp.json — recall runs against our hosted Alibaba Cloud backend with zero setup (no key/DB);
+// to record to the shared cloud add REGRESS_GUARD_TOKEN, or set REGRESS_GUARD_LOCAL=1 for your own instance
 { "mcpServers": { "regress-guard": {
     "command": "regress-guard", "args": ["mcp"],
     "env": { "REGRESS_GUARD_URL": "http://regressguard.duckdns.org" } } } }
 ```
 
 Works with **any MCP-speaking agent** — Claude Code, Cursor, Qwen Code. Two tools: `recall`
-(lessons to follow before writing code) and `record` (learn from a fixed test).
+(lessons to follow before writing code) and `record` (learn from a fixed test). Against the shared
+hosted cloud `recall` is open and `record` needs the operator token; self-host (`REGRESS_GUARD_LOCAL=1`)
+and both are open.
 
 ## The problem
 
@@ -306,9 +309,11 @@ uvicorn backend.main:app --workers 1   # then open http://localhost:8000
 
 `mcp_tool/server.py` exposes `recall(context)` and `record(test_output, diff)` over MCP. By default it
 talks to the **deployed memory on Alibaba Cloud over HTTP** — so any coding agent (Claude Code, Qwen
-Code, Cursor) gains a shared, outcome-grounded memory with **zero local setup** (no ledger, no API key;
-the cloud does the distilling + retrieval). An agent calls `recall` before writing code and `record`
-after fixing a red test, so the same bug can't come back in a later session.
+Code, Cursor) gains a shared, outcome-grounded memory with **zero local setup** for `recall` (no ledger,
+no API key; the cloud does the distilling + retrieval). Because that hosted memory is **shared**, `record`
+writes need an operator token — or run your own instance (`REGRESS_GUARD_LOCAL=1`), where both are open.
+An agent calls `recall` before writing code and `record` after fixing a red test, so the same bug can't
+come back in a later session.
 
 **See it carry a fix across two sessions** — a recordable terminal proof against the *live* cloud memory:
 

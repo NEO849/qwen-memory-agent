@@ -10,8 +10,10 @@ Two tools:
 Backing store — zero local setup by default:
   * If REGRESS_GUARD_URL is set (default: the public Alibaba Cloud deployment), the tools talk to
     the DEPLOYED memory over HTTP — no local ledger, no Qwen key needed; the cloud does the
-    distilling + hybrid retrieval. Any agent, anywhere, shares one memory.
-  * Set REGRESS_GUARD_LOCAL=1 to use a local ledger + your own Qwen key instead.
+    distilling + hybrid retrieval. `recall` is open; because that cloud memory is SHARED, `record`
+    (writes) needs an operator token (set REGRESS_GUARD_TOKEN) so it can't be poisoned by strangers.
+  * Set REGRESS_GUARD_LOCAL=1 to use a local ledger + your own Qwen key instead — then it's your own
+    memory and both tools are fully open.
 
 Run (stdio):  python -m mcp_tool.server      · Wire it in via .mcp.json (repo root).
 """

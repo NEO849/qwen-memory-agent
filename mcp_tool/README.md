@@ -2,8 +2,10 @@
 
 Regress-Guard isn't just a demo — it's a real **MCP tool**. Wire it into a coding agent
 (Claude Code, Qwen Code, Cursor, …) and that agent gains a shared memory, **hosted on Alibaba
-Cloud**, that it recalls before writing code and updates after fixing a failing test. No local
-setup, no API key — the cloud does the distilling and retrieval.
+Cloud**, that it recalls before writing code and updates after fixing a failing test. Against the
+hosted cloud, `recall` needs **no local setup and no API key**; because that memory is **shared**,
+`record` (writes) needs an operator token — or run your own instance (`REGRESS_GUARD_LOCAL=1`),
+where both tools are open. Either way the cloud does the distilling and retrieval.
 
 ## Two tools the agent gets
 | Tool | When the agent calls it | What it does |
@@ -29,7 +31,9 @@ setup, no API key — the cloud does the distilling and retrieval.
 3. Open Claude Code in this repo — the `recall` and `record` tools appear automatically.
 
 That's it. Ask your agent to *"recall lessons before implementing get_orders"* and it will pull
-the shared cloud memory; after it fixes a failing test, ask it to *"record that lesson"*.
+the shared cloud memory; after it fixes a failing test, ask it to *"record that lesson"* — writes to
+the **shared** cloud need `REGRESS_GUARD_TOKEN` in the env, or set `REGRESS_GUARD_LOCAL=1` to keep
+your own ledger (where both tools are open).
 
 ## Options
 - **Friendly URL:** set `REGRESS_GUARD_URL=http://regressguard.duckdns.org` (works from any machine with normal DNS).
@@ -42,4 +46,4 @@ recall("implementing get_orders …")  → #1 "Never call all_orders() and filte
 record(red test + fix)               → learned lesson, distilled by Qwen on the cloud
 recall("validating an email …")      → the just-learned lesson is now returned first
 ```
-Any agent, anywhere, shares one outcome-grounded memory.
+Any agent, anywhere, shares one outcome-grounded memory — reads open, writes token-gated so the shared cloud can't be poisoned.
