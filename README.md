@@ -13,7 +13,7 @@
 
 <p align="center">
   <a href="http://regressguard.duckdns.org"><img src="https://img.shields.io/badge/live_demo-online-059669?style=for-the-badge&labelColor=0b0f14" alt="Live demo"></a>
-  <img src="https://img.shields.io/badge/tests-107%2F107_green-059669?style=for-the-badge&labelColor=0b0f14" alt="107/107 tests">
+  <img src="https://img.shields.io/badge/tests-115%2F115_green-059669?style=for-the-badge&labelColor=0b0f14" alt="115/115 tests">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-059669?style=for-the-badge&labelColor=0b0f14" alt="MIT license"></a>
 </p>
 
@@ -246,7 +246,7 @@ Five distinct Qwen roles across **three Qwen Cloud APIs** (`qwen-plus` · `text-
 
 In chat, we don't decide when to consult the memory — **Qwen does**. It's handed a `recall_memory` tool and *autonomously* calls it for coding/engineering questions (formulating its own query, e.g. *"password storage best practices"*), while skipping it for casual ones (*"What is the capital of France?"* → no tool call). We run the real recall, **sanitize** the lessons (the poisoned-memory defense stays intact) and feed them back as the tool result before Qwen answers — shown in the UI as *"🔧 Qwen called recall('…') → answered using N lessons"*. It fails open to the direct pre-injection path if tool-calling is unavailable.
 
-**Depth beyond a single model** *(active in the live deployment; each stays flag-gated so the reproducible baseline and 107 tests are byte-identical when off)*:
+**Depth beyond a single model** *(active in the live deployment; each stays flag-gated so the reproducible baseline and 115 tests are byte-identical when off)*:
 
 - **Right model for the job** (`RG_MODEL_ROUTING`) — the high-stakes obsolescence/contradiction **judges route to `qwen-max`**, the cheap eval paraphrase to `qwen-turbo`, DISTILL/default stay `qwen-plus`. `/telemetry` shows the model serving each role.
 - **Strict structured output** (`RG_STRUCTURED_OUTPUT`) — DISTILL enforces a `json_schema` (four keys + `severity` enum) model-side, with a graceful fallback to `json_object` if a provider rejects it — schema-enforced, never brittle.
