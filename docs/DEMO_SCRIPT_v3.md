@@ -16,7 +16,7 @@
 
 ## 🎬 Why this script wins (strategy in 6 lines)
 1. **Bookend the money-shot** — `0/5 → 5/5` is the FIRST and LAST image; give the `5/5` a 1.5s silent hold.
-2. **60% of the score = Innovation + Technical Depth** → we *say out loud*: Qwen in 5 roles across 3 APIs, MCP, "custom algorithm", "stateless / scales out", "error handling", 115 tests.
+2. **60% of the score = Innovation + Technical Depth** → we *say out loud*: Qwen in 5 roles across 3 APIs, MCP, "custom algorithm", "stateless / scales out", "error handling", 119 tests.
 3. **Show Qwen deciding for itself** to call `recall` (function-calling) — the single highest-value, sponsor-weighted moment. Named ≥ 4×.
 4. **One visible beat per MemoryAgent track phrase**: *timely forgetting* (tombstone), *recall in a limited context window* (1-of-N), *efficient/hybrid retrieval*, *cross-session* (MCP two sessions).
 5. **Show, don't tell** — every claim proven on screen; waits are speed-ramped, never a spinner.
@@ -106,7 +106,7 @@ Spoken word count ≈ **385 words ≈ 2:34 of talking** at a calm 150 wpm, plus 
 
 ## 🧭 Axis coverage (every rubric axis is *spoken*, not just shown)
 - **Innovation & AI Creativity 30%** → [0:32] Qwen function-calling live · [0:52] "custom confidence algorithm" + tombstone · [1:48] MCP · [2:12] 5 roles / 3 APIs.
-- **Technical Depth 30%** → [2:12] hybrid retrieval · stateless/scales out · atomic/no-race · fail-open error handling · 115 tests + red-team.
+- **Technical Depth 30%** → [2:12] hybrid retrieval · stateless/scales out · atomic/no-race · fail-open error handling · 119 tests + red-team.
 - **Problem Value & Impact 25%** → [0:12] felt problem · [1:20] consistent + 3-class generalization · [1:48] real MCP drop-in, MIT-licensed.
 - **Presentation & Docs 15%** → number-first hook · bookend · 1.5s money-shot hold · architecture diagram · burned subtitles · one clean flow.
 
