@@ -42,9 +42,11 @@ your own ledger (where both tools are open).
 
 ## Security (why this is safe to point at a shared memory)
 - **Untrusted by default.** Recalled lessons come from a store other agents/humans write to, so the
-  tool **neutralizes** injection/role/override directives and wraps them in `<<<UNTRUSTED_MEMORY>>>`
-  markers (`_safety.py`, unit-tested) **before** they reach your agent — a poisoned memory can't hijack
-  Claude Code / Cursor. Same deterministic defense the backend uses for chat, applied at the tool.
+  tool treats them as untrusted (`_safety.py`, unit-tested) **before** they reach your agent: each is
+  single-lined and any injected `<<<…>>>` fence marker is stripped, so content is **confined** inside
+  `<<<UNTRUSTED_MEMORY>>>` markers it can't escape; injection/role/override directives are additionally
+  **best-effort neutralized** (defense-in-depth, not a completeness guarantee). Same layer the backend
+  uses for chat, applied at the tool.
 - **Writes are gated.** On the shared cloud, `record` needs `REGRESS_GUARD_TOKEN`; `recall` is open.
 - **Fails open.** A 403 / unreachable backend returns a friendly message — it never crashes your agent.
 - **Transport note:** the public backend is http-only; for sensitive lessons self-host over HTTPS
