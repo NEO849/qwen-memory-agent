@@ -122,13 +122,13 @@ More bug patterns beyond the current three, editor/CI integrations, and shared p
 Qwen, qwen-plus, qwen-max, qwen-turbo, text-embedding-v4, Qwen Cloud, Alibaba Cloud, ECS, Python, FastAPI, SQLite, NumPy, Server-Sent Events, MCP, JavaScript
 
 ## Try it out links
-- https://github.com/NEO849/qwen-memory-agent   (⚠️ set PUBLIC before final submit)
+- https://github.com/NEO849/qwen-memory-agent   (source code — MIT-licensed)
 - http://regressguard.duckdns.org   (live demo — friendly URL, also works behind IP-blocking filters)
 - http://47.84.227.215   (same server, direct-IP fallback)
 
 ## Media
 - Thumbnail / cover: assets/thumbnail.png  (download: http://47.84.227.215/thumbnail.png) → upload to the Devpost image gallery (first image = cover)
-- Demo video (< 3 min): (add at the end) → **YouTube / Vimeo / Facebook**, PUBLIC, **English**
+- Demo video (< 3 min): (add at the end) → **YouTube / Vimeo / Youku**, PUBLIC, **English**
   (or English subtitles — required by the Official Rules).
 - Alibaba deploy proof: per the binding Official Rules the required proof is the **code-file link** below
   (`backend/qwen_client.py`). A short `deploy/deploy_proof.sh` recording on the ECS box is OPTIONAL/recommended.
