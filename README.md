@@ -134,6 +134,14 @@ misses, breaking none** (McNemar +5/−0) — a naive memory lets an *unproven/w
 the earned one out of the retrieved set; the gate withholds it. Every card's confidence is
 auditable at **`/receipts/{id}`** — the append-only test outcomes that earned it.
 
+**Two more self-proofs** (offline, no API key — [`docs/benchmark.md`](docs/benchmark.md)): a
+**poison-demotion curve** watches a plausible-but-wrong lesson lose confidence on every real pytest
+failure — below the inject-gate after the *first* fail, tombstoned after 0/6 — and the same holds
+across **all 5 bug classes**, not just money. And a small **non-circular transfer test** (confidence
+grounded on a seen task, success measured on an *unseen* variant) shows the confidence separates
+signal from noise — while honestly surfacing one case where it did **not** (a lesson claimed 0.9 but
+transferred 0/8). We report the limit, not only the win.
+
 And on an **external, recognised benchmark** — not a self-built one — our memory lifts
 **LongMemEval `knowledge-update` QA from 5 % (no memory) to ~82 %** (33/40, Wilson95 [68, 91];
 `harness/longmemeval_eval.py`). Honest scope: oracle split (not leaderboard-comparable), and a
