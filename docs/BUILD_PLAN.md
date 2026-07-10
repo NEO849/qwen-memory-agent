@@ -10,14 +10,14 @@ Ein Gedächtnis-Dienst, der verhindert, dass ein KI-Coding-Agent über Sessions 
 [Coding-Agent (Claude Code)] ──MCP-Tool──►  [Regress-Guard API (FastAPI)]
         ▲ injizierte Lehre                         │
         │                                          ├─► Qwen: Lehren-Extraktion (JSON)
-[pytest rot + Korrektur-Diff] ──Event──►           ├─► Qwen text-embedding-v3 (Retrieval)
+[pytest rot + Korrektur-Diff] ──Event──►           ├─► Qwen text-embedding-v4 (Retrieval)
                                                     ├─► Ledger (SQLite): Lehren + Confidence
                                                     └─► Confidence-Updater (Beta/Bayes, pass/fail)
                           Deploy: Alibaba Cloud ECS
 ```
 
 ## Bau-Reihenfolge (8 Tage)
-- **Tag 1:** API-Key in `.env` → Smoke-Test `python -m backend.qwen_client` (qwen-plus/max + text-embedding-v3 auf dashscope-intl bestätigen). GitHub Public-Repo + Push. Qwen-Slice isoliert: Lehren-Extraktion (rot+Diff → JSON {trigger, lesson, scope, severity}).
+- **Tag 1:** API-Key in `.env` → Smoke-Test `python -m backend.qwen_client` (qwen-plus/max + text-embedding-v4 auf dashscope-intl bestätigen). GitHub Public-Repo + Push. Qwen-Slice isoliert: Lehren-Extraktion (rot+Diff → JSON {trigger, lesson, scope, severity}).
 - **Tag 2–3:** Ledger (SQLite) + Retrieval (Fusion BM25 + Qwen-Embedding, aus markmem übernommen) + Confidence-Updater (~50 Zeilen, frisch). MCP-Tool, das die Lehre in den Agent-Prompt injiziert.
 - **Tag 3–4:** **A/B-Harness (Kern-Beweis):** Demo-Repo + EIN Fehlermuster (fehlender `tenant_id`-Filter). Lauf 1 (frisch, keine Lehre)=rot, Lauf 2 (frisch, Lehre)=grün.
 - **Tag 5:** FastAPI-Endpunkte fertig + minimales Frontend (2 JSON-Tabellen: Ledger vorher/nachher, 1 Confidence-Karte). UI auf 1,5 Tage gedeckelt.

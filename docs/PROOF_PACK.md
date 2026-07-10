@@ -130,11 +130,11 @@ red-team flipped the probe vulnerable→safe; a 60-case scan passed clean.
 fed back as the tool result — the defense sits on the recall path, not on how recall was triggered.
 The live poisoned-memory probe above was re-run against the tool-calling `/chat` and stayed **SAFE**.
 
-## 6. Knowledge globe — ~74 nodes / ~230 edges (live, grows), all edge/node types (honest data)
+## 6. Knowledge globe — ~75 nodes / ~230 edges (live, grows), all edge/node types (honest data)
 ```
 .venv/bin/python -m harness.seed_demo <ledger-path>         # guards + enrich
 ```
-Rebuilds a memory of **~74 nodes / ~230 edges** (the live globe grows as lessons accrue) with every type the globe renders:
+Rebuilds a memory of **~75 nodes / ~230 edges** (the live globe grows as lessons accrue) with every type the globe renders:
 `related` (179, from real embedding cosine) · `synthesizes` (16, real Qwen ExpeL crystallization) ·
 `supersedes` (1, a real belief-revision) · 3 anti-pattern nodes (dark red) · 1 forgotten node (grey).
 Edge strength is initialised from embedding-cosine similarity; Hebbian co-recall (§7) then further
