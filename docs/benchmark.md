@@ -64,6 +64,18 @@ the adversarial poisoned-memory case is demonstrated separately by the red-team 
   table is reproducible from a clean clone.
 - The baseline B is a *reasonable* memory (it retrieves relevant fixes) — not a strawman. The
   only thing it lacks is the confidence gate, which is precisely Regress-Guard's contribution.
+- **Where the head-to-head win concentrates.** On UNSEEN, the +5/−0 edge over naive add-only comes
+  from one class (`email_normalize`); the other four tie on unseen at this N. What we claim
+  generalises is the *mechanism*, not this head-to-head margin: across **all 8** offline bug classes
+  (the five above + `strip_prefix`, `bool_env`, `dedup_order`) the gate cleanly separates earned from
+  unproven lessons (`harness/gate_sweep.py`: correct 0.875 vs poisoned 0.125, a wide clean band
+  0.30–0.80) and every wrong lesson is demoted below the gate after one real fail and tombstoned
+  (`harness/poison_curve.py --multiclass`: 8/8) — all offline, deterministic, no Qwen. A full 8-class
+  3-arm re-run is a straightforward rerun when Qwen budget allows; the suite is already expanded.
+- **Outcome attribution is per load-bearing lesson.** The live agent loop records a test outcome
+  against the *top-ranked* recalled lesson (the one retrieval judged most relevant), not every
+  co-recalled lesson — so a lesson's Beta confidence reflects tests where it actually drove the code
+  (`backend/agent_loop.py`).
 
 ## Ablation: does a qwen3-rerank stage help? (an honest negative)
 
@@ -153,11 +165,12 @@ anchor asserts ceiling=GREEN / floor=RED before the curve is trusted. Honest sco
 benchmark or independent sampling); a single real failure only *de-injects* a lesson, tombstoning is
 the terminal case after sustained refutation.
 
-**Not money-specific.** The same demotion+tombstone fires across **all 5 bug classes**
+**Not money-specific.** The same demotion+tombstone fires across **all 8 bug classes**
 (`python -m harness.poison_curve --multiclass`, `poison_multiclass.json`): each class's
 plausible-but-wrong fix drops below the gate after its **first** real failure and is tombstoned
-after 0/6 — email-normalisation, mutable-default, pagination-leak and SQL-parametrisation, not just
-rounding. The forgetting is a property of the mechanism, not of one example.
+after 0/6 — email-normalisation, mutable-default, pagination-leak, SQL-parametrisation, prefix
+stripping (`str.strip` vs `removeprefix`), string-boolean config (`bool("false")`), and order-losing
+dedup (`list(set())`) — not just rounding. The forgetting is a property of the mechanism, not one example.
 
 ## Does the confidence number MEAN anything? — a small non-circular transfer test
 

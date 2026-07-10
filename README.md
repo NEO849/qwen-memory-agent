@@ -13,7 +13,7 @@
 
 <p align="center">
   <a href="http://regressguard.duckdns.org"><img src="https://img.shields.io/badge/live_demo-online-059669?style=for-the-badge&labelColor=0b0f14" alt="Live demo"></a>
-  <img src="https://img.shields.io/badge/tests-129%2F129_green-059669?style=for-the-badge&labelColor=0b0f14" alt="129/129 tests">
+  <img src="https://img.shields.io/badge/tests-131%2F131_green-059669?style=for-the-badge&labelColor=0b0f14" alt="131/131 tests">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-059669?style=for-the-badge&labelColor=0b0f14" alt="MIT license"></a>
 </p>
 
@@ -114,15 +114,15 @@ fix-pass@1 (95% Wilson CI) — N=50 (5 classes × {seen,unseen} × 5 seeds), qwe
   C · Regress-Guard      1.00 [0.87,1.00]     0.80 [0.61,0.91]   ← earned-gating wins
 ```
 
-**Regress-Guard strictly beats both.** On unseen variants it fixes 5 cases naive add-only misses, breaking none (McNemar +5/−0). A naive memory lets an unproven or wrong lesson crowd the earned one out of the retrieved set; the gate withholds it. Every card's confidence is auditable at `/receipts/{id}` — the append-only test outcomes that earned it.
+**Regress-Guard strictly beats both.** On unseen variants it fixes 5 cases naive add-only misses, breaking none (McNemar +5/−0) — honestly, that unseen edge concentrates in one class (`email_normalize`), while the others tie. What generalises is the *mechanism*: across all **8** offline bug classes the gate cleanly separates earned from unproven lessons (below). A naive memory lets an unproven or wrong lesson crowd the earned one out of the retrieved set; the gate withholds it. Every card's confidence is auditable at `/receipts/{id}` — the append-only test outcomes that earned it.
 
-Two more self-proofs (offline, no API key — [`docs/benchmark.md`](docs/benchmark.md)). A **poison-demotion curve** watches a plausible-but-wrong lesson lose confidence on every real pytest failure — below the inject-gate after the first fail, tombstoned after 0/6 — and the same holds across all 5 bug classes, not just money. A small non-circular transfer test (confidence grounded on a seen task, success measured on an *unseen* variant) shows the confidence separates signal from noise — while honestly surfacing one case where it did not (a lesson claimed 0.9 but transferred 0/8). We report the limit, not only the win.
+Two more self-proofs (offline, no API key — [`docs/benchmark.md`](docs/benchmark.md)). A **poison-demotion curve** watches a plausible-but-wrong lesson lose confidence on every real pytest failure — below the inject-gate after the first fail, tombstoned after 0/6 — and the same holds across all **8 bug classes** (offline, deterministic; gate-sweep + poison-demotion), not just money. A small non-circular transfer test (confidence grounded on a seen task, success measured on an *unseen* variant) shows the confidence separates signal from noise — while honestly surfacing one case where it did not (a lesson claimed 0.9 but transferred 0/8). We report the limit, not only the win.
 
 And on an external, recognised benchmark — not a self-built one — our memory lifts **LongMemEval `knowledge-update` QA from 5 % to ~82 %** (33/40, Wilson95 [68, 91]; `harness/longmemeval_eval.py`). Honest scope: oracle split (not leaderboard-comparable), and a recency-ablation arm showed no lift (+0.0 pts) — reported as a null, not dressed up ([`docs/benchmark.md`](docs/benchmark.md)).
 
 One more headline number, reproducible offline with no API key: **value-density packing injects the critical lesson in ~37 % fewer tokens at identical recall**, and tombstoning a wrong lesson cuts harmful-injection 100 % → 0 % (`harness/context_window_bench.py`). *(A vectorized-cosine speedup is documented in the benchmark too — engineering hygiene, not headlined as innovation.)*
 
-> **What we do NOT claim.** N is small (McNemar p≈0.0625 — directional, not yet p<0.05); we say so. `qwen3-rerank` is built but off — it shows no lift at our memory size, and we report that null rather than feature it. The 5/5 is the injection *ceiling*, not a guaranteed default. Full rubric mapping + limits: [`docs/JUDGING.md`](docs/JUDGING.md).
+> **What we do NOT claim.** N is small (McNemar p≈0.0625 — directional, not yet p<0.05); we say so. The unseen head-to-head edge over naive add-only concentrates in one class (`email_normalize`) — the gating *mechanism* generalises across all 8 offline bug classes, the head-to-head margin does not yet. `qwen3-rerank` is built but off — it shows no lift at our memory size, and we report that null rather than feature it. The 5/5 is the injection *ceiling*, not a guaranteed default. Full rubric mapping + limits: [`docs/JUDGING.md`](docs/JUDGING.md).
 
 ---
 
@@ -192,7 +192,7 @@ One clinical surface — a **living-memory** layout. The editable memory sits on
 
 ## Powered by Qwen Cloud on Alibaba Cloud
 
-Five distinct Qwen roles across **four Qwen models** (`qwen-max` · `qwen-plus` · `qwen-turbo` · `text-embedding-v4`) and three Qwen Cloud APIs. The live deployment routes each role to the model that measured best for it (`RG_MODEL_ROUTING` on, `QWEN_MODEL=qwen-max`). The flag-off baseline — the 129 tests and the A/B — collapses every role to a single `qwen-plus`, byte-identical. Alibaba Cloud deploy proof (code): [`backend/qwen_client.py`](backend/qwen_client.py) · deployment notes [`deploy/README.md`](deploy/README.md).
+Five distinct Qwen roles across **four Qwen models** (`qwen-max` · `qwen-plus` · `qwen-turbo` · `text-embedding-v4`) and three Qwen Cloud APIs. The live deployment routes each role to the model that measured best for it (`RG_MODEL_ROUTING` on, `QWEN_MODEL=qwen-max`). The flag-off baseline — the 131 tests and the A/B — collapses every role to a single `qwen-plus`, byte-identical. Alibaba Cloud deploy proof (code): [`backend/qwen_client.py`](backend/qwen_client.py) · deployment notes [`deploy/README.md`](deploy/README.md).
 
 | # | Role | Model | Where |
 |---|------|-------|-------|
@@ -258,7 +258,7 @@ uvicorn backend.main:app --workers 1   # then open http://localhost:8000
 ```
 
 > **`--workers 1` is required** — the live-update fan-out (SSE) is in-process.
-> Tests: `pytest` (offline, 129/129) · `pytest -m live` (hits Qwen).
+> Tests: `pytest` (offline, 131/131) · `pytest -m live` (hits Qwen).
 > Reproduce the two efficiency numbers offline (no API key): `python -m harness.context_window_bench` · `python -m harness.latency_bench`.
 
 ---
@@ -287,7 +287,7 @@ Session 1 (a fresh agent, empty memory) writes `get_orders` → the hidden test 
 
 Every recalled lesson is treated as **untrusted**: structurally confined behind `<<<UNTRUSTED_MEMORY>>>` markers + a deterministic sanitizer — at the web chat *and* the MCP tool (`mcp_tool/_safety.py`). We red-teamed it (60-case scan) and ran it through an adversarial `skeptical-validator` gauntlet that found two structural escapes; we closed them → CONFIRMED-SAFE. Writes to the shared cloud are token-gated, and every tool call fails open.
 
-<p align="center"><img src="docs/media/security-by-design.png" width="820" alt="Security by design — recalled memory is untrusted: confined + sanitized at the web chat and the MCP tool; red-teamed and adversarially re-verified to CONFIRMED-SAFE, 129/129 tests green"></p>
+<p align="center"><img src="docs/media/security-by-design.png" width="820" alt="Security by design — recalled memory is untrusted: confined + sanitized at the web chat and the MCP tool; red-teamed and adversarially re-verified to CONFIRMED-SAFE, 131/131 tests green"></p>
 
 ---
 

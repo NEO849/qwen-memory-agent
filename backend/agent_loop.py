@@ -128,14 +128,19 @@ class AgentSession:
             self.step += 1
             self.last = {"code": code, "passed": passed, "recalled": recalled, "step": self.step}
 
-            # 5) close the loop: the REAL outcome updates each injected lesson's Beta confidence
-            #    (this is the thesis — confidence grounded in test results, not opinion)
+            # 5) close the loop: the REAL outcome updates the load-bearing lesson's Beta confidence
+            #    (this is the thesis — confidence grounded in test results, not opinion).
+            #    Attribute the outcome to the TOP-RANKED recalled lesson only — the one retrieval
+            #    judged most relevant, i.e. the lesson that actually drove this code — not every
+            #    co-recalled lesson in the top-k. A lesson's confidence should reflect tests where it
+            #    was load-bearing, not tests where it merely rode along in the retrieved set, so an
+            #    irrelevant co-recalled lesson is neither rewarded nor blamed for another's result.
+            #    This keeps "confidence earned from real outcomes" true at lesson granularity.
             result = "pass" if passed else "fail"
-            for lid in recalled:
-                await asyncio.to_thread(
-                    memory.record_outcome, lid, result,
-                    run_id=f"agent-{self.step}", injected=True, path=config.LEDGER_PATH)
             if recalled:
+                await asyncio.to_thread(
+                    memory.record_outcome, recalled[0], result,
+                    run_id=f"agent-{self.step}", injected=True, path=config.LEDGER_PATH)
                 events.bump(action="outcome")
             self._emit(phase="result", code=code, passed=passed, recalled=recalled)
 

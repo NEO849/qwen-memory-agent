@@ -97,9 +97,12 @@ def run(*, trials: int = 6, path: str) -> dict:
     }
 
 
-# The 5 bug classes whose floor_solution deterministically FAILS its hidden test and whose
-# ceiling_solution PASSES it (verified in-repo) — so the demotion is real, class by class.
-MULTICLASS = ["email_normalize", "money_rounding", "mutable_default", "pagination_leak", "sql_param"]
+# The 8 bug classes whose floor_solution deterministically FAILS its hidden test and whose
+# ceiling_solution PASSES it (verified in-repo) — so the demotion is real, class by class. Each is a
+# distinct, realistic convention that lives in memory (money as integer cents, remove a prefix with
+# removeprefix not strip, a string boolean is not bool(), dedup with dict.fromkeys not set(), …).
+MULTICLASS = ["email_normalize", "money_rounding", "mutable_default", "pagination_leak", "sql_param",
+              "strip_prefix", "bool_env", "dedup_order"]
 
 
 def run_multiclass(*, trials: int = 6, path: str) -> dict:
@@ -120,7 +123,7 @@ def run_multiclass(*, trials: int = 6, path: str) -> dict:
                         "tombstoned": lane["tombstoned"],
                         "final_confidence": lane["final_confidence"]})
     return {
-        "demo": "multi-class poison-demotion — same forgetting mechanism across 5 bug classes",
+        "demo": f"multi-class poison-demotion — same forgetting mechanism across {len(MULTICLASS)} bug classes",
         "gate": GATE, "trials": trials, "classes": len(results),
         "crossed_gate_after_1_fail": sum(1 for r in results if r["gate_cross_trial"] == 1),
         "tombstoned": sum(1 for r in results if r["tombstoned"]),

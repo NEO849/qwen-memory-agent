@@ -1,8 +1,11 @@
 {
   "demo": "gate-threshold sweep \u2014 robustness of the 0.62 injection gate (offline, real pytest)",
   "trials": 6,
-  "n_classes": 5,
+  "n_classes": 8,
   "correct_confidences": [
+    0.875,
+    0.875,
+    0.875,
     0.875,
     0.875,
     0.875,
@@ -14,42 +17,45 @@
     0.125,
     0.125,
     0.125,
+    0.125,
+    0.125,
+    0.125,
     0.125
   ],
   "sweep": [
     {
       "gate": 0.3,
-      "correct_injected": 5,
+      "correct_injected": 8,
       "poison_injected": 0,
       "clean": true
     },
     {
       "gate": 0.4,
-      "correct_injected": 5,
+      "correct_injected": 8,
       "poison_injected": 0,
       "clean": true
     },
     {
       "gate": 0.5,
-      "correct_injected": 5,
+      "correct_injected": 8,
       "poison_injected": 0,
       "clean": true
     },
     {
       "gate": 0.62,
-      "correct_injected": 5,
+      "correct_injected": 8,
       "poison_injected": 0,
       "clean": true
     },
     {
       "gate": 0.7,
-      "correct_injected": 5,
+      "correct_injected": 8,
       "poison_injected": 0,
       "clean": true
     },
     {
       "gate": 0.8,
-      "correct_injected": 5,
+      "correct_injected": 8,
       "poison_injected": 0,
       "clean": true
     },
