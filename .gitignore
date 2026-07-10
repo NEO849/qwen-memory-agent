@@ -35,3 +35,6 @@ bench_result.json
 .lme_cache/
 .calib_cache/
 .calib_cache_run.log
+
+# Internes Arbeitsmaterial (Aufnahme-Anleitung, Devpost-Media, LinkedIn) — nicht in die Abgabe
+handoff/
