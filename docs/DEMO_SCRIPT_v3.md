@@ -16,7 +16,7 @@
 
 ## 🎬 Why this script wins (strategy in 6 lines)
 1. **Bookend the money-shot** — `0/5 → 5/5` is the FIRST and LAST image; give the `5/5` a 1.5s silent hold.
-2. **60% of the score = Innovation + Technical Depth** → we *say out loud*: Qwen in 5 roles across 3 APIs, MCP, "custom algorithm", "stateless / scales out", "error handling", 120 tests.
+2. **60% of the score = Innovation + Technical Depth** → we *say out loud*: Qwen in 5 roles across 4 models (qwen-max flagship, routed live), MCP, "custom algorithm", "stateless / scales out", "error handling", 120 tests.
 3. **Show Qwen deciding for itself** to call `recall` (function-calling) — the single highest-value, sponsor-weighted moment. Named ≥ 4×.
 4. **One visible beat per MemoryAgent track phrase**: *timely forgetting* (tombstone), *recall in a limited context window* (1-of-N), *efficient/hybrid retrieval*, *cross-session* (MCP two sessions).
 5. **Show, don't tell** — every claim proven on screen; waits are speed-ramped, never a spinner.
@@ -66,8 +66,8 @@
 
 ### [2:12–2:38] · ARCHITECTURE at altitude  ·  🎯 *Technical Depth 30% — the axis teams forget to say out loud*
 🎬 *Show the **architecture diagram** (`architecture/diagram.png`), legible on screen. Optionally cut to `/telemetry` for ~1s so the **per-role model routing is visible on camera — `chat: qwen-max`, `recall: text-embedding-v4`** (four Qwen models, routed live).*
-**🎙️ EN:** "Under the hood: Qwen Cloud in five roles, across three APIs — the model, embeddings, and function-calling. The recall path is stateless and scales out. Error handling is fail-open: if a Qwen call drops, it falls back to direct recall — it never crashes. Over a hundred tests, plus a sixty-case security red-team, stay green."
-**🇩🇪 DE:** *„Unter der Haube: Qwen Cloud in fünf Rollen, über drei APIs — das Modell, Embeddings und Function-Calling. Der Recall-Pfad ist zustandslos und skaliert horizontal. Fehlerbehandlung ist fail-open: fällt ein Qwen-Aufruf weg, greift der direkte Recall — es stürzt nie ab. Über hundert Tests plus ein 60-Fälle-Security-Red-Team bleiben grün."* — **(getrimmt: 4 klare Signale statt 8; Details zeigt das Diagramm)*
+**🎙️ EN:** "Under the hood, Qwen Cloud runs in five roles across four models — chat and the judges on Qwen's flagship, Qwen Max; paraphrasing on Qwen Turbo; distillation on Qwen Plus; recall on Qwen embeddings — each on the model that measured best. It's stateless and fail-open; it never crashes. Over a hundred tests, plus a sixty-case red-team, stay green."
+**🇩🇪 DE:** *„Unter der Haube läuft Qwen Cloud in fünf Rollen über vier Modelle — Chat und die Judges auf Qwens Flaggschiff Qwen Max; Paraphrasieren auf Qwen Turbo; Destillieren auf Qwen Plus; Recall auf Qwen-Embeddings — jede Rolle auf dem Modell, das am besten gemessen hat. Es ist zustandslos und fail-open; es stürzt nie ab. Über hundert Tests plus ein 60-Fälle-Red-Team bleiben grün."* — **(4 Modelle laut ausgesprochen: kontert den Single-Model-Einwand; qwen-max zusätzlich sichtbar im /telemetry-Cut)*
 
 ### [2:38–2:54] · CLOSE — slam back to the proof (bookend)  ·  🎯 *Presentation*
 🎬 *Back to **🏆 Proof** — `0/5 → 5/5` is the LAST image. Fade in the URLs.*
@@ -113,7 +113,7 @@
 Spoken word count ≈ **385 words ≈ 2:34 of talking** at a calm 150 wpm, plus ~20s of speed-ramped waits and silent holds ≈ **~2:54 total**. That leaves real pause room. If you add the optional security beat you WILL exceed 3:00 — then cut the architecture test-list or the France aside. **Never cut the bookend or the money-shot.**
 
 ## 🧭 Axis coverage (every rubric axis is *spoken*, not just shown)
-- **Innovation & AI Creativity 30%** → [0:32] Qwen function-calling live · [0:52] "custom confidence algorithm" + tombstone · [1:48] MCP · [2:12] 5 roles / 3 APIs.
+- **Innovation & AI Creativity 30%** → [0:32] Qwen function-calling live · [0:52] "custom confidence algorithm" + tombstone · [1:48] MCP · [2:12] 5 roles / 4 Qwen models (routed live).
 - **Technical Depth 30%** → [2:12] hybrid retrieval · stateless/scales out · atomic/no-race · fail-open error handling · 120 tests + red-team.
 - **Problem Value & Impact 25%** → [0:12] felt problem · [1:20] consistent + 3-class generalization · [1:48] real MCP drop-in, MIT-licensed.
 - **Presentation & Docs 15%** → number-first hook · bookend · 1.5s money-shot hold · architecture diagram · burned subtitles · one clean flow.
