@@ -51,8 +51,8 @@
 
 ### [0:52–1:20] · MONEY SHOT — earned confidence + it forgets  ·  🎯 *Innovation (novel algorithm) + track phrase "timely forgetting"*
 🎬 *On the globe/deck: point to a **green, validated** lesson (0.86), then a **grey, tombstoned** one. Show `Beta(α,β)` as an on-screen label — don't say it. **Hold 1.5s of silence on the tombstone reveal.***
-**🎙️ EN:** "Here's the core. When a real test **passes**, the lesson that helped **earns** a confidence score — from the math of pass and fail, not the model's opinion. Qwen distills each fix into that lesson; real pytest results decide if it's trusted — or **tombstoned**. That's *timely forgetting* of what's wrong, with evidence. It's a **custom confidence algorithm** no other agent memory has."
-**🇩🇪 DE:** *„Der Kern: Wenn ein echter Test besteht, verdient sich die helfende Lektion einen Vertrauens-Wert — aus der Mathematik von Bestehen und Durchfallen, nicht aus der Modell-Meinung. Qwen destilliert jeden Fix zu dieser Lektion; echte pytest-Ergebnisse entscheiden, ob sie vertraut oder getombstoned wird. Das ist rechtzeitiges Vergessen des Falschen, mit Beweis. Ein eigener Confidence-Algorithmus, den kein anderes Agenten-Gedächtnis hat."*
+**🎙️ EN:** "Here's the core. When a real test **passes**, the lesson that helped **earns** a confidence score — from the math of pass and fail, not the model's opinion. Qwen distills each fix into that lesson; real pytest results decide if it's trusted — or **tombstoned**. That's *timely forgetting* of what's wrong, with evidence. It's a **custom confidence algorithm** we haven't seen in other agent memories."
+**🇩🇪 DE:** *„Der Kern: Wenn ein echter Test besteht, verdient sich die helfende Lektion einen Vertrauens-Wert — aus der Mathematik von Bestehen und Durchfallen, nicht aus der Modell-Meinung. Qwen destilliert jeden Fix zu dieser Lektion; echte pytest-Ergebnisse entscheiden, ob sie vertraut oder getombstoned wird. Das ist rechtzeitiges Vergessen des Falschen, mit Beweis. Ein eigener Confidence-Algorithmus, wie wir ihn in anderen Agenten-Gedächtnissen nicht gesehen haben."*
 
 ### [1:20–1:48] · CONSISTENT & GENERAL — the honest proof  ·  🎯 *Impact + track phrases "cross-session" + "limited context window"*
 🎬 *Show the **🏆 Proof** replay `0/5 → 5/5` (reliable), or run **⚔️ Duel → ▶ Run 5 live** if confident (speed-ramp the wait). On the LEFT deck, highlight that only **1 of N** lessons is injected.*
@@ -66,8 +66,8 @@
 
 ### [2:12–2:38] · ARCHITECTURE at altitude  ·  🎯 *Technical Depth 30% — the axis teams forget to say out loud*
 🎬 *Show the **architecture diagram** (`architecture/diagram.png`), legible on screen. Optionally cut to `/telemetry` for ~1s so the **per-role model routing is visible on camera — `chat: qwen-max`, `recall: text-embedding-v4`** (four Qwen models, routed live).*
-**🎙️ EN:** "Under the hood, Qwen Cloud runs in five roles across four models — chat and the judges on Qwen's flagship, Qwen Max; paraphrasing on Qwen Turbo; distillation on Qwen Plus; recall on Qwen embeddings — each on the model that measured best. It's stateless and fail-open; it never crashes. Over a hundred tests, plus a sixty-case red-team, stay green."
-**🇩🇪 DE:** *„Unter der Haube läuft Qwen Cloud in fünf Rollen über vier Modelle — Chat und die Judges auf Qwens Flaggschiff Qwen Max; Paraphrasieren auf Qwen Turbo; Destillieren auf Qwen Plus; Recall auf Qwen-Embeddings — jede Rolle auf dem Modell, das am besten gemessen hat. Es ist zustandslos und fail-open; es stürzt nie ab. Über hundert Tests plus ein 60-Fälle-Red-Team bleiben grün."* — **(4 Modelle laut ausgesprochen: kontert den Single-Model-Einwand; qwen-max zusätzlich sichtbar im /telemetry-Cut)*
+**🎙️ EN:** "Under the hood, Qwen Cloud runs in five roles across four models — chat and the judges on Qwen's flagship, Qwen Max; paraphrasing on Qwen Turbo; distillation on Qwen Plus; recall on Qwen embeddings — each on the model that measured best. It's stateless and fail-open — it degrades instead of crashing. Over a hundred tests, plus a sixty-case red-team, stay green."
+**🇩🇪 DE:** *„Unter der Haube läuft Qwen Cloud in fünf Rollen über vier Modelle — Chat und die Judges auf Qwens Flaggschiff Qwen Max; Paraphrasieren auf Qwen Turbo; Destillieren auf Qwen Plus; Recall auf Qwen-Embeddings — jede Rolle auf dem Modell, das am besten gemessen hat. Es ist zustandslos und fail-open — es degradiert, statt abzustürzen. Über hundert Tests plus ein 60-Fälle-Red-Team bleiben grün."* — **(4 Modelle laut ausgesprochen: kontert den Single-Model-Einwand; qwen-max zusätzlich sichtbar im /telemetry-Cut)*
 
 ### [2:38–2:54] · CLOSE — slam back to the proof (bookend)  ·  🎯 *Presentation*
 🎬 *Back to **🏆 Proof** — `0/5 → 5/5` is the LAST image. Fade in the URLs.*
@@ -113,8 +113,8 @@
 Spoken word count ≈ **385 words ≈ 2:34 of talking** at a calm 150 wpm, plus ~20s of speed-ramped waits and silent holds ≈ **~2:54 total**. That leaves real pause room. If you add the optional security beat you WILL exceed 3:00 — then cut the architecture test-list or the France aside. **Never cut the bookend or the money-shot.**
 
 ## 🧭 Axis coverage (every rubric axis is *spoken*, not just shown)
-- **Innovation & AI Creativity 30%** → [0:32] Qwen function-calling live · [0:52] "custom confidence algorithm" + tombstone · [1:48] MCP · [2:12] 5 roles / 4 Qwen models (routed live).
-- **Technical Depth 30%** → [2:12] hybrid retrieval · stateless/scales out · atomic/no-race · fail-open error handling · 120 tests + red-team.
+- **Innovation & AI Creativity 30%** (architecture/modularity/error-handling + the novel idea) → [0:52] outcome-grounded confidence + tombstone (the novel contribution) · flag-gated modularity · stateless / scales-out · fail-open error handling · [2:12] bi-temporal time-travel + 3D globe.
+- **Technical Depth 30%** (Qwen-API depth + algorithmics) → [0:32] Qwen function-calling · 5 roles / 4 models · [0:52] custom confidence algorithm + hybrid retrieval + atomic/no-race · [1:48] MCP · 120 tests + red-team.
 - **Problem Value & Impact 25%** → [0:12] felt problem · [1:20] consistent + 3-class generalization · [1:48] real MCP drop-in, MIT-licensed.
 - **Presentation & Docs 15%** → number-first hook · bookend · 1.5s money-shot hold · architecture diagram · burned subtitles · one clean flow.
 

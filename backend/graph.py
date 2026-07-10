@@ -70,7 +70,7 @@ def build_graph(*, path: str | None = None, include_obsolete: bool = True,
         "nodes": nodes, "edges": edges,
         "stats": {
             "lessons": len(active), "obsolete": len(obsolete),
-            "links": len(edges), "orphans": sum(1 for n in nodes if n["orphan"]),
+            "links": len(links), "edges": len(edges), "orphans": sum(1 for n in nodes if n["orphan"]),
             "never_validated": sum(1 for n in nodes if n["never_validated"] and not n["obsolete"]),
         },
     }

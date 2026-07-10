@@ -18,7 +18,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Qwen_Cloud-qwen--plus_%C2%B7_text--embedding--v4-F0C35A?style=flat-square&labelColor=0b0f14&logo=alibabacloud&logoColor=white" alt="Powered by Qwen Cloud">
+  <img src="https://img.shields.io/badge/Qwen_Cloud-4_models_%C2%B7_3_APIs-F0C35A?style=flat-square&labelColor=0b0f14&logo=alibabacloud&logoColor=white" alt="Powered by Qwen Cloud — four models across three APIs">
+  <img src="https://img.shields.io/badge/flagship-qwen--max-34D399?style=flat-square&labelColor=0b0f14" alt="Chat and the judges run on flagship qwen-max">
   <img src="https://img.shields.io/badge/Alibaba_Cloud-ECS_%C2%B7_Singapore-FF6A00?style=flat-square&labelColor=0b0f14&logo=alibabacloud&logoColor=white" alt="Deployed on Alibaba Cloud">
   <img src="https://img.shields.io/badge/MCP-drop--in_tool-B9A6E8?style=flat-square&labelColor=0b0f14" alt="MCP drop-in tool">
   <img src="https://img.shields.io/badge/track-MemoryAgent-5AC8F5?style=flat-square&labelColor=0b0f14" alt="Track: MemoryAgent">
@@ -97,7 +98,7 @@ the knowledge *must* come from memory. Three honest measurements, not one number
 > distillation that drops the concrete comparison **fails the hidden test and gets demoted**, so
 > confidence tracks what actually works. The temp-0 in-run trials are a *consistency* check, not an
 > independent sample — the independent unit is the distillation (one draw per run), which is why the
-> Wilson interval lives there. We never claim "guaranteed 100%".
+> Wilson interval lives there. We never claim "guaranteed 100%". *(The reproducible A/B pins `qwen-plus` for a clean same-model comparison; the live `/ab` endpoint runs under the deployment's routing and reports `qwen-max`.)*
 >
 > **Generalisation across 3 bug classes** (`harness/generalization.py`): memory flips the two classes
 > the base model gets **wrong** by default — *tenant isolation* and *pagination leak* — from **0/3 →
@@ -220,7 +221,7 @@ One clinical surface — a **living-memory** layout: the **editable memory on th
 | ⚔️ | **Live duel (plain AI vs. AI + Regress-Guard)** | One prompt, two arms — **"plain AI · no memory"** vs **"AI + Regress-Guard"**. Hit **▶ Run 5 live** and 5 hidden `pytest` fire in real time; the counters tick to **0/5 vs 5/5**. The *live, un-recorded* twin of 🏆 Proof — the memory arm uses a **disclosed determinism guard** (`"injected":"canonical"`), so it is the injection *ceiling*, never "guaranteed". |
 | 💬 | **Chat + editable memory** | Talk to the agent; beside it, a flashcard deck shows every lesson with a **Beta(α,β) confidence meter** — **pin**, **demote** or **forget** any lesson in a click. |
 | 🕐 | **Bi-temporal time-travel** | A slider under the globe scrubs the whole knowledge base through **its own history** — drag it back and lessons that were later tombstoned reappear as they stood *valid then*. Point-in-time recall (`/graph?as_of=…`, `/timeline`), validity time kept strictly separate from transaction time. Honest: bi-temporal supersession, not a full Graphiti graph. |
-| 🌐 | **3D knowledge globe** | The whole memory as a rotating globe (**74 nodes and ~230 edges**): node size = evidence (α+β), colour = confidence, grey = forgotten, dark-red = anti-pattern; **edge strength is initialised from embedding-cosine similarity**, then further strengthened by Hebbian co-recall on the synapses that co-fire (capped). **Click a node and its strands light up by type** — *related* (blue), *supersedes* (red), *synthesizes* (violet) — so you see at a glance what a memory connects to. |
+| 🌐 | **3D knowledge globe** | The whole memory as a rotating globe (**a live, growing graph — ~75 nodes / ~230 edges**): node size = evidence (α+β), colour = confidence, grey = forgotten, dark-red = anti-pattern; **edge strength is initialised from embedding-cosine similarity**, then further strengthened by Hebbian co-recall on the synapses that co-fire (capped). **Click a node and its strands light up by type** — *related* (blue), *supersedes* (red), *synthesizes* (violet) — so you see at a glance what a memory connects to. |
 | 🏆 | **The proof** | The signature A/B moment above, replayable on demand — the decisive token pulses, the pass-rate lift counts up. |
 | ⛔ | **Anti-pattern inhibitions** | Dead-end rules a past regression proved wrong are injected as active **⛔ DO NOT** directives — the agent is steered *away* from a known bad path, not just toward a good one. |
 | ✦ | **Crystallization (ExpeL)** | A cluster of related lessons can be distilled into one higher-level meta-lesson that then **earns its own confidence** from real tests like any other. |
@@ -247,7 +248,7 @@ Five distinct Qwen roles across **four Qwen models** (`qwen-max` · `qwen-plus` 
 
 In chat, we don't decide when to consult the memory — **Qwen does**. It's handed a `recall_memory` tool and *autonomously* calls it for coding/engineering questions (formulating its own query, e.g. *"password storage best practices"*), while skipping it for casual ones (*"What is the capital of France?"* → no tool call). We run the real recall, **sanitize** the lessons (the poisoned-memory defense stays intact) and feed them back as the tool result before Qwen answers — shown in the UI as *"🔧 Qwen called recall('…') → answered using N lessons"*. It fails open to the direct pre-injection path if tool-calling is unavailable.
 
-**Depth beyond a single model** *(active in the live deployment; each stays flag-gated so the reproducible baseline and 120 tests are byte-identical when off)*:
+**Depth beyond a single model** *(active in the live deployment; each paid-depth stage is flag-gated and byte-identical when off — the associative Hebbian wiring is on by default but never touches earned confidence)*:
 
 - **Right model for the job** (`RG_MODEL_ROUTING`, on in the live deployment) — chat and the high-stakes obsolescence/contradiction **judges run on flagship `qwen-max`**, the cheap eval paraphrase on `qwen-turbo`, and structured DISTILL stays on `qwen-plus`, which measured most reliable for schema extraction — each role on the model that measured best for it. `/telemetry` shows the model serving each role.
 - **Strict structured output** (`RG_STRUCTURED_OUTPUT`) — DISTILL enforces a `json_schema` (four keys + `severity` enum) model-side, with a graceful fallback to `json_object` if a provider rejects it — schema-enforced, never brittle.

@@ -38,7 +38,12 @@ FRONTEND = ROOT / "frontend"
 AB_RESULT = ROOT / "ab_result.json"
 
 MAX_BODY = 64 * 1024                              # reject bodies larger than 64 KB
-DEMO_TOKEN = os.environ.get("REGRESS_GUARD_TOKEN", "")   # if set, gate all writes (by method)
+DEMO_TOKEN = os.environ.get("REGRESS_GUARD_TOKEN", "")   # if set, gate persistent-ledger writes
+# Compute-only POSTs that never mutate the persistent deck — kept open even when DEMO_TOKEN is set,
+# so the public demo stays fully interactive (chat + function-calling, the live duel is GET, and the
+# "Measure" self-eval). Everything else that writes (notes/outcome/tombstone/pin/demote/revise/
+# synthesize/agent/*) requires the operator token when DEMO_TOKEN is set.
+_OPEN_WRITE_PATHS = ("/chat", "/chat/stream", "/evaluate")
 # Paid / expensive endpoints — a stricter per-IP budget so a public visitor can't burn the
 # Qwen quota or run the code-executing agent loop unbounded. Prefix match (covers /agent/*).
 PAID_PREFIXES = ("/chat", "/ingest", "/notes", "/revise", "/evaluate", "/tune",
@@ -149,9 +154,11 @@ async def _guard(request: Request, call_next):
         return JSONResponse({"detail": "rate limited — too many model calls, wait a moment"}, status_code=429)
     if path == "/duel" and not _rate_ok(_duel_hits, ip, 4, 60.0, now):  # live duel runs k*2 code-gens
         return JSONResponse({"detail": "the live duel is expensive — wait a moment"}, status_code=429)
-    # 3) optional shared-secret gate on ALL writes (enabled only if env token set) — method-based
-    #    so new write endpoints are covered automatically (reads are GET).
-    if DEMO_TOKEN and method in ("POST", "PATCH", "PUT", "DELETE"):
+    # 3) shared-secret gate on persistent-ledger writes (enabled only if env token set). Compute-only
+    #    POSTs that never mutate the persistent deck stay open, so the public demo is fully
+    #    interactive (chat, function-calling, the live duel, the "Measure" button); every deck-
+    #    mutating write and the agent loop require the operator token. Reads are GET (never gated).
+    if DEMO_TOKEN and method in ("POST", "PATCH", "PUT", "DELETE") and path not in _OPEN_WRITE_PATHS:
         if request.headers.get("x-demo-token") != DEMO_TOKEN:
             return JSONResponse({"detail": "forbidden"}, status_code=403)
     # 4) correlation id — ties this request's DISTILL/RECALL/REVISE/SELF-CHECK Qwen calls together
