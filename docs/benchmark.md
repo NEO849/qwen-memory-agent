@@ -153,6 +153,33 @@ anchor asserts ceiling=GREEN / floor=RED before the curve is trusted. Honest sco
 benchmark or independent sampling); a single real failure only *de-injects* a lesson, tombstoning is
 the terminal case after sustained refutation.
 
+## Does the confidence number MEAN anything? — a small non-circular transfer test
+
+A confidence is only worth trusting if it holds up out-of-sample. We ground a lesson's confidence on
+a SEEN task (`cart_total(line_items)` with `price_cents`/`quantity`, graded by `test_hidden.py`) and
+then measure whether it TRANSFERS to a DIFFERENT unseen variant (`invoice_total(lines)` with
+`unit_price_cents`/`qty` — same integer-cents rule, graded by `test_unseen.py`). The confidence never
+saw the variant, so this is genuine out-of-sample — not "confidence vs the outcomes that formed it".
+Reproduce: `python -m harness.calibration`.
+
+**What it shows (honestly):** across 5 bug classes the confidence separates signal from noise — the
+two classes with no prior knowledge score ~0.1 and transfer 0/8; memory-backed lessons score ~0.9.
+
+**What it does NOT show:** only two confidence levels appeared (~0.1 and ~0.9), so this is a **coarse
+high/low separation, not a fine-grained calibration curve over [0,1]**. The effective sample is
+**~10 class-points, not 80** (the 8 samples in a group share one confidence). Three classes Qwen
+solves without memory, so they add no contrast and dilute the aggregate.
+
+**The most honest result:** our own eval caught a real miscalibration — `pagination_leak` claimed 0.9
+but transferred **0/8**. We surface it, not hide it: on the two contrast classes only, high
+confidence claims ~0.9 but transfers just **~0.5**. That the harness *catches* its own failure is
+exactly why we trust the method. (Aggregate Brier 0.09 / ECE 0.04 are reported for transparency but
+are dominated by that one failure and diluted by the easy classes.)
+
+The Beta confidence *math* — that it converges to the true rate and is calibrated on clean Bernoulli
+outcomes (ECE < 0.06) — is shown separately and synthetically in `tests/test_calibration.py`. We keep
+the two distinct: a math backbone, and a small real-world transfer probe that also exposes a limit.
+
 ## External anchor — LongMemEval `knowledge-update` (does our memory help on a STANDARD benchmark?)
 
 Every self-built number above answers "does the *mechanism* help?" — but a memory-track judge also

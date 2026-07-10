@@ -1,0 +1,125 @@
+{
+  "demo": "small non-circular TRANSFER experiment (NOT a fine-grained calibration curve) — claimed confidence grounded on the SEEN task, success measured on an UNSEEN variant task",
+  "model": "qwen-plus",
+  "temperature": 0.7,
+  "n_per_group": 8,
+  "brier_score": 0.09,
+  "ece": 0.04,
+  "reliability": [
+    {
+      "bucket": "0.0-0.2",
+      "mean_claimed": 0.1,
+      "mean_observed": 0.0,
+      "n": 16
+    },
+    {
+      "bucket": "0.8-1.0",
+      "mean_claimed": 0.9,
+      "mean_observed": 0.875,
+      "n": 64
+    }
+  ],
+  "groups": [
+    {
+      "pattern": "email_normalize",
+      "condition": "no_memory",
+      "n": 8,
+      "claimed_confidence": 0.1,
+      "observed_unseen": 0.0,
+      "hidden_pass": 0,
+      "unseen_pass": 0
+    },
+    {
+      "pattern": "email_normalize",
+      "condition": "with_memory",
+      "n": 8,
+      "claimed_confidence": 0.9,
+      "observed_unseen": 1.0,
+      "hidden_pass": 8,
+      "unseen_pass": 8
+    },
+    {
+      "pattern": "money_rounding",
+      "condition": "no_memory",
+      "n": 8,
+      "claimed_confidence": 0.9,
+      "observed_unseen": 1.0,
+      "hidden_pass": 8,
+      "unseen_pass": 8
+    },
+    {
+      "pattern": "money_rounding",
+      "condition": "with_memory",
+      "n": 8,
+      "claimed_confidence": 0.9,
+      "observed_unseen": 1.0,
+      "hidden_pass": 8,
+      "unseen_pass": 8
+    },
+    {
+      "pattern": "mutable_default",
+      "condition": "no_memory",
+      "n": 8,
+      "claimed_confidence": 0.9,
+      "observed_unseen": 1.0,
+      "hidden_pass": 8,
+      "unseen_pass": 8
+    },
+    {
+      "pattern": "mutable_default",
+      "condition": "with_memory",
+      "n": 8,
+      "claimed_confidence": 0.9,
+      "observed_unseen": 1.0,
+      "hidden_pass": 8,
+      "unseen_pass": 8
+    },
+    {
+      "pattern": "pagination_leak",
+      "condition": "no_memory",
+      "n": 8,
+      "claimed_confidence": 0.1,
+      "observed_unseen": 0.0,
+      "hidden_pass": 0,
+      "unseen_pass": 0
+    },
+    {
+      "pattern": "pagination_leak",
+      "condition": "with_memory",
+      "n": 8,
+      "claimed_confidence": 0.9,
+      "observed_unseen": 0.0,
+      "hidden_pass": 8,
+      "unseen_pass": 0
+    },
+    {
+      "pattern": "sql_param",
+      "condition": "no_memory",
+      "n": 8,
+      "claimed_confidence": 0.9,
+      "observed_unseen": 1.0,
+      "hidden_pass": 8,
+      "unseen_pass": 8
+    },
+    {
+      "pattern": "sql_param",
+      "condition": "with_memory",
+      "n": 8,
+      "claimed_confidence": 0.9,
+      "observed_unseen": 1.0,
+      "hidden_pass": 8,
+      "unseen_pass": 8
+    }
+  ],
+  "honesty": "Confidence grounded on the SEEN task (test_hidden); success measured on a DIFFERENT UNSEEN variant (test_unseen) — genuine out-of-sample transfer, not circular. Beta(1,1)+outcomes = live gate math. HONEST LIMITS: only two confidence levels (~0.1/~0.9) → COARSE high/low separation, NOT a fine calibration curve over [0,1]. Effective ~10 class-points, not 80. 3/5 classes Qwen solves without memory (no contrast). pagination_leak claimed 0.9 but transferred 0/8 — a REAL miscalibration we SURFACE; Brier 0.09/ECE 0.04 are dominated by it and diluted by easy classes (see contrast_only). Beta convergence shown separately+synthetically in tests/test_calibration.py — not merged.",
+  "effective_units": "≈10 class-points (8 samples per group share one confidence), not 80",
+  "contrast_only": {
+    "classes": [
+      "email_normalize",
+      "pagination_leak"
+    ],
+    "mean_claimed": 0.9,
+    "mean_observed": 0.5,
+    "note": "memory-signal classes only: claim ~0.9 but transfer ~0.5 (pagination_leak claims 0.9, transfers 0/8). The aggregate hides this; surfaced on purpose."
+  }
+}

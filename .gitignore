@@ -33,3 +33,5 @@ bench_*.json
 bench_result.json
 .longmemeval_cache/
 .lme_cache/
+.calib_cache/
+.calib_cache_run.log
