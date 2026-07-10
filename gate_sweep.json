@@ -1,0 +1,69 @@
+{
+  "demo": "gate-threshold sweep \u2014 robustness of the 0.62 injection gate (offline, real pytest)",
+  "trials": 6,
+  "n_classes": 5,
+  "correct_confidences": [
+    0.875,
+    0.875,
+    0.875,
+    0.875,
+    0.875
+  ],
+  "poison_confidences": [
+    0.125,
+    0.125,
+    0.125,
+    0.125,
+    0.125
+  ],
+  "sweep": [
+    {
+      "gate": 0.3,
+      "correct_injected": 5,
+      "poison_injected": 0,
+      "clean": true
+    },
+    {
+      "gate": 0.4,
+      "correct_injected": 5,
+      "poison_injected": 0,
+      "clean": true
+    },
+    {
+      "gate": 0.5,
+      "correct_injected": 5,
+      "poison_injected": 0,
+      "clean": true
+    },
+    {
+      "gate": 0.62,
+      "correct_injected": 5,
+      "poison_injected": 0,
+      "clean": true
+    },
+    {
+      "gate": 0.7,
+      "correct_injected": 5,
+      "poison_injected": 0,
+      "clean": true
+    },
+    {
+      "gate": 0.8,
+      "correct_injected": 5,
+      "poison_injected": 0,
+      "clean": true
+    },
+    {
+      "gate": 0.9,
+      "correct_injected": 0,
+      "poison_injected": 0,
+      "clean": false
+    }
+  ],
+  "clean_band": [
+    0.3,
+    0.8
+  ],
+  "gate_0_62_clean": true,
+  "honesty": "Correct lessons ground to high confidence, poisoned to low, on real pytest (Beta(1,1)+outcomes = the live gate's math). A wide clean band means the exact gate barely matters \u2014 0.62 is a robust choice, not cherry-picked. Deterministic, no Qwen, isolated ledgers. Small N per lesson (illustrative)."
+}

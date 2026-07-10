@@ -186,6 +186,21 @@ The Beta confidence *math* — that it converges to the true rate and is calibra
 outcomes (ECE < 0.06) — is shown separately and synthetically in `tests/test_calibration.py`. We keep
 the two distinct: a math backbone, and a small real-world transfer probe that also exposes a limit.
 
+## Is the 0.62 gate cherry-picked? — a threshold sweep
+
+A fair skeptic asks: did we pick **0.62** because it flatters the numbers? We ground a correct and a
+poisoned lesson per bug class on real `pytest` (like the poison curve), then sweep the injection gate
+0.30–0.90 (`python -m harness.gate_sweep`, offline, deterministic):
+
+| gate | correct injected | poisoned injected | |
+|---|---|---|---|
+| **0.30 – 0.80** | **5 / 5** | **0 / 5** | ✓ clean |
+| 0.90 | 0 / 5 | 0 / 5 | too strict |
+
+Correct lessons ground to **0.875**, poisoned to **0.125** — a big gap — so **any** gate from **0.30
+to 0.80** cleanly injects every good lesson and no bad one. 0.62 sits in the middle of that wide
+plateau: the exact threshold barely matters, so it is a **robust** choice, not cherry-picked.
+
 ## External anchor — LongMemEval `knowledge-update` (does our memory help on a STANDARD benchmark?)
 
 Every self-built number above answers "does the *mechanism* help?" — but a memory-track judge also
