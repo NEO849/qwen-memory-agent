@@ -296,7 +296,7 @@ uvicorn backend.main:app --workers 1   # then open http://localhost:8000
 ```
 
 > **`--workers 1` is required** — the live-update fan-out (SSE) is in-process.
-> Tests: `pytest` (offline, 107/107) · `pytest -m live` (hits Qwen).
+> Tests: `pytest` (offline, 119/119) · `pytest -m live` (hits Qwen).
 > Reproduce the two efficiency numbers offline (no API key): `python -m harness.context_window_bench` · `python -m harness.latency_bench`.
 
 ---
