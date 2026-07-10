@@ -66,8 +66,8 @@
 
 ### [2:12–2:38] · ARCHITECTURE at altitude  ·  🎯 *Technical Depth 30% — the axis teams forget to say out loud*
 🎬 *Show the **architecture diagram** (`architecture/diagram.png`), legible on screen.*
-**🎙️ EN:** "Under the hood: Qwen Cloud in five roles, across three APIs — the model, embeddings, and function-calling. The recall path is stateless and scales out. Error handling is fail-open: if a Qwen call drops, it falls back to direct recall — it never crashes. Fifty-four tests, plus a sixty-case security red-team, stay green."
-**🇩🇪 DE:** *„Unter der Haube: Qwen Cloud in fünf Rollen, über drei APIs — das Modell, Embeddings und Function-Calling. Der Recall-Pfad ist zustandslos und skaliert horizontal. Fehlerbehandlung ist fail-open: fällt ein Qwen-Aufruf weg, greift der direkte Recall — es stürzt nie ab. Vierundfünfzig Tests plus ein 60-Fälle-Security-Red-Team bleiben grün."* — **(getrimmt: 4 klare Signale statt 8; Details zeigt das Diagramm)*
+**🎙️ EN:** "Under the hood: Qwen Cloud in five roles, across three APIs — the model, embeddings, and function-calling. The recall path is stateless and scales out. Error handling is fail-open: if a Qwen call drops, it falls back to direct recall — it never crashes. Over a hundred tests, plus a sixty-case security red-team, stay green."
+**🇩🇪 DE:** *„Unter der Haube: Qwen Cloud in fünf Rollen, über drei APIs — das Modell, Embeddings und Function-Calling. Der Recall-Pfad ist zustandslos und skaliert horizontal. Fehlerbehandlung ist fail-open: fällt ein Qwen-Aufruf weg, greift der direkte Recall — es stürzt nie ab. Über hundert Tests plus ein 60-Fälle-Security-Red-Team bleiben grün."* — **(getrimmt: 4 klare Signale statt 8; Details zeigt das Diagramm)*
 
 ### [2:38–2:54] · CLOSE — slam back to the proof (bookend)  ·  🎯 *Presentation*
 🎬 *Back to **🏆 Proof** — `0/5 → 5/5` is the LAST image. Fade in the URLs.*
@@ -82,6 +82,14 @@
 **🎙️ EN:** "A memory anyone can write to is an attack surface — so we red-teamed our own. A lesson with a hidden command inside is **neutralized** before it reaches the model. You can see the shield. Vulnerable to safe, sixty cases clean."
 **🇩🇪 DE:** *„Ein Gedächtnis, in das jeder schreiben kann, ist eine Angriffsfläche — also haben wir unser eigenes ge-red-teamt. Eine Lektion mit verstecktem Befehl wird neutralisiert, bevor sie das Modell erreicht. Man sieht den Schild. Von verwundbar zu sicher, sechzig Fälle sauber."*
 > Note: the sixty-case clean scan is already spoken in the architecture beat, so this beat is a *visual* bonus, not new evidence.
+
+---
+
+## 🧩 OPTIONAL beat — "time-travel through the memory" (~10s, strong Innovation visual)
+🎯 *Innovation differentiator — bi-temporal point-in-time recall, the feature Zep/Graphiti charge for.* 🎬 *On the globe, drag the **time-travel slider** back: the knowledge base shrinks to a handful of early lessons, then scrub forward and watch it grow to 66 as tombstoned ones blink out and stay gone.*
+**🎙️ EN:** "And the memory has a history. Drag the slider back and the knowledge base grows week by week — lessons appear as they were learned, and the ones later proven wrong blink out and stay forgotten. Point-in-time recall: you can ask what the memory believed on any past day."
+**🇩🇪 DE:** *„Und das Gedächtnis hat eine Historie. Zieh den Regler zurück und die Wissensbasis wächst Woche für Woche — Lektionen erscheinen, wie sie gelernt wurden, und die später als falsch bewiesenen verschwinden und bleiben vergessen. Point-in-Time-Recall: du kannst fragen, was das Gedächtnis an jedem vergangenen Tag glaubte."*
+> Honest note (on-screen label already says this): the demo memory's **calendar spacing is illustrative**; the **event order and tombstones are real**. Don't claim real 8-week production usage.
 
 ---
 
