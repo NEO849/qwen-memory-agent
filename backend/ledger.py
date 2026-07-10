@@ -29,7 +29,7 @@ from . import config
 SEVERITIES = ("low", "med", "high")
 SOURCES = ("agent-distill", "human", "human-distill", "import")
 KINDS = ("guard", "anti_pattern")   # guard = "do this"; anti_pattern = "never do this again" (dead-end memory)
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 def _now() -> str:
@@ -112,6 +112,12 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE lessons ADD COLUMN last_recalled_at TEXT")
     if "merge_count" not in cols:   # dedup salience — NOT confidence (confidence stays test-grounded)
         conn.execute("ALTER TABLE lessons ADD COLUMN merge_count INTEGER NOT NULL DEFAULT 0")
+    # bi-temporal validity interval (validity time, kept STRICTLY separate from transaction time
+    # `updated_at`). NULL valid_from = valid since creation; NULL valid_to = still valid (open).
+    if "valid_from" not in cols:
+        conn.execute("ALTER TABLE lessons ADD COLUMN valid_from TEXT")
+    if "valid_to" not in cols:
+        conn.execute("ALTER TABLE lessons ADD COLUMN valid_to TEXT")
     conn.execute(
         """CREATE TABLE IF NOT EXISTS links (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -174,10 +180,10 @@ def add_lesson(trigger: str, lesson: str, *, scope: str = "", severity: str = "m
         cur = conn.execute(
             """INSERT INTO lessons
                (trigger, lesson, scope, severity, embedding, alpha, beta, status,
-                source, pinned, author, note_raw, kind, rev, created_at, updated_at)
-               VALUES (?,?,?,?,?,?,?, 'active', ?,?,?,?,?, 1, ?,?)""",
+                source, pinned, author, note_raw, kind, rev, created_at, updated_at, valid_from)
+               VALUES (?,?,?,?,?,?,?, 'active', ?,?,?,?,?, 1, ?,?,?)""",
             (trigger, lesson, scope, severity, _pack(embedding), alpha, beta,
-             source, int(pinned), author, note_raw, kind, now, now),
+             source, int(pinned), author, note_raw, kind, now, now, now),
         )
         conn.commit()
         return int(cur.lastrowid)
@@ -233,8 +239,9 @@ def tombstone(lesson_id: int, *, superseded_by: int | None = None,
     with _connect(path) as conn:
         conn.execute("BEGIN IMMEDIATE")
         conn.execute(
-            "UPDATE lessons SET status='obsolete', superseded_by=?, updated_at=? WHERE id=?",
-            (superseded_by, now, lesson_id),
+            "UPDATE lessons SET status='obsolete', superseded_by=?, "
+            "valid_to=COALESCE(valid_to, ?), updated_at=? WHERE id=?",
+            (superseded_by, now, now, lesson_id),
         )
         conn.commit()
     return get_lesson(lesson_id, path=path)
@@ -373,16 +380,27 @@ def get_lesson(lesson_id: int, *, with_embedding: bool = False,
 
 
 def list_lessons(*, status: str = "all", with_embedding: bool = False,
-                 path: str | None = None) -> list[dict]:
-    """Snapshot read — ONE SELECT. status in {all, active, obsolete}."""
+                 as_of: str | None = None, path: str | None = None) -> list[dict]:
+    """Snapshot read — ONE SELECT. status in {all, active, obsolete}.
+
+    `as_of` (ISO timestamp) turns this into a bi-temporal point-in-time read: return the lessons
+    that were VALID at that instant (valid_from ≤ as_of < valid_to), regardless of today's status —
+    a lesson tombstoned yesterday was still valid last week. NULL valid_from = valid since creation;
+    NULL valid_to = still valid. Default `as_of=None` is byte-identical to the old snapshot read."""
     q = "SELECT * FROM lessons"
-    args: tuple = ()
-    if status in ("active", "obsolete"):
-        q += " WHERE status = ?"
-        args = (status,)
+    conds: list[str] = []
+    args: list = []
+    if as_of is not None:
+        conds.append("(valid_from IS NULL OR valid_from <= ?) AND (valid_to IS NULL OR valid_to > ?)")
+        args.extend([as_of, as_of])
+    elif status in ("active", "obsolete"):
+        conds.append("status = ?")
+        args.append(status)
+    if conds:
+        q += " WHERE " + " AND ".join(conds)
     q += " ORDER BY pinned DESC, id ASC"
     with _connect(path) as conn:
-        rows = conn.execute(q, args).fetchall()
+        rows = conn.execute(q, tuple(args)).fetchall()
     return [_row_to_dict(r, with_embedding=with_embedding) for r in rows]
 
 

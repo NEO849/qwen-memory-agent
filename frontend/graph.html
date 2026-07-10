@@ -60,6 +60,10 @@
     <div class="row"><span class="ln" style="color:#B9A6E8"></span>synthesizes</div>
   </div>
   <div id="tip"></div>
+  <div id="timeline" class="hud" style="display:none; bottom:16px; left:50%; transform:translateX(-50%); padding:10px 15px; text-align:center">
+    <div class="grp" style="font-family:var(--mono); font-size:11px; margin-bottom:7px">🕐 time-travel · <b id="tl-date">now</b></div>
+    <input id="tl-range" type="range" min="0" max="0" value="0" step="1" style="width:190px; accent-color:#34d399; cursor:pointer">
+  </div>
 
   <script>
     // embedded in the app's Graph tab? hide the redundant back-link (the tab toggle is the nav)
@@ -156,6 +160,27 @@
           if (lastPulse.length) pulseNodes(lastPulse);
         }).catch(() => {});
       }
+      // ---- bi-temporal time-travel: scrub the whole knowledge base through its own history ----
+      function applyAsOf(ts) {
+        const url = ts ? '/graph?as_of=' + encodeURIComponent(ts) : '/graph';
+        fetch(url).then(r => r.json()).then(g => {
+          data.nodes = g.nodes; data.links = (g.edges || []).map(e => ({ ...e })); G.graphData(data);
+        }).catch(() => {});
+      }
+      fetch('/timeline').then(r => r.json()).then(tl => {
+        const inst = tl.instants || [];
+        if (inst.length < 2) return;                  // not enough history to scrub
+        const range = document.getElementById('tl-range');
+        const dateEl = document.getElementById('tl-date');
+        const panel = document.getElementById('timeline');
+        if (panel) panel.style.display = 'block';
+        range.max = inst.length; range.value = inst.length;   // rightmost = "now" (no as_of)
+        range.addEventListener('input', () => {
+          const i = Number(range.value);
+          if (i >= inst.length) { dateEl.textContent = 'now'; applyAsOf(null); }
+          else { dateEl.textContent = inst[i].slice(0, 10); applyAsOf(inst[i]); }
+        });
+      }).catch(() => {});
       window.addEventListener('message', (e) => {
         if (e.source !== window.parent) return;       // ignore anything but our host frame
         const m = e.data || {};

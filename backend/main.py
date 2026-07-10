@@ -628,10 +628,27 @@ async def sse() -> StreamingResponse:
 
 # -------------------------------------------------------------------- graph ---
 @app.get("/graph")
-def get_graph() -> dict:
+def get_graph(as_of: str | None = Query(None)) -> dict:
     """Knowledge-graph view of the memory (nodes = lessons, edges = related/supersedes/synthesizes).
-    Registered BEFORE the static mount so this API route wins over any static path."""
-    return graph.build_graph(path=config.LEDGER_PATH)
+    Registered BEFORE the static mount so this API route wins over any static path.
+    `as_of` (ISO timestamp) → bi-temporal snapshot: the memory as it stood at that instant."""
+    return graph.build_graph(path=config.LEDGER_PATH, as_of=as_of)
+
+
+@app.get("/timeline")
+def get_timeline() -> dict:
+    """Bi-temporal timeline: the distinct instants at which the memory changed (a lesson became
+    valid, or was tombstoned) plus the current bounds — so a UI slider can scrub the knowledge base
+    through time and re-query `/graph?as_of=<instant>`. Validity time, not transaction time."""
+    lessons = ledger.list_lessons(path=config.LEDGER_PATH)
+    stamps = set()
+    for l in lessons:
+        stamps.add(l.get("valid_from") or l.get("created_at"))
+        if l.get("valid_to"):
+            stamps.add(l["valid_to"])
+    instants = sorted(s for s in stamps if s)
+    return {"instants": instants, "min": instants[0] if instants else None,
+            "max": instants[-1] if instants else None, "count": len(instants)}
 
 
 # --------------------------------------------------------------------- duel ---

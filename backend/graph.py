@@ -15,9 +15,15 @@ def _hue(conf: float) -> str:
     return f"hsl({h} 60% 66%)"
 
 
-def build_graph(*, path: str | None = None, include_obsolete: bool = True) -> dict:
-    active = ledger.list_lessons(status="active", path=path)
-    obsolete = ledger.list_lessons(status="obsolete", path=path) if include_obsolete else []
+def build_graph(*, path: str | None = None, include_obsolete: bool = True,
+                as_of: str | None = None) -> dict:
+    if as_of is not None:
+        # bi-temporal snapshot: everything VALID at `as_of` (a lesson tombstoned today was live then).
+        active = ledger.list_lessons(as_of=as_of, path=path)
+        obsolete = []
+    else:
+        active = ledger.list_lessons(status="active", path=path)
+        obsolete = ledger.list_lessons(status="obsolete", path=path) if include_obsolete else []
     counts = ledger.outcome_counts(path=path)
     links = ledger.list_links(path=path)
     lessons = active + obsolete
@@ -44,7 +50,7 @@ def build_graph(*, path: str | None = None, include_obsolete: bool = True) -> di
     for l in lessons:
         c = counts.get(l["id"], {})
         rp, rf = c.get("pass", 0), c.get("fail", 0)
-        is_obs = l["status"] == "obsolete"
+        is_obs = as_of is None and l["status"] == "obsolete"
         is_anti = l.get("kind") == "anti_pattern"
         orphan = deg.get(l["id"], 0) == 0 and not is_obs
         color = "#5a6577" if is_obs else ("#c0392b" if is_anti else _hue(l["confidence"]))
