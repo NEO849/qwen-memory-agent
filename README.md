@@ -229,7 +229,7 @@ One clinical surface — a **living-memory** layout: the **editable memory on th
 | ⛔ | **Anti-pattern inhibitions** | Dead-end rules a past regression proved wrong are injected as active **⛔ DO NOT** directives — the agent is steered *away* from a known bad path, not just toward a good one. |
 | ✦ | **Crystallization (ExpeL)** | A cluster of related lessons can be distilled into one higher-level meta-lesson that then **earns its own confidence** from real tests like any other. |
 | 🧠 | **Associative memory (Hebbian + spreading activation)** | Neuroscience-*inspired*, not mystical: lessons recalled together **wire together** — the edge weight grows with co-recall (capped), never touching confidence (that stays test-earned). An opt-in **spreading-activation** recall then follows the strongest synapses to surface associated neighbours that pure search misses. |
-| 🛡 | **Poison defense** | Recalled lessons enter the prompt as *untrusted data* behind structural markers + a deterministic sanitizer — a poisoned lesson can't become a command. |
+| 🛡 | **Poison defense** | Recalled memory is untrusted — confined in `<<<UNTRUSTED_MEMORY>>>` markers + a deterministic sanitizer so a poisoned lesson stays *data, not a command* — **at the web chat *and* the MCP tool** (`mcp_tool/_safety.py`). Red-teamed (60 cases) and adversarially re-verified. |
 
 <p align="center"><img src="docs/media/globe.png" alt="3D knowledge globe — clicking a node lights up its strands by type" width="820"></p>
 
@@ -313,7 +313,9 @@ Code, Cursor) gains a shared, outcome-grounded memory with **zero local setup** 
 no API key; the cloud does the distilling + retrieval). Because that hosted memory is **shared**, `record`
 writes need an operator token — or run your own instance (`REGRESS_GUARD_LOCAL=1`), where both are open.
 An agent calls `recall` before writing code and `record` after fixing a red test, so the same bug can't
-come back in a later session.
+come back in a later session. **Safe to point at a shared memory:** the tool treats every recalled
+lesson as untrusted — sanitized + confined behind untrusted markers before it reaches your agent — and
+fails open on any backend error (`mcp_tool/_safety.py`, adversarially verified).
 
 **See it carry a fix across two sessions** — a recordable terminal proof against the *live* cloud memory:
 
