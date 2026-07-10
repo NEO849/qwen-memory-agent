@@ -14,8 +14,8 @@ deployed on Alibaba Cloud ECS · track **MemoryAgent**.
 *"Sophisticated use of QwenCloud APIs (custom skills, MCP integrations)? Algorithmic or
 engineering innovation through novel solutions, custom components, or performance optimization?"*
 
-- **Sophisticated QwenCloud API usage — five roles across three APIs:** DISTILL, REVISE,
-  SELF-CHECK (`qwen-plus`, JSON mode), RECALL (`text-embedding-v4` + BM25/RRF hybrid), and
+- **Sophisticated QwenCloud API usage — five roles across four Qwen models & three APIs:** DISTILL (`qwen-plus`), REVISE & contradiction judge (`qwen-max`),
+  SELF-CHECK (`qwen-turbo` paraphrase + `qwen-max` judge), RECALL (`text-embedding-v4` + BM25/RRF hybrid), chat on flagship `qwen-max`, and
   **FUNCTION-CALLING** — the model itself decides, via a `recall_memory` tool it invokes and
   writes the query for, when to consult memory (`backend/main.py::_chat_prepare`,
   `qwen_client.py::chat_with_tools`). A **bounded multi-step tool loop** (recall → traverse the
@@ -23,7 +23,7 @@ engineering innovation through novel solutions, custom components, or performanc
   flag-gated (`TOOL_LOOP_ENABLED`, `STREAMING_ENABLED`).
 - **Beyond a single model (flag-gated, byte-identical when off):** **per-role model routing**
   (`RG_MODEL_ROUTING`) sends the high-stakes obsolescence/contradiction *judges* to `qwen-max`,
-  cheap eval paraphrase to `qwen-turbo`, DISTILL/default to `qwen-plus` — the right model for the
+  cheap eval paraphrase to `qwen-turbo`, chat/default to flagship `qwen-max`, structured DISTILL to `qwen-plus` — the right model for the
   job, visible per role at `/telemetry`; **strict `json_schema`** for DISTILL with graceful
   `json_object` fallback (`RG_STRUCTURED_OUTPUT`); **Qwen3 reasoning-trace capture** on
   DISTILL/REVISE surfaced at `/reasoning` (`RG_REASONING_ENABLED`) — observability that never

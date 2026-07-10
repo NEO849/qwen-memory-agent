@@ -65,7 +65,7 @@
 **🇩🇪 DE:** *„Das ist nicht nur eine Demo — es ist ein echtes Werkzeug. Es läuft über MCP, auf Alibaba Cloud. Session eins trifft den Bug — der Test wird rot. Ein Entwickler speichert den Fix. Session zwei — ein brandneuer Agent — ruft ihn ab und liefert grün. Es ist MIT-lizenziert und funktioniert heute mit jedem MCP-Agenten, mit ein paar Zeilen Konfig."*
 
 ### [2:12–2:38] · ARCHITECTURE at altitude  ·  🎯 *Technical Depth 30% — the axis teams forget to say out loud*
-🎬 *Show the **architecture diagram** (`architecture/diagram.png`), legible on screen.*
+🎬 *Show the **architecture diagram** (`architecture/diagram.png`), legible on screen. Optionally cut to `/telemetry` for ~1s so the **per-role model routing is visible on camera — `chat: qwen-max`, `recall: text-embedding-v4`** (four Qwen models, routed live).*
 **🎙️ EN:** "Under the hood: Qwen Cloud in five roles, across three APIs — the model, embeddings, and function-calling. The recall path is stateless and scales out. Error handling is fail-open: if a Qwen call drops, it falls back to direct recall — it never crashes. Over a hundred tests, plus a sixty-case security red-team, stay green."
 **🇩🇪 DE:** *„Unter der Haube: Qwen Cloud in fünf Rollen, über drei APIs — das Modell, Embeddings und Function-Calling. Der Recall-Pfad ist zustandslos und skaliert horizontal. Fehlerbehandlung ist fail-open: fällt ein Qwen-Aufruf weg, greift der direkte Recall — es stürzt nie ab. Über hundert Tests plus ein 60-Fälle-Security-Red-Team bleiben grün."* — **(getrimmt: 4 klare Signale statt 8; Details zeigt das Diagramm)*
 

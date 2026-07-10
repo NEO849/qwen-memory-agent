@@ -42,7 +42,7 @@
 
 ---
 
-> **Powered by Qwen Cloud — five roles across three APIs:** DISTILL · REVISE · SELF-CHECK · function-calling (`qwen-plus`) + RECALL (`text-embedding-v4`), deployed on **Alibaba Cloud**. Deploy proof (code): [`backend/qwen_client.py`](backend/qwen_client.py). [Full role table ↓](#powered-by-qwen-cloud-on-alibaba-cloud)
+> **Powered by Qwen Cloud — five roles across four Qwen models:** flagship **`qwen-max`** for chat & the high-stakes judges · `qwen-turbo` for cheap paraphrase · `qwen-plus` for structured distillation · `text-embedding-v4` for recall — each role routed to the model that measured best for it (three Qwen Cloud APIs), deployed on **Alibaba Cloud**. Deploy proof (code): [`backend/qwen_client.py`](backend/qwen_client.py). [Full role table ↓](#powered-by-qwen-cloud-on-alibaba-cloud)
 
 ## Install
 
@@ -233,23 +233,23 @@ One clinical surface — a **living-memory** layout: the **editable memory on th
 
 ## Powered by Qwen Cloud on Alibaba Cloud
 
-Five distinct Qwen roles across **three Qwen Cloud APIs** (`qwen-plus` · `text-embedding-v4` · Qwen function-calling). **Alibaba Cloud deploy proof (code):** the DashScope / Qwen Cloud client [`backend/qwen_client.py`](backend/qwen_client.py) · deployment notes [`deploy/README.md`](deploy/README.md).
+Five distinct Qwen roles across **four Qwen models** (`qwen-max` · `qwen-plus` · `qwen-turbo` · `text-embedding-v4`) and three Qwen Cloud APIs. The **live deployment routes each role to the model that measured best for it** (`RG_MODEL_ROUTING` on, `QWEN_MODEL=qwen-max`); the flag-off reproducible baseline — the 120 tests and the A/B — collapses every role to a single `qwen-plus`, byte-identical. **Alibaba Cloud deploy proof (code):** the DashScope / Qwen Cloud client [`backend/qwen_client.py`](backend/qwen_client.py) · deployment notes [`deploy/README.md`](deploy/README.md).
 
 | # | Role | Model | Where |
 |---|------|-------|-------|
 | 1 | **DISTILL** — red test + fix diff → lesson JSON | `qwen-plus` (JSON mode) | `backend/extractor.py` |
 | 2 | **RECALL** — embed lessons + context, fuse with BM25 (RRF) | `text-embedding-v4` (1024-d) | `backend/retrieval.py`, `memory.py` |
-| 3 | **REVISE** — is a lesson now obsolete? → tombstone | `qwen-plus` | `backend/reviser.py` |
-| 4 | **SELF-CHECK** — keyword-free paraphrase eval + contradiction judge | `qwen-plus` | `backend/evaluation.py`, `reviser.py` |
-| 5 | **FUNCTION-CALLING** — chat gives Qwen a `recall_memory` tool; the model decides on its own to call it for coding questions and writes the query itself | `qwen-plus` (tool-calling) | `backend/qwen_client.py::chat_with_tools`, `backend/main.py::/chat` |
+| 3 | **REVISE** — is a lesson now obsolete? → tombstone | `qwen-max` (obsolescence/contradiction judge) | `backend/reviser.py` |
+| 4 | **SELF-CHECK** — keyword-free paraphrase eval + contradiction judge | `qwen-turbo` paraphrase · `qwen-max` judge | `backend/evaluation.py`, `reviser.py` |
+| 5 | **FUNCTION-CALLING** — chat gives Qwen a `recall_memory` tool; the model decides on its own to call it for coding questions and writes the query itself | flagship **`qwen-max`** (tool-calling) | `backend/qwen_client.py::chat_with_tools`, `backend/main.py::/chat` |
 
-*Even the coding agent in the proof harness is Qwen — Qwen both **causes** and **cures** the bug via memory.*
+*Even the coding agent in the proof harness is Qwen — Qwen both **causes** and **cures** the bug via memory. The Model column is the **live per-role routing**; with `RG_MODEL_ROUTING` off every role collapses to `qwen-plus` for a byte-identical baseline. `/telemetry` shows the live model serving each role (chat = `qwen-max`).*
 
 In chat, we don't decide when to consult the memory — **Qwen does**. It's handed a `recall_memory` tool and *autonomously* calls it for coding/engineering questions (formulating its own query, e.g. *"password storage best practices"*), while skipping it for casual ones (*"What is the capital of France?"* → no tool call). We run the real recall, **sanitize** the lessons (the poisoned-memory defense stays intact) and feed them back as the tool result before Qwen answers — shown in the UI as *"🔧 Qwen called recall('…') → answered using N lessons"*. It fails open to the direct pre-injection path if tool-calling is unavailable.
 
 **Depth beyond a single model** *(active in the live deployment; each stays flag-gated so the reproducible baseline and 120 tests are byte-identical when off)*:
 
-- **Right model for the job** (`RG_MODEL_ROUTING`) — the high-stakes obsolescence/contradiction **judges route to `qwen-max`**, the cheap eval paraphrase to `qwen-turbo`, DISTILL/default stay `qwen-plus`. `/telemetry` shows the model serving each role.
+- **Right model for the job** (`RG_MODEL_ROUTING`, on in the live deployment) — chat and the high-stakes obsolescence/contradiction **judges run on flagship `qwen-max`**, the cheap eval paraphrase on `qwen-turbo`, and structured DISTILL stays on `qwen-plus`, which measured most reliable for schema extraction — each role on the model that measured best for it. `/telemetry` shows the model serving each role.
 - **Strict structured output** (`RG_STRUCTURED_OUTPUT`) — DISTILL enforces a `json_schema` (four keys + `severity` enum) model-side, with a graceful fallback to `json_object` if a provider rejects it — schema-enforced, never brittle.
 - **Reasoning traces** (`RG_REASONING_ENABLED`) — captures Qwen3 *thinking* on DISTILL/REVISE and surfaces it at `/reasoning` (why a lesson was distilled or retired). Pure observability — it **never** moves a lesson's Beta confidence, which stays earned from real tests.
 
