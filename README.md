@@ -338,6 +338,18 @@ carried across sessions by the cloud memory alone, over the same `recall`/`recor
 
 ---
 
+## Security — a memory an agent trusts is an attack surface
+
+Every recalled lesson is treated as **untrusted**: structurally confined behind `<<<UNTRUSTED_MEMORY>>>`
+markers + a deterministic sanitizer — at the web chat **and** the MCP tool (`mcp_tool/_safety.py`). We
+red-teamed it (60-case scan) and ran it through an adversarial `skeptical-validator` gauntlet that found
+two structural escapes; we closed them → **CONFIRMED-SAFE**. Writes to the shared cloud are token-gated,
+and every tool call fails open.
+
+<p align="center"><img src="docs/media/security-by-design.png" width="820" alt="Security by design — recalled memory is untrusted: confined + sanitized at the web chat and the MCP tool; red-teamed and adversarially re-verified to CONFIRMED-SAFE, 129/129 tests green"></p>
+
+---
+
 ## Deployment
 
 Runs as a single process on **Alibaba Cloud ECS** (Singapore) — see [`deploy/README.md`](deploy/README.md).
