@@ -172,7 +172,7 @@ honest about the rows where the incumbents beat us.
 | Trust grounded in | **execution outcome (real tests)** | recency / salience | recency + graph | recency / self-edit |
 | Forgets what's *wrong* (not just old) | **yes — demote/tombstone on a real fail** | TTL / eviction | invalidate by recency | self-edit |
 | Token-budget-aware recall | yes (value-density) | yes | yes | via context mgmt |
-| Temporal invalidation | supersede / tombstone | partial | **bitemporal graph** | partial |
+| Temporal invalidation | **supersede/tombstone + bi-temporal point-in-time** | partial | **bitemporal graph** | partial |
 | Standard-benchmark breadth | LongMemEval subset (honest) | **LoCoMo + LongMemEval (full)** | **LongMemEval (full)** | DMR |
 | Scale | single-process (honest cap) | managed | **graph, scalable** | managed |
 | Agent integration | MCP (drop-in, any agent) | SDK / API | SDK | framework |
@@ -219,6 +219,7 @@ One clinical surface — a **living-memory** layout: the **editable memory on th
 | 🧠 | **Living memory (globe + chat together)** | Three columns in one frame: **LEFT** the editable card deck (**pin / demote / forget / revise**, **Teach** a rule, add a **⛔ don't**, **Run / Pause / Stop** the agent), **MIDDLE** the chat, **RIGHT** the always-on 3D globe. When chat or the agent recalls a lesson, exactly those nodes pulse **live** on the globe while the answer streams — only the **real recalled IDs** light up (verified via Playwright). Mobile stacks. |
 | ⚔️ | **Live duel (plain AI vs. AI + Regress-Guard)** | One prompt, two arms — **"plain AI · no memory"** vs **"AI + Regress-Guard"**. Hit **▶ Run 5 live** and 5 hidden `pytest` fire in real time; the counters tick to **0/5 vs 5/5**. The *live, un-recorded* twin of 🏆 Proof — the memory arm uses a **disclosed determinism guard** (`"injected":"canonical"`), so it is the injection *ceiling*, never "guaranteed". |
 | 💬 | **Chat + editable memory** | Talk to the agent; beside it, a flashcard deck shows every lesson with a **Beta(α,β) confidence meter** — **pin**, **demote** or **forget** any lesson in a click. |
+| 🕐 | **Bi-temporal time-travel** | A slider under the globe scrubs the whole knowledge base through **its own history** — drag it back and lessons that were later tombstoned reappear as they stood *valid then*. Point-in-time recall (`/graph?as_of=…`, `/timeline`), validity time kept strictly separate from transaction time. Honest: bi-temporal supersession, not a full Graphiti graph. |
 | 🌐 | **3D knowledge globe** | The whole memory as a rotating globe (**66 nodes and ~200 edges**): node size = evidence (α+β), colour = confidence, grey = forgotten, dark-red = anti-pattern; **edge strength is initialised from embedding-cosine similarity**, then further strengthened by Hebbian co-recall on the synapses that co-fire (capped). **Click a node and its strands light up by type** — *related* (blue), *supersedes* (red), *synthesizes* (violet) — so you see at a glance what a memory connects to. |
 | 🏆 | **The proof** | The signature A/B moment above, replayable on demand — the decisive token pulses, the pass-rate lift counts up. |
 | ⛔ | **Anti-pattern inhibitions** | Dead-end rules a past regression proved wrong are injected as active **⛔ DO NOT** directives — the agent is steered *away* from a known bad path, not just toward a good one. |
