@@ -186,7 +186,7 @@ One clinical surface — a **living-memory** layout. The editable memory sits on
 | 🧠 | **Associative memory (Hebbian + spreading activation)** | Lessons recalled together wire together — the edge weight grows with co-recall (capped), never touching confidence. An opt-in spreading-activation recall then follows the strongest synapses to surface neighbours pure search misses. Neuroscience-*inspired*, not mystical. |
 | 🛡 | **Poison defense** | Recalled memory is untrusted — confined in `<<<UNTRUSTED_MEMORY>>>` markers + a deterministic sanitizer so a poisoned lesson stays *data, not a command* — at the web chat *and* the MCP tool (`mcp_tool/_safety.py`). Red-teamed (60 cases) and adversarially re-verified. |
 
-<p align="center"><img src="docs/media/globe.png" alt="3D knowledge globe — clicking a node lights up its strands by type" width="820"></p>
+<p align="center"><img src="docs/media/globe.png" alt="3D knowledge globe with the time-travel slider — the whole memory as a rotating globe: node size = evidence, colour = confidence, grey = forgotten" width="400"></p>
 
 ---
 
