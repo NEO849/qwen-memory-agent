@@ -463,7 +463,7 @@ function paintTeach() {
   const sec = document.querySelector('.teach'); if (!sec) return;
   const busy = agentBusy();
   sec.classList.toggle('steer', busy);
-  $('#teachSub').textContent = busy ? "· steers me while I'm running" : "· I'll use it on my next answer";
+  ($('#teachSub')||{}).textContent = busy ? "· steers me while I'm running" : "· I'll use it on my next answer";
   $('#teachInput').placeholder = busy ? "Steer me — I'll re-plan with your note…" : 'Teach a rule, or correct me…';
   $('#tSig').textContent = busy ? '⇢' : '»';
   $('#teachSend').textContent = busy ? 'Steer' : 'Teach';
@@ -546,7 +546,7 @@ function setView(v) {
 document.querySelectorAll('.vbtn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#btnReplay') && $('#btnReplay').addEventListener('click', playProof);
 $('#btnDuel') && $('#btnDuel').addEventListener('click', runDuel);
-{ const gf = $('#graphFrame'); if (gf) gf.src = '/graph.html?n=7'; }   // load the persistent globe once
+{ const gf = $('#graphFrame'); if (gf) gf.src = '/graph.html?n=8'; }   // load the persistent globe once
 loadGraphStats();                                                     // populate the metric strip above it
 paintTeach();
 // Land on the signature 🏆 Proof moment and auto-play it once — a cold visitor sees 0→5/5 first
