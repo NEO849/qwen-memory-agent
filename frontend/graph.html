@@ -41,6 +41,19 @@
     #tip .t-meta { font-family:var(--mono); font-size:10.5px; color:var(--dim); }
     #tip .t-flag { display:inline-block; margin-top:5px; font-family:var(--mono); font-size:10px;
       border-radius:5px; padding:1px 6px; }
+    /* refined time-travel slider: wider, muted, custom-styled (no neon accent-color) */
+    #timeline #tl-range { -webkit-appearance:none; appearance:none; display:block; margin:2px auto 0;
+      width:clamp(220px,58vw,380px); height:5px; border-radius:999px; outline:none; cursor:pointer;
+      background:linear-gradient(90deg, rgba(87,168,140,.5), rgba(87,168,140,.12)); }
+    #timeline #tl-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none;
+      width:15px; height:15px; border-radius:50%; background:#57a88c;
+      border:2px solid rgba(232,237,244,.9); box-shadow:0 1px 5px rgba(0,0,0,.55); cursor:pointer;
+      transition:background .15s ease; }
+    #timeline #tl-range::-moz-range-thumb { width:15px; height:15px; border-radius:50%; background:#57a88c;
+      border:2px solid rgba(232,237,244,.9); box-shadow:0 1px 5px rgba(0,0,0,.55); cursor:pointer; }
+    #timeline #tl-range::-moz-range-track { height:5px; border-radius:999px; background:rgba(87,168,140,.28); }
+    #timeline #tl-range:hover::-webkit-slider-thumb { background:#6bbfa1; }
+    #timeline #tl-range:hover::-moz-range-thumb { background:#6bbfa1; }
   </style>
 </head>
 <body>
@@ -60,10 +73,9 @@
     <div class="row"><span class="ln" style="color:#B9A6E8"></span>synthesizes</div>
   </div>
   <div id="tip"></div>
-  <div id="timeline" class="hud" style="display:none; bottom:16px; left:50%; transform:translateX(-50%); padding:10px 15px; text-align:center">
-    <div class="grp" style="font-family:var(--mono); font-size:11px; margin-bottom:7px">🕐 time-travel · <b id="tl-date">now</b></div>
-    <input id="tl-range" type="range" min="0" max="0" value="0" step="1" style="width:190px; accent-color:#34d399; cursor:pointer">
-    <div style="font-size:9px; color:#5a6577; margin-top:5px; font-family:var(--mono)">demo memory · order &amp; tombstones real, calendar dates illustrative</div>
+  <div id="timeline" class="hud" style="display:none; bottom:16px; left:50%; transform:translateX(-50%); padding:12px 22px; text-align:center">
+    <div class="grp" style="font-family:var(--mono); font-size:11px; margin-bottom:10px; color:#4b5563">🕐 time-travel · <b id="tl-date">now</b></div>
+    <input id="tl-range" type="range" min="0" max="0" value="0" step="1">
   </div>
 
   <script>
