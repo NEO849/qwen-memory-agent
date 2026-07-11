@@ -546,7 +546,7 @@ function setView(v) {
 document.querySelectorAll('.vbtn').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#btnReplay') && $('#btnReplay').addEventListener('click', playProof);
 $('#btnDuel') && $('#btnDuel').addEventListener('click', runDuel);
-{ const gf = $('#graphFrame'); if (gf) gf.src = '/graph.html?n=6'; }   // load the persistent globe once
+{ const gf = $('#graphFrame'); if (gf) gf.src = '/graph.html?n=7'; }   // load the persistent globe once
 loadGraphStats();                                                     // populate the metric strip above it
 paintTeach();
 // Land on the signature 🏆 Proof moment and auto-play it once — a cold visitor sees 0→5/5 first

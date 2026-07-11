@@ -149,7 +149,8 @@
         .onNodeClick(n => {
           selectNode(n);                       // colour the strands leaving this node
           // back the camera off proportionally to the node's radius so even the biggest hub fits
-          const d = 80 + Math.cbrt(n.val || 1) * 46;
+          // groesserer Standoff = sanfterer Zoom beim Klick (nicht so stark reingezoomt)
+          const d = 135 + Math.cbrt(n.val || 1) * 66;
           const r = 1 + d / (Math.hypot(n.x, n.y, n.z) || 1);
           G.cameraPosition({ x: n.x * r, y: n.y * r, z: n.z * r }, n, 900);
         });
